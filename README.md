@@ -1,46 +1,35 @@
-# ELU Upgrading — Premium V5
+# ELU Upgrading — Premium V6
 
-## Status logic
-Only four resident/unit statuses are used:
+This version keeps the V5 workflow and upgrades two areas requested after live testing: visual impact and existing-data import.
+
+## Imported source data
+- 6 uploaded PR3 workbooks
+- 38 blocks
+- 2,341 exact units
+- A / C / D / NR status is read from the block charts (C is preserved as Confirmation)
+- Existing dated appointment schedules are preloaded into Appointment Register
+- Existing completed work is retained
+- Existing Excel remarks and the available contact numbers are retained
+
+## Status rules
 - A = Opt-In
-- C = Confirmation (appointment confirmed) — shown in pink
+- C = Confirmation (pink)
 - D = Opt-Out
 - NR = No Response
+- Appointment confirmation sets C
+- When the appointment slot ends, C automatically returns to A and the work is counted as completed
 
-When an appointment is confirmed, the matching Unit Register status becomes C.
-After the appointment time slot ends, the app automatically changes C to A and counts that unit as work completed.
-If the app was closed, this check runs immediately the next time the app opens.
-While the app is open, it checks every minute.
+## Unit Register
+Read-only master register. Operational edits happen in Survey / Appointment / Complaint registers.
 
-## Data architecture
-- Survey / Follow-up Register: editable + deletable operational records
-- Appointment Register: editable + deletable operational records
-- Complaint Register: editable + deletable operational records
-- Unit Register: READ ONLY master register; calculated automatically from Survey + Appointment
-- Block Board: read-only visual status board; use the shortcuts to enter Survey or Appointment data
-- Daily Team Board: operational work control
-- Weekly Meeting Report: calculated directly from Unit Register
-
-## Weekly Progress logic
-Per block:
+## Weekly Progress
+Aligned report columns:
 - Total Units
 - Opt-In Agree = A + C
-- Work Completed = completed appointment/work records
+- Work Completed
 - Opt-Out = D
 - No Response = NR
-- Percentage for each metric
-- TOTAL DU summary row
+- percentage columns and TOTAL DU
 
-## Fixed appointment slots
-- 9am–11am
-- 11am–1pm
-- 2pm–4pm
-- 4pm–6pm
-
-## GitHub update
-Replace/upload:
-- index.html
-- styles.css
-- data.js
-- app.js
-- README.md
+## Design upgrade
+The dashboard now has stronger presentation contrast while staying in the requested light-blue family: command-centre hero, completion ring, richer KPI cards, pink C status, improved zone cards, and presentation-aligned weekly report tables.

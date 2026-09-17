@@ -69,42 +69,44 @@
       </header>
 
       <section class="view active" id="dashboard">
-        <div class="hero">
-          <div>
-            <span class="hero-kicker">PROJECT OVERVIEW</span>
-            <h2>6 zones. 38 blocks. One clean workflow.</h2>
-            <p>Exact unit layouts are preloaded from your PR3 survey workbooks — including special low-rise and irregular blocks.</p>
+        <div class="command-hero">
+          <div class="command-copy">
+            <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
+            <h2>Field control that looks ready for the boardroom.</h2>
+            <p>Survey, appointment, unit status and weekly progress — connected to one master register across all 6 zones.</p>
+            <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
           </div>
-          <div class="hero-stat">
-            <span>Total project units</span>
-            <strong id="heroTotalUnits">0</strong>
-            <small>Automatically mapped by floor</small>
+          <div class="hero-orbit-wrap">
+            <div class="hero-orbit" id="heroOrbit">
+              <div class="hero-orbit-inner"><strong id="heroCompletionPct">0%</strong><span>Completed</span></div>
+            </div>
+            <div class="hero-orbit-caption"><strong id="heroTotalUnits">0</strong><span>Total project units</span></div>
           </div>
         </div>
 
-        <div class="kpi-grid">
-          <article class="kpi-card"><div class="kpi-icon green">A</div><div><span>Opt-In</span><strong id="kpiOptIn">0</strong><small id="kpiOptInPct">0%</small></div></article>
-          <article class="kpi-card"><div class="kpi-icon blue">C</div><div><span>Appointments</span><strong id="kpiAppointments">0</strong><small>Confirmed bookings</small></div></article>
-          <article class="kpi-card"><div class="kpi-icon cyan">✓</div><div><span>Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
-          <article class="kpi-card"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Follow-up required</small></div></article>
-          <article class="kpi-card"><div class="kpi-icon rose">OUT</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
-          <article class="kpi-card"><div class="kpi-icon violet">↻</div><div><span>Follow-ups</span><strong id="kpiFollowups">0</strong><small>Open survey follow-ups</small></div></article>
+        <div class="kpi-grid premium-kpis">
+          <article class="kpi-card accent-green"><div class="kpi-icon green"><svg><use href="#i-check"/></svg></div><div><span>Opt-In Agree</span><strong id="kpiOptIn">0</strong><small id="kpiOptInPct">A + C</small></div></article>
+          <article class="kpi-card accent-pink"><div class="kpi-icon pink"><svg><use href="#i-calendar"/></svg></div><div><span>Confirmation · C</span><strong id="kpiAppointments">0</strong><small>Active confirmed appointments</small></div></article>
+          <article class="kpi-card accent-cyan"><div class="kpi-icon cyan"><svg><use href="#i-building"/></svg></div><div><span>Work Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
+          <article class="kpi-card accent-amber"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Requires follow-up</small></div></article>
+          <article class="kpi-card accent-rose"><div class="kpi-icon rose">D</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
+          <article class="kpi-card accent-violet"><div class="kpi-icon violet"><svg><use href="#i-survey"/></svg></div><div><span>Follow-ups</span><strong id="kpiFollowups">0</strong><small>Scheduled follow-ups</small></div></article>
         </div>
 
-        <div class="dashboard-grid">
-          <article class="panel">
-            <div class="panel-head"><div><span class="section-label">ZONE PERFORMANCE</span><h3>Progress by zone</h3></div></div>
-            <div id="zoneProgress" class="zone-progress"></div>
+        <div class="dashboard-grid dashboard-grid-wow">
+          <article class="panel zone-panel">
+            <div class="panel-head"><div><span class="section-label">ZONE PERFORMANCE</span><h3>Project pulse by zone</h3><p>Completion is calculated from the master unit data.</p></div><span class="panel-badge">LIVE</span></div>
+            <div id="zoneProgress" class="zone-progress zone-card-grid"></div>
           </article>
 
-          <article class="panel">
-            <div class="panel-head"><div><span class="section-label">NEXT ACTIONS</span><h3>Upcoming appointments</h3></div><button class="text-btn" data-go="appointments">View all</button></div>
-            <div id="upcomingAppointments" class="compact-list"></div>
+          <article class="panel appointment-panel">
+            <div class="panel-head"><div><span class="section-label">NEXT ACTIONS</span><h3>Upcoming confirmations</h3><p>Existing Excel schedules are already loaded.</p></div><button class="text-btn" data-go="appointments">View schedule</button></div>
+            <div id="upcomingAppointments" class="compact-list premium-compact-list"></div>
           </article>
         </div>
 
-        <article class="panel">
-          <div class="panel-head"><div><span class="section-label">FIELD ATTENTION</span><h3>Follow-ups requiring attention</h3></div><button class="text-btn" data-go="survey">Open survey register</button></div>
+        <article class="panel attention-panel">
+          <div class="panel-head"><div><span class="section-label">FIELD ATTENTION</span><h3>Follow-ups requiring attention</h3></div><button class="text-btn" data-go="survey">Open Survey</button></div>
           <div id="followupAttention" class="attention-grid"></div>
         </article>
       </section>
@@ -122,7 +124,6 @@
         <div id="blockHeadline" class="block-headline"></div>
 
         <div class="legend">
-          <span><i class="dot blank"></i>Blank · Not Updated</span>
           <span><i class="dot optin"></i>A · Opt-In</span>
           <span><i class="dot confirm"></i>C · Confirmation</span>
           <span><i class="dot optout"></i>D · Opt-Out</span>
@@ -150,7 +151,7 @@
               <div class="form-row two">
                 <label>Resident Response
                   <select id="surveyResponse">
-                    <option value="">Blank · Not Updated</option>
+                    <option value="">Select status</option>
                     <option value="A">A · Opt-In</option>
                     <option value="D">D · Opt-Out</option>
                     <option value="NR">NR · No Response</option>
@@ -205,7 +206,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3></div><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div>
+            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> appointment schedules imported from your Excel sheets.</p></div><div class="register-tools"><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">Completed History</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
             <div id="appointmentTable" class="table-shell"></div>
           </article>
         </div>
@@ -277,7 +278,7 @@
         </div>
         <article class="panel">
           <div class="panel-head register-head">
-            <div><h3>Block Progress Summary</h3><p>Same reporting logic as your weekly progress summary.</p></div>
+            <div><h3>Weekly Progress Summary</h3><p>Aligned to the Progress Summary structure from your source workbooks.</p></div>
             <div class="register-tools">
               <label class="mini-filter">Zone<select id="reportZoneFilter"></select></label>
             </div>
