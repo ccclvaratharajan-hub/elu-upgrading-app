@@ -9,21 +9,25 @@
 <body>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">ELU</div>
+      <div class="brand-mark"><span>ELU</span></div>
       <div>
-        <h1>Upgrading App</h1>
-        <p>Project Control</p>
+        <h1>ELU Upgrading</h1>
+        <p>Project Management System</p>
       </div>
     </div>
 
     <nav id="nav">
-      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
-      <button class="nav-btn" data-view="zones">Zone View</button>
-      <button class="nav-btn" data-view="blocks">Block View</button>
-      <button class="nav-btn" data-view="daily">Daily Update</button>
-      <button class="nav-btn" data-view="photos">Photo Upload</button>
-      <button class="nav-btn" data-view="issues">Issues</button>
-      <button class="nav-btn" data-view="reports">Reports</button>
+      <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">◫</span><span>Dashboard</span></button>
+      <button class="nav-btn" data-view="zones"><span class="nav-icon">▦</span><span>Zone View</span></button>
+      <button class="nav-btn" data-view="blocks"><span class="nav-icon">▤</span><span>Block View</span></button>
+      <button class="nav-btn" data-view="daily"><span class="nav-icon">✎</span><span>Daily Update</span></button>
+      <button class="nav-btn" data-view="photos"><span class="nav-icon">▧</span><span>Photo Upload</span></button>
+      <button class="nav-btn" data-view="issues"><span class="nav-icon">!</span><span>Issues</span></button>
+      <button class="nav-btn" data-view="units"><span class="nav-icon">⌂</span><span>Unit Register</span></button>
+      <button class="nav-btn" data-view="appointments"><span class="nav-icon">◷</span><span>Appointments</span></button>
+      <button class="nav-btn" data-view="complaints"><span class="nav-icon">◉</span><span>Complaints</span></button>
+      <button class="nav-btn" data-view="surveys"><span class="nav-icon">✓</span><span>Survey Register</span></button>
+      <button class="nav-btn" data-view="reports"><span class="nav-icon">⇩</span><span>Reports</span></button>
     </nav>
 
     <div class="sidebar-foot">
@@ -38,6 +42,7 @@
         <p id="pageSubtitle">Overall ELU upgrading progress across all 6 zones.</p>
       </div>
       <div class="top-actions">
+        <span class="live-pill"><span class="live-dot"></span> Project Active</span>
         <button class="secondary" id="resetDemoBtn">Reset Demo Data</button>
       </div>
     </header>
@@ -190,6 +195,112 @@
       </div>
     </section>
 
+
+    <section id="units" class="view">
+      <div class="two-col">
+        <form id="unitForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add / Update Unit</h3></div>
+          <label>Block No<select id="unitBlock" required></select></label>
+          <label>Unit No<input type="text" id="unitNo" placeholder="e.g. 05-123" required></label>
+          <div class="check-row">
+            <label><input type="checkbox" id="optIn"> Opt In</label>
+            <label><input type="checkbox" id="optOut"> Opt Out</label>
+            <label><input type="checkbox" id="nr"> NR</label>
+          </div>
+          <label>Owner Name<input type="text" id="ownerName"></label>
+          <label>Contact<input type="text" id="ownerContact"></label>
+          <label>Date & Time<input type="datetime-local" id="unitDateTime"></label>
+          <label>Remarks<textarea id="unitRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Unit</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Unit Register</h3></div>
+          <div id="unitTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="appointments" class="view">
+      <div class="two-col">
+        <form id="appointmentForm" class="panel form-panel">
+          <div class="panel-head"><h3>Book Appointment</h3></div>
+          <label>Unit<select id="appointmentUnit" required></select></label>
+          <label>Owner Name<input type="text" id="appointmentOwner" readonly></label>
+          <label>Contact<input type="text" id="appointmentContact" readonly></label>
+          <label>Date<input type="date" id="appointmentDate" required></label>
+          <label>Time Slot
+            <select id="appointmentSlot" required>
+              <option>9am–11am</option>
+              <option>11am–1pm</option>
+              <option>2pm–4pm</option>
+              <option>4pm–6pm</option>
+            </select>
+          </label>
+          <label>Remarks<textarea id="appointmentRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Appointment</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Appointment Register</h3></div>
+          <div id="appointmentTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="complaints" class="view">
+      <div class="two-col">
+        <form id="complaintForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add Complaint</h3></div>
+          <label>Unit<select id="complaintUnit" required></select></label>
+          <label>Owner Name<input type="text" id="complaintOwner" readonly></label>
+          <label>Contact<input type="text" id="complaintContact" readonly></label>
+          <label>Date<input type="date" id="complaintDate" required></label>
+          <label>Complaint<textarea id="complaintText" rows="4" required></textarea></label>
+          <label>Status
+            <select id="complaintStatus">
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Closed</option>
+            </select>
+          </label>
+          <label>Remarks<textarea id="complaintRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Complaint</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Complaint Register</h3></div>
+          <div id="complaintTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="surveys" class="view">
+      <div class="two-col">
+        <form id="surveyForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add Survey</h3></div>
+          <label>Unit<select id="surveyUnit" required></select></label>
+          <label>Owner Name<input type="text" id="surveyOwner" readonly></label>
+          <label>Contact<input type="text" id="surveyContact" readonly></label>
+          <label>Date<input type="date" id="surveyDate" required></label>
+          <label>Survey Result
+            <select id="surveyResult">
+              <option>Pending</option>
+              <option>Completed</option>
+              <option>Follow-up Required</option>
+            </select>
+          </label>
+          <label>Remarks<textarea id="surveyRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Survey</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Survey Register</h3></div>
+          <div id="surveyTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="reports" class="view">
       <div class="report-grid">
         <article class="panel">
@@ -206,6 +317,21 @@
           <h3>Issues Report</h3>
           <p>Export current site issues and responsibility details.</p>
           <button class="primary" id="exportIssues">Export CSV</button>
+        </article>
+        <article class="panel">
+          <h3>Unit Register Report</h3>
+          <p>Export owner and unit records.</p>
+          <button class="primary" id="exportUnits">Export CSV</button>
+        </article>
+        <article class="panel">
+          <h3>Appointment Report</h3>
+          <p>Export appointment bookings.</p>
+          <button class="primary" id="exportAppointments">Export CSV</button>
+        </article>
+        <article class="panel">
+          <h3>Complaint Report</h3>
+          <p>Export complaint records.</p>
+          <button class="primary" id="exportComplaints">Export CSV</button>
         </article>
       </div>
     </section>

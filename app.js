@@ -24,7 +24,7 @@ function defaultData(){
       });
     });
   });
-  return { blocks, dailyUpdates:[], issues:[], photos:[] };
+  return { blocks, dailyUpdates:[], issues:[], photos:[], units:[], appointments:[], complaints:[], surveys:[] };
 }
 
 let state = loadState();
@@ -32,7 +32,13 @@ let state = loadState();
 function loadState(){
   try{
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : defaultData();
+    if(!saved) return defaultData();
+    const d = JSON.parse(saved);
+    d.units = d.units || [];
+    d.appointments = d.appointments || [];
+    d.complaints = d.complaints || [];
+    d.surveys = d.surveys || [];
+    return d;
   }catch{
     return defaultData();
   }
@@ -201,6 +207,63 @@ function renderPhotos(){
   `).join("") : `<div class="empty">No photos added yet.</div>`;
 }
 
+
+function fillUnitBlockSelect(){
+  const el=document.getElementById("unitBlock");
+  if(!el) return;
+  const blocks=[...new Set(state.blocks.map(b=>b.block))].sort((a,b)=>Number(a)-Number(b));
+  el.innerHTML=blocks.map(b=>`<option value="${b}">Blk ${b}</option>`).join("");
+}
+function unitLabel(u){ return `Blk ${u.block} / ${u.unitNo}`; }
+function getUnitById(id){ return state.units.find(u=>u.id===Number(id)); }
+
+function populateResidentUnitLists(){
+  const options=state.units.length
+    ? state.units.slice().sort((a,b)=>unitLabel(a).localeCompare(unitLabel(b))).map(u=>`<option value="${u.id}">${esc(unitLabel(u))}</option>`).join("")
+    : `<option value="">No units yet</option>`;
+  ["appointmentUnit","complaintUnit","surveyUnit"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.innerHTML=options;
+  });
+  ["appointment","complaint","survey"].forEach(autofillResident);
+}
+function autofillResident(prefix){
+  const sel=document.getElementById(prefix+"Unit");
+  if(!sel) return;
+  const u=getUnitById(sel.value);
+  const owner=document.getElementById(prefix+"Owner");
+  const contact=document.getElementById(prefix+"Contact");
+  if(owner) owner.value=u?.ownerName||"";
+  if(contact) contact.value=u?.contact||"";
+}
+function renderUnits(){
+  const el=document.getElementById("unitTable"); if(!el) return;
+  const items=[...state.units].sort((a,b)=>(a.block+a.unitNo).localeCompare(b.block+b.unitNo));
+  el.innerHTML=items.length?`<table><thead><tr><th>Block</th><th>Unit</th><th>Opt In</th><th>Opt Out</th><th>NR</th><th>Owner</th><th>Contact</th><th>Date & Time</th><th>Remarks</th><th></th></tr></thead><tbody>${
+    items.map(u=>`<tr><td>Blk ${esc(u.block)}</td><td>${esc(u.unitNo)}</td><td>${u.optIn?"Yes":""}</td><td>${u.optOut?"Yes":""}</td><td>${u.nr?"Yes":""}</td><td>${esc(u.ownerName||"")}</td><td>${esc(u.contact||"")}</td><td>${esc(u.dateTime||"")}</td><td>${esc(u.remarks||"")}</td><td><button class="secondary delete-unit" data-id="${u.id}">Delete</button></td></tr>`).join("")
+  }</tbody></table>`:`<div class="empty">No unit records yet.</div>`;
+}
+function renderAppointments(){
+  const el=document.getElementById("appointmentTable"); if(!el) return;
+  const items=[...state.appointments].sort((a,b)=>b.id-a.id);
+  el.innerHTML=items.length?`<table><thead><tr><th>Date</th><th>Slot</th><th>Block</th><th>Unit</th><th>Owner</th><th>Contact</th><th>Remarks</th><th></th></tr></thead><tbody>${
+    items.map(a=>`<tr><td>${esc(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${esc(a.block)}</td><td>${esc(a.unitNo)}</td><td>${esc(a.ownerName||"")}</td><td>${esc(a.contact||"")}</td><td>${esc(a.remarks||"")}</td><td><button class="secondary delete-appointment" data-id="${a.id}">Delete</button></td></tr>`).join("")
+  }</tbody></table>`:`<div class="empty">No appointments yet.</div>`;
+}
+function renderComplaints(){
+  const el=document.getElementById("complaintTable"); if(!el) return;
+  const items=[...state.complaints].sort((a,b)=>b.id-a.id);
+  el.innerHTML=items.length?`<table><thead><tr><th>Date</th><th>Block</th><th>Unit</th><th>Owner</th><th>Complaint</th><th>Status</th><th>Remarks</th><th></th></tr></thead><tbody>${
+    items.map(c=>`<tr><td>${esc(c.date)}</td><td>Blk ${esc(c.block)}</td><td>${esc(c.unitNo)}</td><td>${esc(c.ownerName||"")}</td><td>${esc(c.complaint)}</td><td>${esc(c.status)}</td><td>${esc(c.remarks||"")}</td><td><button class="secondary delete-complaint" data-id="${c.id}">Delete</button></td></tr>`).join("")
+  }</tbody></table>`:`<div class="empty">No complaints yet.</div>`;
+}
+function renderSurveys(){
+  const el=document.getElementById("surveyTable"); if(!el) return;
+  const items=[...state.surveys].sort((a,b)=>b.id-a.id);
+  el.innerHTML=items.length?`<table><thead><tr><th>Date</th><th>Block</th><th>Unit</th><th>Owner</th><th>Result</th><th>Remarks</th><th></th></tr></thead><tbody>${
+    items.map(s=>`<tr><td>${esc(s.date)}</td><td>Blk ${esc(s.block)}</td><td>${esc(s.unitNo)}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.result)}</td><td>${esc(s.remarks||"")}</td><td><button class="secondary delete-survey" data-id="${s.id}">Delete</button></td></tr>`).join("")
+  }</tbody></table>`:`<div class="empty">No survey records yet.</div>`;
+}
+
 function renderAll(){
   renderDashboard();
   renderZones();
@@ -209,6 +272,11 @@ function renderAll(){
   renderDaily();
   renderIssues();
   renderPhotos();
+  renderUnits();
+  populateResidentUnitLists();
+  renderAppointments();
+  renderComplaints();
+  renderSurveys();
 }
 
 function setView(view){
@@ -223,7 +291,11 @@ function setView(view){
     daily:["Daily Update","Record date, manpower, work done and remarks."],
     photos:["Photo Upload","Store before, during and after photo records."],
     issues:["Issues","Track site issues, pending items and responsibility."],
-    reports:["Reports","Export block, daily and issue data as CSV."]
+    units:["Unit Register","Manage unit, owner, contact and opt-in details."],
+    appointments:["Appointments","Book resident appointments using fixed daily slots."],
+    complaints:["Complaints","Track resident complaints and status."],
+    surveys:["Survey Register","Track survey status and follow-up."],
+    reports:["Reports","Export project and resident data as CSV."]
   };
   document.getElementById("pageTitle").textContent = titles[view][0];
   document.getElementById("pageSubtitle").textContent = titles[view][1];
@@ -292,6 +364,9 @@ document.getElementById("issueForm").addEventListener("submit", e=>{
   });
   e.target.reset();
   document.getElementById("issueDate").value=today();
+document.getElementById("appointmentDate").value=today();
+document.getElementById("complaintDate").value=today();
+document.getElementById("surveyDate").value=today();
   saveState();
   toast("Issue saved");
 });
@@ -340,6 +415,69 @@ document.getElementById("photoGallery").addEventListener("click", e=>{
   toast("Photo deleted");
 });
 
+
+fillUnitBlockSelect();
+["appointmentUnit","complaintUnit","surveyUnit"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener("change",()=>autofillResident(id.replace("Unit","")));
+});
+
+document.getElementById("unitForm")?.addEventListener("submit",e=>{
+  e.preventDefault();
+  const block=document.getElementById("unitBlock").value;
+  const unitNo=document.getElementById("unitNo").value.trim();
+  const data={
+    block,unitNo,
+    optIn:document.getElementById("optIn").checked,
+    optOut:document.getElementById("optOut").checked,
+    nr:document.getElementById("nr").checked,
+    ownerName:document.getElementById("ownerName").value.trim(),
+    contact:document.getElementById("ownerContact").value.trim(),
+    dateTime:document.getElementById("unitDateTime").value,
+    remarks:document.getElementById("unitRemarks").value.trim()
+  };
+  const old=state.units.find(u=>u.block===block && u.unitNo.toLowerCase()===unitNo.toLowerCase());
+  if(old) Object.assign(old,data); else state.units.push({id:Date.now(),...data});
+  e.target.reset(); saveState(); toast(old?"Unit updated":"Unit saved");
+});
+document.getElementById("unitTable")?.addEventListener("click",e=>{
+  const b=e.target.closest(".delete-unit"); if(!b) return;
+  state.units=state.units.filter(x=>x.id!==Number(b.dataset.id)); saveState(); toast("Unit deleted");
+});
+
+document.getElementById("appointmentForm")?.addEventListener("submit",e=>{
+  e.preventDefault(); const u=getUnitById(document.getElementById("appointmentUnit").value);
+  if(!u){toast("Add a unit first");return;}
+  state.appointments.push({id:Date.now(),unitId:u.id,block:u.block,unitNo:u.unitNo,ownerName:u.ownerName,contact:u.contact,date:document.getElementById("appointmentDate").value,slot:document.getElementById("appointmentSlot").value,remarks:document.getElementById("appointmentRemarks").value.trim()});
+  e.target.reset(); document.getElementById("appointmentDate").value=today(); saveState(); toast("Appointment saved");
+});
+document.getElementById("appointmentTable")?.addEventListener("click",e=>{
+  const b=e.target.closest(".delete-appointment"); if(!b) return;
+  state.appointments=state.appointments.filter(x=>x.id!==Number(b.dataset.id)); saveState(); toast("Appointment deleted");
+});
+
+document.getElementById("complaintForm")?.addEventListener("submit",e=>{
+  e.preventDefault(); const u=getUnitById(document.getElementById("complaintUnit").value);
+  if(!u){toast("Add a unit first");return;}
+  state.complaints.push({id:Date.now(),unitId:u.id,block:u.block,unitNo:u.unitNo,ownerName:u.ownerName,contact:u.contact,date:document.getElementById("complaintDate").value,complaint:document.getElementById("complaintText").value.trim(),status:document.getElementById("complaintStatus").value,remarks:document.getElementById("complaintRemarks").value.trim()});
+  e.target.reset(); document.getElementById("complaintDate").value=today(); saveState(); toast("Complaint saved");
+});
+document.getElementById("complaintTable")?.addEventListener("click",e=>{
+  const b=e.target.closest(".delete-complaint"); if(!b) return;
+  state.complaints=state.complaints.filter(x=>x.id!==Number(b.dataset.id)); saveState(); toast("Complaint deleted");
+});
+
+document.getElementById("surveyForm")?.addEventListener("submit",e=>{
+  e.preventDefault(); const u=getUnitById(document.getElementById("surveyUnit").value);
+  if(!u){toast("Add a unit first");return;}
+  state.surveys.push({id:Date.now(),unitId:u.id,block:u.block,unitNo:u.unitNo,ownerName:u.ownerName,contact:u.contact,date:document.getElementById("surveyDate").value,result:document.getElementById("surveyResult").value,remarks:document.getElementById("surveyRemarks").value.trim()});
+  e.target.reset(); document.getElementById("surveyDate").value=today(); saveState(); toast("Survey saved");
+});
+document.getElementById("surveyTable")?.addEventListener("click",e=>{
+  const b=e.target.closest(".delete-survey"); if(!b) return;
+  state.surveys=state.surveys.filter(x=>x.id!==Number(b.dataset.id)); saveState(); toast("Survey deleted");
+});
+
 function csvEscape(v){
   const s=String(v??"");
   return `"${s.replace(/"/g,'""')}"`;
@@ -372,6 +510,17 @@ document.getElementById("exportIssues").addEventListener("click", ()=>{
   ]);
 });
 
+
+document.getElementById("exportUnits")?.addEventListener("click", ()=>{
+  downloadCSV("elu_unit_register.csv", [["Block No","Unit No","Opt In","Opt Out","NR","Owner Name","Contact","Date & Time","Remarks"],...state.units.map(u=>[u.block,u.unitNo,u.optIn?"Yes":"",u.optOut?"Yes":"",u.nr?"Yes":"",u.ownerName,u.contact,u.dateTime,u.remarks])]);
+});
+document.getElementById("exportAppointments")?.addEventListener("click", ()=>{
+  downloadCSV("elu_appointments.csv", [["Date","Time Slot","Block No","Unit No","Owner Name","Contact","Remarks"],...state.appointments.map(a=>[a.date,a.slot,a.block,a.unitNo,a.ownerName,a.contact,a.remarks])]);
+});
+document.getElementById("exportComplaints")?.addEventListener("click", ()=>{
+  downloadCSV("elu_complaints.csv", [["Date","Block No","Unit No","Owner Name","Contact","Complaint","Status","Remarks"],...state.complaints.map(c=>[c.date,c.block,c.unitNo,c.ownerName,c.contact,c.complaint,c.status,c.remarks])]);
+});
+
 document.getElementById("resetDemoBtn").addEventListener("click", ()=>{
   if(confirm("Reset all ELU app data in this browser?")){
     state=defaultData();
@@ -387,5 +536,8 @@ fillBlockSelect("issueZone","issueBlock");
 
 document.getElementById("dailyDate").value=today();
 document.getElementById("issueDate").value=today();
+document.getElementById("appointmentDate").value=today();
+document.getElementById("complaintDate").value=today();
+document.getElementById("surveyDate").value=today();
 
 renderAll();

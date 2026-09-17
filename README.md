@@ -1,30 +1,17 @@
-# ELU Upgrading App — First Version
+# ELU Upgrading App — Version 3 UI Redesign
 
-This is a static browser-based first version of the ELU Upgrading App.
+This version keeps the Version 2 functionality and redesigns the UI.
 
-## Included modules
-- Dashboard — overall progress across 6 zones
-- Zone View — Zones 1–6
-- Block View — zone/block status, progress %, remarks
-- Work Status — Not Started / In Progress / Completed / Hold
-- Daily Update — date, manpower, work done, remarks
-- Photo Upload — before / during / after photo records
-- Issues — site issue, pending item, responsible person, status
-- Progress % — block-wise and zone-wise
-- Reports — CSV export for blocks, daily updates, issues
+## Design improvements
+- Professional project-management style
+- Cleaner dark sidebar
+- Stronger dashboard hierarchy
+- Better cards, forms and tables
+- Improved spacing and typography
+- Mobile responsive layout
+- No functional/data model changes from V2
+- Existing localStorage key remains unchanged, so browser-stored data remains compatible
 
-## Zone mapping
-- Zone 1: Blk 564–569
-- Zone 2: Blk 544–550
-- Zone 3: Blk 531–536
-- Zone 4: Blk 557–562
-- Zone 5: Blk 537–543
-- Zone 6: Blk 551–556
-
-## How to run
-Open `index.html` in a web browser.
-
-## Important
-This first version stores data using browser `localStorage`.
-Photos are stored as browser data URLs, so it is suitable for testing/demo use.
-A future production version should use a real database and file storage.
+## Functional modules retained
+Dashboard, Zones, Blocks, Daily Updates, Photos, Issues, Unit Register,
+Appointments, Complaints, Survey Register, Reports.
