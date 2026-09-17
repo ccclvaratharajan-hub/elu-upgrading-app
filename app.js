@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v6";
-const PREV_STORAGE_KEY="elu_premium_v5";
+const STORAGE_KEY="elu_premium_v7";
+const PREV_STORAGE_KEY="elu_premium_v6";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -119,7 +119,7 @@ survey:["Survey & Follow-up","First-entry register. Unit Register updates automa
 appointments:["Appointment Schedule","Existing Excel appointments are preloaded. New bookings use the four fixed slots."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
-teams:["Daily Team Board","Run the day's confirmed appointments by Team 1 and Team 2."],
+teams:["Appointment Planner","Plan Team 1 and Team 2 across the four daily slots."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."]
 }[view]}
 function setView(view){
@@ -140,8 +140,8 @@ function initSelectors(){
   document.getElementById("unitZoneFilter").value="1";document.getElementById("reportZoneFilter").value="1";
   document.getElementById("boardZone").value="1";syncBoardBlocks();
   document.getElementById("surveyZone").value="1";syncSurveyBlocks();
-  ["appointmentBlock","complaintBlock"].forEach(id=>document.getElementById(id).innerHTML=Object.values(ZONE_BLOCKS).flat().map(b=>`<option value="${b}">Blk ${b}</option>`).join(""));
-  syncPairUnits("appointment");syncPairUnits("complaint");
+  ["appointmentBlock","complaintBlock","plannerBlock"].forEach(id=>document.getElementById(id).innerHTML=Object.values(ZONE_BLOCKS).flat().map(b=>`<option value="${b}">Blk ${b}</option>`).join(""));
+  syncPairUnits("appointment");syncPairUnits("complaint");syncPlannerUnits();
 }
 function syncBoardBlocks(){const z=document.getElementById("boardZone").value;document.getElementById("boardBlock").innerHTML=blockOptions(z);renderBoardFloorOptions();renderBlockBoard()}
 function renderBoardFloorOptions(){
@@ -151,11 +151,13 @@ function renderBoardFloorOptions(){
 function syncSurveyBlocks(){document.getElementById("surveyBlock").innerHTML=blockOptions(document.getElementById("surveyZone").value);syncSurveyUnits()}
 function syncSurveyUnits(){document.getElementById("surveyUnit").innerHTML=unitOptionsForBlock(document.getElementById("surveyBlock").value);autofillSurvey()}
 function syncPairUnits(prefix){document.getElementById(prefix+"Unit").innerHTML=unitOptionsForBlock(document.getElementById(prefix+"Block").value);autofillPair(prefix)}
+function syncPlannerUnits(){document.getElementById("plannerUnit").innerHTML=unitOptionsForBlock(document.getElementById("plannerBlock").value)}
 function autofillSurvey(){const u=getUnit(document.getElementById("surveyUnit").value);if(!u)return;document.getElementById("surveyOwner").value=u.ownerName||"";document.getElementById("surveyContact").value=u.contact||"";document.getElementById("surveyResponse").value=u.response==="C"?"A":normalizeStatus(u.response)}
 function autofillPair(prefix){const u=getUnit(document.getElementById(prefix+"Unit").value);if(!u)return;document.getElementById(prefix+"Owner").value=u.ownerName||"";document.getElementById(prefix+"Contact").value=u.contact||""}
 document.getElementById("boardZone").addEventListener("change",syncBoardBlocks);document.getElementById("boardBlock").addEventListener("change",()=>{renderBoardFloorOptions();renderBlockBoard()});document.getElementById("boardFloor").addEventListener("change",renderBlockBoard);document.getElementById("boardSearch").addEventListener("input",renderBlockBoard);
 document.getElementById("surveyZone").addEventListener("change",syncSurveyBlocks);document.getElementById("surveyBlock").addEventListener("change",syncSurveyUnits);document.getElementById("surveyUnit").addEventListener("change",autofillSurvey);
 ["appointment","complaint"].forEach(p=>{document.getElementById(p+"Block").addEventListener("change",()=>syncPairUnits(p));document.getElementById(p+"Unit").addEventListener("change",()=>autofillPair(p))});
+document.getElementById("plannerBlock").addEventListener("change",syncPlannerUnits);
 
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
@@ -169,6 +171,7 @@ function renderDashboard(){
   const upcoming=state.appointments.filter(x=>x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
   const follow=state.surveys.filter(s=>s.followUpDate&&s.followUpDate>=isoTodaySG()).sort((a,b)=>a.followUpDate.localeCompare(b.followUpDate)).slice(0,6);document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Owner not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.followUpDate)}</b></div>`).join(""):`<div class="empty-state">No follow-ups scheduled.</div>`;
+  renderTodayTeamBoard();
 }
 function renderBlockBoard(){
   const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),u=getBlockUnits(block);
@@ -254,12 +257,38 @@ function deleteComplaint(id){if(!confirm("Delete this complaint entry?"))return;
 function renderComplaintTable(){const r=[...state.complaints].sort((a,b)=>b.id-a.id);document.getElementById("complaintTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Complaint</th><th>Complaint Status</th><th>Remarks</th><th>Action</th></tr></thead><tbody>${r.map(c=>`<tr><td>${safeDate(c.date)}</td><td>Blk ${c.block}<br><strong>${esc(c.unitDisplay)}</strong></td><td>${esc(c.ownerName||"—")}</td><td>${esc(c.contact||"—")}</td><td>${esc(c.complaint)}</td><td><span class="pill ${c.status==="Closed"?"completed":c.status==="Open"?"d":"pending"}">${esc(c.status)}</span></td><td>${esc(c.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-comp-edit="${c.id}">Edit</button><button class="table-action delete" data-comp-delete="${c.id}">Delete</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No complaints yet.</div>`}
 document.getElementById("complaintTable").addEventListener("click",e=>{let b=e.target.closest("[data-comp-edit]");if(b)return editComplaint(Number(b.dataset.compEdit));b=e.target.closest("[data-comp-delete]");if(b)deleteComplaint(Number(b.dataset.compDelete))});
 
-document.getElementById("teamDate").addEventListener("change",renderTeams);
-function renderTeams(){
-  const date=document.getElementById("teamDate").value||isoTodaySG(),g={"Team 1":[],"Team 2":[],"":[]};state.appointments.filter(a=>a.date===date).forEach(a=>(g[a.team]||g[""]).push(a));
-  [["Team 1","team1List","team1Count"],["Team 2","team2List","team2Count"],["","team0List","team0Count"]].forEach(([name,listId,countId])=>{const arr=g[name];document.getElementById(countId).textContent=`${arr.length} appointment${arr.length===1?"":"s"}`;document.getElementById(listId).innerHTML=arr.length?arr.map(a=>{const u=getUnit(a.unitKey);return`<div class="team-card"><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)} · ${esc(u?.ownerName||"Owner not entered")} · ${esc(statusLabel(u?.response))}</span><div class="team-actions"><button data-work-id="${a.id}" data-work="Completed">Complete → A</button><button data-work-id="${a.id}" data-work="Pending">Reopen → C</button></div></div>`}).join(""):`<div class="empty-state">No appointments</div>`})
+function addDaysISO(date,days){const d=new Date(date+"T12:00:00+08:00");d.setDate(d.getDate()+days);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function plannerDateLabel(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
+function plannerDateShort(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
+function appointmentForPlanner(a){const u=getUnit(a.unitKey);return {...a,ownerName:u?.ownerName||a.ownerName||"",contact:u?.contact||a.contact||""}}
+function plannerEntries(date,team,slot){return state.appointments.filter(a=>a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
+function plannerRemarks(entries){return entries.map(a=>a.remarks||"").filter(Boolean).join(" · ")||"—"}
+function plannerTeamCell(entries,team,slot){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`}
+function renderPlanner(){
+  const date=document.getElementById("teamDate").value||isoTodaySG();document.getElementById("plannerDateTitle").textContent=`${plannerDateLabel(date)} unit appointments`;
+  const rows=SLOTS.map((slot,i)=>{const t1=plannerEntries(date,"Team 1",slot),t2=plannerEntries(date,"Team 2",slot);return `<tr>${i===0?`<td class="date-cell" rowspan="4">${esc(plannerDateShort(date))}</td>`:""}<td class="slot-cell">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t1,"Team 1",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t1))}</td><td class="slot-cell team2-start">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t2,"Team 2",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t2))}</td></tr>`}).join("");
+  document.getElementById("plannerTable").innerHTML=`<table class="planner-table"><thead><tr><th>Date</th><th>Time</th><th>Team 1</th><th>Remarks</th><th class="team2-start">Time</th><th>Team 2</th><th>Remarks</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const un=state.appointments.filter(a=>a.date===date&&!a.team).sort((a,b)=>SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot)||a.block-b.block);
+  document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}${a.source==="Excel"?" · Excel":""}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this date.</div>`;
 }
-document.querySelector(".team-columns").addEventListener("click",e=>{const b=e.target.closest("[data-work-id]");if(!b)return;const a=state.appointments.find(x=>x.id===Number(b.dataset.workId));if(!a)return;a.workStatus=b.dataset.work;save(a.workStatus==="Completed"?"Work completed · Status A":"Reopened · Status C")});
+function renderTodayTeamBoard(){
+  const date=isoTodaySG();document.getElementById("todayTeamBoard").innerHTML=["Team 1","Team 2"].map(team=>{const all=state.appointments.filter(a=>a.date===date&&a.team===team);return `<div class="today-team-col"><div class="today-team-head"><strong>${team}</strong><span>${all.length} appointment${all.length===1?"":"s"}</span></div>${SLOTS.map(slot=>{const arr=plannerEntries(date,team,slot);return `<div class="today-slot"><div class="today-slot-time">${esc(slot)}</div><div class="today-slot-work">${arr.length?arr.map(a=>`<div class="today-appt-chip"><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong>${a.remarks?` · ${esc(a.remarks)}`:""}</div>`).join(""):`<div class="today-empty">No appointment</div>`}</div></div>`}).join("")}</div>`}).join("")
+}
+function savePlannerAppointment(){
+  const date=document.getElementById("teamDate").value||isoTodaySG(),key=document.getElementById("plannerUnit").value,u=getUnit(key);if(!u)return;
+  const team=document.getElementById("plannerTeam").value,slot=document.getElementById("plannerSlot").value,remarks=document.getElementById("plannerRemarks").value.trim();
+  let a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&x.slot===slot);
+  if(a){a.team=team;if(remarks)a.remarks=remarks;a.workStatus=appointmentHasEnded(a)?"Completed":"Pending"}
+  else state.appointments.push({id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date,slot,team,remarks,source:"Planner",workStatus:"Pending"});
+  document.getElementById("plannerRemarks").value="";save("Planner updated · Unit Register synced")
+}
+document.getElementById("plannerForm").addEventListener("submit",e=>{e.preventDefault();savePlannerAppointment()});
+document.getElementById("teamDate").addEventListener("change",renderPlanner);
+document.getElementById("plannerPrevDay").addEventListener("click",()=>{document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),-1);renderPlanner()});
+document.getElementById("plannerNextDay").addEventListener("click",()=>{document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),1);renderPlanner()});
+document.getElementById("plannerToday").addEventListener("click",()=>{document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
+document.getElementById("plannerTable").addEventListener("click",e=>{let b=e.target.closest("[data-planner-prefill]");if(b){const [team,slot]=b.dataset.plannerPrefill.split("|");document.getElementById("plannerTeam").value=team;document.getElementById("plannerSlot").value=slot;document.getElementById("plannerBlock").focus();return}b=e.target.closest("[data-planner-edit]");if(b)editAppointment(Number(b.dataset.plannerEdit))});
+document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)editAppointment(Number(b.dataset.plannerEdit))});
 
 function buildReportRows(zoneFilter="all"){
   const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
@@ -278,7 +307,7 @@ document.getElementById("exportProgressBtn").addEventListener("click",()=>{const
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>download("ELU_Unit_Register.csv",toCSV([["Block No","Unit No","Status","Owner Name","Contact","Remarks","Appointment Date","Appointment Slot"],...unitsArray().map(u=>[u.block,unitDisplay(u.floor,u.unit),u.response,u.ownerName,u.contact,u.remarks,u.appointmentDate,u.appointmentSlot])])) );
 document.getElementById("exportBackupBtn").addEventListener("click",()=>download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json"));
 
-function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderTeams();renderReport()}
+function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderReport()}
 document.getElementById("todayChip").textContent=fmtDate.format(new Date());document.getElementById("appointmentDate").value=isoTodaySG();document.getElementById("appointmentFilterDate").value="";document.getElementById("appointmentMode").value="upcoming";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("teamDate").value=isoTodaySG();
 initSelectors();renderAll();autoCompleteAppointments();
 setInterval(()=>autoCompleteAppointments(true),60000);

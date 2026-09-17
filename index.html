@@ -45,7 +45,7 @@
         <button class="nav-item" data-view="appointments"><svg><use href="#i-calendar"/></svg><span>Appointment Schedule</span></button>
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
-        <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Daily Team</span></button>
+        <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
       </nav>
 
@@ -63,6 +63,7 @@
           <p id="pageSubtitle">One view of resident response, appointments and completed work.</p>
         </div>
         <div class="top-actions">
+          <div class="user-name-chip">Manoharan Varatharajan</div>
           <div class="today-chip" id="todayChip"></div>
           <button class="ghost-btn" id="exportBackupBtn">Backup Data</button>
         </div>
@@ -72,7 +73,6 @@
         <div class="command-hero">
           <div class="command-copy">
             <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
-            <h2>Field control that looks ready for the boardroom.</h2>
             <p>Survey, appointment, unit status and weekly progress — connected to one master register across all 6 zones.</p>
             <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
           </div>
@@ -104,6 +104,11 @@
             <div id="upcomingAppointments" class="compact-list premium-compact-list"></div>
           </article>
         </div>
+
+        <article class="panel today-team-panel">
+          <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Team 1 and Team 2 are pulled directly from the Appointment Planner.</p></div><button class="text-btn" data-go="teams">Open Planner</button></div>
+          <div id="todayTeamBoard" class="today-team-board"></div>
+        </article>
 
         <article class="panel attention-panel">
           <div class="panel-head"><div><span class="section-label">FIELD ATTENTION</span><h3>Follow-ups requiring attention</h3></div><button class="text-btn" data-go="survey">Open Survey</button></div>
@@ -260,15 +265,41 @@
       </section>
 
       <section class="view" id="teams">
-        <div class="section-toolbar">
-          <div><span class="section-label">SITE EXECUTION</span><h3 class="toolbar-title">Daily Team Board</h3></div>
-          <label>Working Date<input type="date" id="teamDate"></label>
+        <div class="planner-hero">
+          <div>
+            <span class="section-label">DAILY APPOINTMENT PLANNER</span>
+            <h2>Two teams · four fixed slots</h2>
+            <p>Fill appointments days in advance here. The same appointment data updates the Unit Register, C status and Dashboard — no double entry.</p>
+          </div>
+          <div class="planner-date-nav">
+            <button class="icon-date-btn" id="plannerPrevDay" type="button">‹</button>
+            <label>Planning Date<input type="date" id="teamDate"></label>
+            <button class="icon-date-btn" id="plannerNextDay" type="button">›</button>
+            <button class="ghost-btn" id="plannerToday" type="button">Today</button>
+          </div>
         </div>
-        <div class="team-columns">
-          <article class="team-panel"><div class="team-head"><span class="team-badge">T1</span><div><h3>Team 1</h3><small id="team1Count">0 appointments</small></div></div><div id="team1List" class="team-list"></div></article>
-          <article class="team-panel"><div class="team-head"><span class="team-badge t2">T2</span><div><h3>Team 2</h3><small id="team2Count">0 appointments</small></div></div><div id="team2List" class="team-list"></div></article>
-          <article class="team-panel"><div class="team-head"><span class="team-badge un">—</span><div><h3>Unassigned</h3><small id="team0Count">0 appointments</small></div></div><div id="team0List" class="team-list"></div></article>
-        </div>
+
+        <article class="panel planner-entry-panel">
+          <div class="panel-head"><div><span class="section-label">QUICK ENTRY</span><h3>Add to selected day</h3><p>New entries and existing imported appointments use the same appointment record.</p></div></div>
+          <form id="plannerForm" class="planner-form">
+            <label>Block<select id="plannerBlock"></select></label>
+            <label>Unit<select id="plannerUnit"></select></label>
+            <label>Team<select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select></label>
+            <label>Slot<select id="plannerSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option></select></label>
+            <label class="planner-remarks">Remarks<input id="plannerRemarks" placeholder="Access note / resident note"></label>
+            <button class="primary-btn" type="submit">Add to Planner</button>
+          </form>
+        </article>
+
+        <article class="panel planner-sheet-panel">
+          <div class="planner-sheet-title"><div><span class="section-label">DAILY SHEET</span><h3 id="plannerDateTitle">Daily appointment sheet</h3></div><div class="planner-sheet-actions"><span class="panel-badge">LIVE</span></div></div>
+          <div id="plannerTable" class="planner-table-wrap"></div>
+        </article>
+
+        <article class="panel unassigned-panel">
+          <div class="panel-head"><div><span class="section-label">EXISTING SCHEDULE</span><h3>Unassigned appointments</h3><p>Appointments already in the system for this date but not yet allocated to Team 1 or Team 2.</p></div></div>
+          <div id="plannerUnassigned" class="planner-unassigned"></div>
+        </article>
       </section>
 
       <section class="view" id="reports">

@@ -1,35 +1,44 @@
-# ELU Upgrading — Premium V6
+# ELU Upgrading — Premium V7.2
 
-This version keeps the V5 workflow and upgrades two areas requested after live testing: visual impact and existing-data import.
+## Main V7 addition: Appointment Planner
+A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
+- 2 teams
+- 4 fixed slots
+- Date selector with previous / next / today
+- Block + Unit + Team + Slot + Remarks quick entry
+- Existing imported appointments for the selected date appear under Unassigned until allocated
+- Assigning an existing appointment to Team 1 or Team 2 does not create a duplicate
 
-## Imported source data
-- 6 uploaded PR3 workbooks
-- 38 blocks
-- 2,341 exact units
-- A / C / D / NR status is read from the block charts (C is preserved as Confirmation)
-- Existing dated appointment schedules are preloaded into Appointment Register
-- Existing completed work is retained
-- Existing Excel remarks and the available contact numbers are retained
+## One source of truth
+The Planner does **not** create a second schedule database. It writes to the same Appointment records. Therefore:
+- Appointment confirmed / planned = C
+- Slot completed = A
+- Unit Register updates automatically
+- Appointment Register updates automatically
+- Dashboard shows today's Team 1 / Team 2 deployment automatically
 
-## Status rules
-- A = Opt-In
-- C = Confirmation (pink)
-- D = Opt-Out
-- NR = No Response
-- Appointment confirmation sets C
-- When the appointment slot ends, C automatically returns to A and the work is counted as completed
+## Dashboard
+The entrance Dashboard includes a new **Today · Team Schedule** panel with Team 1 and Team 2, each showing the four fixed slots.
 
-## Unit Register
-Read-only master register. Operational edits happen in Survey / Appointment / Complaint registers.
+## Data migration
+V7 migrates existing V6 browser data on first open on the same GitHub Pages domain.
 
-## Weekly Progress
-Aligned report columns:
-- Total Units
-- Opt-In Agree = A + C
-- Work Completed
-- Opt-Out = D
-- No Response = NR
-- percentage columns and TOTAL DU
+## Upload to GitHub
+Replace the same five files only:
+- index.html
+- styles.css
+- data.js
+- app.js
+- README.md
 
-## Design upgrade
-The dashboard now has stronger presentation contrast while staying in the requested light-blue family: command-centre hero, completion ring, richer KPI cards, pink C status, improved zone cards, and presentation-aligned weekly report tables.
+
+## V7.1 minor corrections
+- Removed the boardroom tagline from the dashboard hero.
+- Added only the name “Manoharan Varatharajan” in the top bar.
+- No workflow, data, appointment, planner, dashboard logic, or V7 features were changed.
+
+## V7.2 minor correction
+- Block/Floor Board colours made stronger and easier to identify at a glance.
+- A = green, C = pink, D = coral/red, NR = amber/gold.
+- Larger status dots and clearer unit-card contrast.
+- No workflow, data, appointment, report, planner, or dashboard logic changed.
