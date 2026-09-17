@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ELU Upgrading App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">ELU</div>
+      <div>
+        <h1>Upgrading App</h1>
+        <p>Project Control</p>
+      </div>
+    </div>
+
+    <nav id="nav">
+      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="zones">Zone View</button>
+      <button class="nav-btn" data-view="blocks">Block View</button>
+      <button class="nav-btn" data-view="daily">Daily Update</button>
+      <button class="nav-btn" data-view="photos">Photo Upload</button>
+      <button class="nav-btn" data-view="issues">Issues</button>
+      <button class="nav-btn" data-view="reports">Reports</button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <small>Data is saved in this browser.</small>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Overall ELU upgrading progress across all 6 zones.</p>
+      </div>
+      <div class="top-actions">
+        <button class="secondary" id="resetDemoBtn">Reset Demo Data</button>
+      </div>
+    </header>
+
+    <section id="dashboard" class="view active-view">
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span>Total Zones</span>
+          <strong>6</strong>
+          <small>Zones 1–6</small>
+        </article>
+        <article class="stat-card">
+          <span>Total Blocks</span>
+          <strong id="totalBlocks">0</strong>
+          <small>All project blocks</small>
+        </article>
+        <article class="stat-card">
+          <span>Overall Progress</span>
+          <strong id="overallProgress">0%</strong>
+          <small>Average block progress</small>
+        </article>
+        <article class="stat-card">
+          <span>Open Issues</span>
+          <strong id="openIssues">0</strong>
+          <small>Pending / active issues</small>
+        </article>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Zone Progress</h3>
+            <p>Live roll-up from block progress.</p>
+          </div>
+        </div>
+        <div id="dashboardZones" class="zone-progress-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Latest Daily Updates</h3>
+            <p>Most recent site entries.</p>
+          </div>
+        </div>
+        <div id="latestUpdates" class="table-wrap"></div>
+      </div>
+    </section>
+
+    <section id="zones" class="view">
+      <div id="zoneCards" class="zone-card-grid"></div>
+    </section>
+
+    <section id="blocks" class="view">
+      <div class="toolbar">
+        <label>
+          Zone
+          <select id="blockZoneFilter"></select>
+        </label>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Zone</th>
+                <th>Block</th>
+                <th>Status</th>
+                <th>Progress %</th>
+                <th>Remarks</th>
+                <th>Save</th>
+              </tr>
+            </thead>
+            <tbody id="blockTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="daily" class="view">
+      <div class="two-col">
+        <form id="dailyForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add Daily Update</h3></div>
+          <label>Date<input type="date" id="dailyDate" required /></label>
+          <label>Zone<select id="dailyZone" required></select></label>
+          <label>Block<select id="dailyBlock" required></select></label>
+          <label>Manpower<input type="number" id="dailyManpower" min="0" value="0" required /></label>
+          <label>Work Done<textarea id="dailyWork" rows="4" required></textarea></label>
+          <label>Remarks<textarea id="dailyRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Daily Update</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Daily Update Register</h3></div>
+          <div id="dailyTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="photos" class="view">
+      <div class="two-col">
+        <form id="photoForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add Photo Record</h3></div>
+          <label>Zone<select id="photoZone" required></select></label>
+          <label>Block<select id="photoBlock" required></select></label>
+          <label>Stage
+            <select id="photoStage" required>
+              <option>Before</option>
+              <option>During</option>
+              <option>After</option>
+            </select>
+          </label>
+          <label>Photo<input type="file" id="photoFile" accept="image/*" required /></label>
+          <label>Remarks<textarea id="photoRemarks" rows="3"></textarea></label>
+          <button type="submit" class="primary">Save Photo Record</button>
+          <p class="hint">For this first version, image previews are stored only in this browser.</p>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Photo Gallery</h3></div>
+          <div id="photoGallery" class="photo-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="issues" class="view">
+      <div class="two-col">
+        <form id="issueForm" class="panel form-panel">
+          <div class="panel-head"><h3>Add Issue</h3></div>
+          <label>Date<input type="date" id="issueDate" required /></label>
+          <label>Zone<select id="issueZone" required></select></label>
+          <label>Block<select id="issueBlock" required></select></label>
+          <label>Site Issue<textarea id="issueText" rows="3" required></textarea></label>
+          <label>Pending Item<textarea id="pendingItem" rows="3"></textarea></label>
+          <label>Responsible Person<input type="text" id="responsiblePerson" /></label>
+          <label>Status
+            <select id="issueStatus">
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Closed</option>
+            </select>
+          </label>
+          <button type="submit" class="primary">Save Issue</button>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Issue Register</h3></div>
+          <div id="issueTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reports" class="view">
+      <div class="report-grid">
+        <article class="panel">
+          <h3>Block Progress Report</h3>
+          <p>Export all block statuses and progress percentages.</p>
+          <button class="primary" id="exportBlocks">Export CSV</button>
+        </article>
+        <article class="panel">
+          <h3>Daily Update Report</h3>
+          <p>Export all daily site update entries.</p>
+          <button class="primary" id="exportDaily">Export CSV</button>
+        </article>
+        <article class="panel">
+          <h3>Issues Report</h3>
+          <p>Export current site issues and responsibility details.</p>
+          <button class="primary" id="exportIssues">Export CSV</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
