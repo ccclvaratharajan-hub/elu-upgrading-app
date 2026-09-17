@@ -201,3 +201,136 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
   transform:translateY(-2px);
   filter:saturate(1.06);
 }
+
+/* V7.3 FINAL status-colour correction — mapping locked
+   A = Green | C = Pink | D = Yellow | NR = Red
+*/
+#blockboard .unit-card.status-a{
+  background:linear-gradient(145deg,#f2fff9,#dff8ec);
+  border-color:#77d3ad;
+  box-shadow:inset 4px 0 0 #36b77e,0 6px 16px rgba(54,183,126,.10);
+}
+#blockboard .unit-card.status-a:before{background:#24a96f}
+#blockboard .unit-card.status-a .u-no{color:#187552}
+#blockboard .unit-card.status-a .u-status{color:#2a8f68}
+
+/* C = Confirmation — Pink */
+#blockboard .unit-card.status-c{
+  background:linear-gradient(145deg,#fff4f8,#ffe1ec);
+  border-color:#f09ab9;
+  box-shadow:inset 4px 0 0 #e76e9b,0 6px 16px rgba(231,110,155,.11);
+}
+#blockboard .unit-card.status-c:before{background:#df5c8d}
+#blockboard .unit-card.status-c .u-no{color:#a83f68}
+#blockboard .unit-card.status-c .u-status{color:#c55780}
+
+/* D = Opt-Out — Yellow */
+#blockboard .unit-card.status-out{
+  background:linear-gradient(145deg,#fffdf2,#fff3bf);
+  border-color:#e8c84f;
+  box-shadow:inset 4px 0 0 #d9b62d,0 6px 16px rgba(217,182,45,.11);
+}
+#blockboard .unit-card.status-out:before{background:#d1a91d}
+#blockboard .unit-card.status-out .u-no{color:#896d08}
+#blockboard .unit-card.status-out .u-status{color:#9f7f0b}
+
+/* NR = No Response — Red */
+#blockboard .unit-card.status-nr{
+  background:linear-gradient(145deg,#fff5f5,#ffe1e3);
+  border-color:#ee8a91;
+  box-shadow:inset 4px 0 0 #df5963,0 6px 16px rgba(223,89,99,.11);
+}
+#blockboard .unit-card.status-nr:before{background:#d94b56}
+#blockboard .unit-card.status-nr .u-no{color:#a63d45}
+#blockboard .unit-card.status-nr .u-status{color:#bd4a53}
+
+/* Legend follows the same locked mapping */
+#blockboard .legend .dot.optin{background:#24a96f}
+#blockboard .legend .dot.confirm{background:#df5c8d}
+#blockboard .legend .dot.optout{background:#d1a91d}
+#blockboard .legend .dot.nr{background:#d94b56}
+
+/* V7.4 minor visual refinement — Block/Floor Board only
+   Compact square-ish cards, no extra unit dot, softer transparent fills.
+   Locked mapping remains: A green | C pink | D yellow | NR red.
+*/
+#blockboard .unit-grid{
+  grid-template-columns:repeat(auto-fill,minmax(100px,112px));
+  justify-content:start;
+  align-items:stretch;
+  gap:9px;
+}
+
+#blockboard .unit-card{
+  width:100%;
+  min-height:78px;
+  max-width:112px;
+  padding:12px 10px;
+  border-radius:14px;
+  border-width:1.25px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+/* Card colour itself is enough — remove the extra status dot */
+#blockboard .unit-card:before{
+  display:none !important;
+}
+
+/* Blank / not updated */
+#blockboard .unit-card:not(.status-a):not(.status-c):not(.status-out):not(.status-nr){
+  background:rgba(244,248,252,.72);
+  border-color:#d9e3ec;
+  box-shadow:inset 3px 0 0 #b8c6d3,0 5px 13px rgba(57,105,153,.045);
+}
+
+/* A = Opt-In — Green */
+#blockboard .unit-card.status-a{
+  background:rgba(86,197,148,.14);
+  border-color:rgba(54,183,126,.46);
+  box-shadow:inset 3px 0 0 #36b77e,0 5px 13px rgba(54,183,126,.075);
+}
+
+/* C = Confirmation — Pink */
+#blockboard .unit-card.status-c{
+  background:rgba(231,110,155,.14);
+  border-color:rgba(231,110,155,.44);
+  box-shadow:inset 3px 0 0 #e76e9b,0 5px 13px rgba(231,110,155,.075);
+}
+
+/* D = Opt-Out — Yellow */
+#blockboard .unit-card.status-out{
+  background:rgba(232,200,79,.18);
+  border-color:rgba(217,182,45,.48);
+  box-shadow:inset 3px 0 0 #d9b62d,0 5px 13px rgba(217,182,45,.075);
+}
+
+/* NR = No Response — Red */
+#blockboard .unit-card.status-nr{
+  background:rgba(223,89,99,.13);
+  border-color:rgba(223,89,99,.43);
+  box-shadow:inset 3px 0 0 #df5963,0 5px 13px rgba(223,89,99,.075);
+}
+
+#blockboard .unit-card .u-no{
+  font-size:12px;
+  line-height:1.2;
+}
+
+#blockboard .unit-card .u-status{
+  margin-top:7px;
+  font-size:9px;
+  line-height:1.25;
+}
+
+/* Keep phone layout neat and compact */
+@media(max-width:760px){
+  #blockboard .unit-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #blockboard .unit-card{
+    max-width:none;
+    min-height:72px;
+  }
+}
