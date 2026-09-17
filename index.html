@@ -1,343 +1,322 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ELU Upgrading App</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef7ff">
+  <title>ELU Upgrading — Command Centre</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark"><span>ELU</span></div>
-      <div>
-        <h1>ELU Upgrading</h1>
-        <p>Project Management System</p>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M8 8h2m4 0h2M8 12h2m4 0h2M8 16h2m4 0h2M2 21h20"/></symbol>
+    <symbol id="i-survey" viewBox="0 0 24 24"><path d="M7 3h10v4H7zM5 5H4v16h16V5h-1M8 12l2 2 5-5M8 18h8"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2ZM7 2v4m10-4v4M3 9h18M7 13h3v3H7z"/></symbol>
+    <symbol id="i-register" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5M8 19h4"/></symbol>
+    <symbol id="i-complaint" viewBox="0 0 24 24"><path d="M4 4h16v13H9l-5 4zM8 8h8M8 12h6"/></symbol>
+    <symbol id="i-team" viewBox="0 0 24 24"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m2 0v-2a5 5 0 0 0-2-4m4-1a5 5 0 0 1 4 5v2"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 16v2m4-6v6m4-10v10"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">ELU</div>
+        <div>
+          <div class="brand-name">Upgrading</div>
+          <div class="brand-sub">Command Centre</div>
+        </div>
       </div>
+
+      <div class="project-badge">
+        <span class="project-dot"></span>
+        <div><strong>PR3 Project</strong><small>6 zones · live workspace</small></div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-view="dashboard"><svg><use href="#i-dashboard"/></svg><span>Dashboard</span></button>
+        <button class="nav-item" data-view="blockboard"><svg><use href="#i-building"/></svg><span>Block Board</span></button>
+        <button class="nav-item" data-view="survey"><svg><use href="#i-survey"/></svg><span>Survey & Follow-up</span></button>
+        <button class="nav-item" data-view="appointments"><svg><use href="#i-calendar"/></svg><span>Appointment Schedule</span></button>
+        <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
+        <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
+        <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Daily Team</span></button>
+        <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
+      </nav>
+
+      <div class="sidebar-note">
+        <strong>Field-first workflow</strong>
+        <span>Survey → Unit → Appointment</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">ELU UPGRADING · PASIR RIS</div>
+          <h1 id="pageTitle">Executive Dashboard</h1>
+          <p id="pageSubtitle">One view of resident response, appointments and completed work.</p>
+        </div>
+        <div class="top-actions">
+          <div class="today-chip" id="todayChip"></div>
+          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboard">
+        <div class="hero">
+          <div>
+            <span class="hero-kicker">PROJECT OVERVIEW</span>
+            <h2>6 zones. 38 blocks. One clean workflow.</h2>
+            <p>Exact unit layouts are preloaded from your PR3 survey workbooks — including special low-rise and irregular blocks.</p>
+          </div>
+          <div class="hero-stat">
+            <span>Total project units</span>
+            <strong id="heroTotalUnits">0</strong>
+            <small>Automatically mapped by floor</small>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <article class="kpi-card"><div class="kpi-icon green">A</div><div><span>Opt-In</span><strong id="kpiOptIn">0</strong><small id="kpiOptInPct">0%</small></div></article>
+          <article class="kpi-card"><div class="kpi-icon blue">C</div><div><span>Appointments</span><strong id="kpiAppointments">0</strong><small>Confirmed bookings</small></div></article>
+          <article class="kpi-card"><div class="kpi-icon cyan">✓</div><div><span>Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
+          <article class="kpi-card"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Follow-up required</small></div></article>
+          <article class="kpi-card"><div class="kpi-icon rose">OUT</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
+          <article class="kpi-card"><div class="kpi-icon violet">↻</div><div><span>Follow-ups</span><strong id="kpiFollowups">0</strong><small>Open survey follow-ups</small></div></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head"><div><span class="section-label">ZONE PERFORMANCE</span><h3>Progress by zone</h3></div></div>
+            <div id="zoneProgress" class="zone-progress"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><div><span class="section-label">NEXT ACTIONS</span><h3>Upcoming appointments</h3></div><button class="text-btn" data-go="appointments">View all</button></div>
+            <div id="upcomingAppointments" class="compact-list"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head"><div><span class="section-label">FIELD ATTENTION</span><h3>Follow-ups requiring attention</h3></div><button class="text-btn" data-go="survey">Open survey register</button></div>
+          <div id="followupAttention" class="attention-grid"></div>
+        </article>
+      </section>
+
+      <section class="view" id="blockboard">
+        <div class="section-toolbar">
+          <div class="filter-group">
+            <label>Zone<select id="boardZone"></select></label>
+            <label>Block<select id="boardBlock"></select></label>
+            <label>Floor<select id="boardFloor"><option value="all">All floors</option></select></label>
+          </div>
+          <div class="search-box"><svg><use href="#i-search"/></svg><input id="boardSearch" placeholder="Search unit e.g. 13-132"></div>
+        </div>
+
+        <div id="blockHeadline" class="block-headline"></div>
+
+        <div class="legend">
+          <span><i class="dot blank"></i>Blank · Not Updated</span>
+          <span><i class="dot optin"></i>A · Opt-In</span>
+          <span><i class="dot confirm"></i>C · Confirmation</span>
+          <span><i class="dot optout"></i>D · Opt-Out</span>
+          <span><i class="dot nr"></i>NR · No Response</span>
+        </div>
+
+        <div id="floorBoard" class="floor-board"></div>
+      </section>
+
+      <section class="view" id="survey">
+        <div class="form-layout">
+          <article class="panel form-card">
+            <div class="panel-head"><div><span class="section-label">NEW ENTRY</span><h3>Survey / Resident Follow-up</h3><p>This is the entry point. Nothing from other registers is pushed back here automatically.</p></div></div>
+            <form id="surveyForm" class="premium-form">
+              <input type="hidden" id="surveyEditId">
+              <div class="form-row three">
+                <label>Zone<select id="surveyZone"></select></label>
+                <label>Block<select id="surveyBlock"></select></label>
+                <label>Unit<select id="surveyUnit"></select></label>
+              </div>
+              <div class="form-row two">
+                <label>Owner Name<input id="surveyOwner" autocomplete="off" placeholder="Owner / resident name"></label>
+                <label>Contact<input id="surveyContact" inputmode="tel" autocomplete="off" placeholder="Contact number"></label>
+              </div>
+              <div class="form-row two">
+                <label>Resident Response
+                  <select id="surveyResponse">
+                    <option value="">Blank · Not Updated</option>
+                    <option value="A">A · Opt-In</option>
+                    <option value="D">D · Opt-Out</option>
+                    <option value="NR">NR · No Response</option>
+                  </select>
+                </label>
+                <label>Next Follow-up Date<input type="date" id="surveyFollowup"></label>
+              </div>
+              <label>Survey / Follow-up Note<textarea id="surveyRemarks" rows="4" placeholder="Resident request, preferred day, call note, access note..."></textarea></label>
+              <div class="form-actions">
+                <button class="primary-btn" id="surveySaveBtn" type="submit">Save Survey Entry → Update Unit Register</button>
+                <button class="ghost-btn hidden" id="surveyCancelEdit" type="button">Cancel Edit</button>
+              </div>
+              <div class="form-hint">C is not entered here. C is set automatically when an appointment is confirmed.</div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><div><span class="section-label">RECENT ACTIVITY</span><h3>Survey Register</h3></div></div>
+            <div id="surveyTable" class="table-shell"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="appointments">
+        <div class="form-layout">
+          <article class="panel form-card">
+            <div class="panel-head"><div><span class="section-label">BOOKING</span><h3>Confirm Appointment</h3><p>Owner and contact are read from the Unit Register.</p></div></div>
+            <form id="appointmentForm" class="premium-form">
+              <input type="hidden" id="appointmentEditId">
+              <div class="form-row two">
+                <label>Block<select id="appointmentBlock"></select></label>
+                <label>Unit<select id="appointmentUnit"></select></label>
+              </div>
+              <div class="form-row two">
+                <label>Owner Name<input id="appointmentOwner" readonly></label>
+                <label>Contact<input id="appointmentContact" readonly></label>
+              </div>
+              <div class="form-row two">
+                <label>Appointment Date<input type="date" id="appointmentDate" required></label>
+                <label>Time Slot<select id="appointmentSlot" required>
+                  <option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option>
+                </select></label>
+              </div>
+              <label>Team<select id="appointmentTeam"><option value="">Unassigned</option><option>Team 1</option><option>Team 2</option></select></label>
+              <label>Appointment Note<textarea id="appointmentRemarks" rows="3"></textarea></label>
+              <div class="form-actions">
+                <button class="primary-btn" id="appointmentSaveBtn" type="submit">Confirm Appointment → Set C</button>
+                <button class="ghost-btn hidden" id="appointmentCancelEdit" type="button">Cancel Edit</button>
+              </div>
+              <div class="form-hint">After the appointment slot ends, C automatically changes to A and work is counted as completed.</div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3></div><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div>
+            <div id="appointmentTable" class="table-shell"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="units">
+        <article class="panel">
+          <div class="panel-head register-head">
+            <div><span class="section-label">MASTER DATA · READ ONLY</span><h3>Unit Register</h3><p>Automatically populated from Survey and Appointment. This master register cannot be edited directly.</p></div>
+            <div class="register-tools">
+              <div class="search-box small"><svg><use href="#i-search"/></svg><input id="unitSearch" placeholder="Search block / unit / owner / contact"></div>
+              <select id="unitZoneFilter"></select>
+            </div>
+          </div>
+          <div id="unitTable" class="table-shell"></div>
+        </article>
+      </section>
+
+      <section class="view" id="complaints">
+        <div class="form-layout">
+          <article class="panel form-card">
+            <div class="panel-head"><div><span class="section-label">SEPARATE RECORD</span><h3>New Complaint</h3><p>Select the unit; owner and contact are looked up. No complaint is created automatically.</p></div></div>
+            <form id="complaintForm" class="premium-form">
+              <input type="hidden" id="complaintEditId">
+              <div class="form-row two">
+                <label>Block<select id="complaintBlock"></select></label>
+                <label>Unit<select id="complaintUnit"></select></label>
+              </div>
+              <div class="form-row two">
+                <label>Owner Name<input id="complaintOwner" readonly></label>
+                <label>Contact<input id="complaintContact" readonly></label>
+              </div>
+              <div class="form-row two">
+                <label>Date<input type="date" id="complaintDate" required></label>
+                <label>Status<select id="complaintStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select></label>
+              </div>
+              <label>Complaint<textarea id="complaintText" rows="4" required></textarea></label>
+              <label>Remarks<textarea id="complaintRemarks" rows="3"></textarea></label>
+              <div class="form-actions">
+                <button class="primary-btn" id="complaintSaveBtn" type="submit">Save Complaint</button>
+                <button class="ghost-btn hidden" id="complaintCancelEdit" type="button">Cancel Edit</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3></div></div>
+            <div id="complaintTable" class="table-shell"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="teams">
+        <div class="section-toolbar">
+          <div><span class="section-label">SITE EXECUTION</span><h3 class="toolbar-title">Daily Team Board</h3></div>
+          <label>Working Date<input type="date" id="teamDate"></label>
+        </div>
+        <div class="team-columns">
+          <article class="team-panel"><div class="team-head"><span class="team-badge">T1</span><div><h3>Team 1</h3><small id="team1Count">0 appointments</small></div></div><div id="team1List" class="team-list"></div></article>
+          <article class="team-panel"><div class="team-head"><span class="team-badge t2">T2</span><div><h3>Team 2</h3><small id="team2Count">0 appointments</small></div></div><div id="team2List" class="team-list"></div></article>
+          <article class="team-panel"><div class="team-head"><span class="team-badge un">—</span><div><h3>Unassigned</h3><small id="team0Count">0 appointments</small></div></div><div id="team0List" class="team-list"></div></article>
+        </div>
+      </section>
+
+      <section class="view" id="reports">
+        <div class="report-hero">
+          <div><span class="section-label">WEEKLY PROGRESS MEETING</span><h2>Progress Summary</h2><p>Calculated from the read-only Unit Register. A + C = Opt-In Agree; completed work is counted separately.</p></div>
+          <div class="report-actions"><button class="primary-btn" id="exportProgressBtn">Export Progress CSV</button><button class="ghost-btn" id="exportUnitsBtn">Export Unit Register</button></div>
+        </div>
+        <article class="panel">
+          <div class="panel-head register-head">
+            <div><h3>Block Progress Summary</h3><p>Same reporting logic as your weekly progress summary.</p></div>
+            <div class="register-tools">
+              <label class="mini-filter">Zone<select id="reportZoneFilter"></select></label>
+            </div>
+          </div>
+          <div id="reportSummaryCards" class="report-summary-cards"></div>
+          <div id="reportTable" class="table-shell"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="unit-drawer" id="unitDrawer">
+    <div class="drawer-head">
+      <div><span class="section-label">UNIT DETAILS</span><h2 id="drawerUnitTitle">Unit</h2><p id="drawerUnitMeta"></p></div>
+      <button class="icon-btn" id="drawerClose"><svg><use href="#i-close"/></svg></button>
     </div>
-
-    <nav id="nav">
-      <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">◫</span><span>Dashboard</span></button>
-      <button class="nav-btn" data-view="zones"><span class="nav-icon">▦</span><span>Zone View</span></button>
-      <button class="nav-btn" data-view="blocks"><span class="nav-icon">▤</span><span>Block View</span></button>
-      <button class="nav-btn" data-view="daily"><span class="nav-icon">✎</span><span>Daily Update</span></button>
-      <button class="nav-btn" data-view="photos"><span class="nav-icon">▧</span><span>Photo Upload</span></button>
-      <button class="nav-btn" data-view="issues"><span class="nav-icon">!</span><span>Issues</span></button>
-      <button class="nav-btn" data-view="units"><span class="nav-icon">⌂</span><span>Unit Register</span></button>
-      <button class="nav-btn" data-view="appointments"><span class="nav-icon">◷</span><span>Appointments</span></button>
-      <button class="nav-btn" data-view="complaints"><span class="nav-icon">◉</span><span>Complaints</span></button>
-      <button class="nav-btn" data-view="surveys"><span class="nav-icon">✓</span><span>Survey Register</span></button>
-      <button class="nav-btn" data-view="reports"><span class="nav-icon">⇩</span><span>Reports</span></button>
-    </nav>
-
-    <div class="sidebar-foot">
-      <small>Data is saved in this browser.</small>
+    <div class="master-readonly">
+      <div class="master-lock">Master data · read only</div>
+      <input type="hidden" id="drawerUnitKey">
+      <div class="readonly-grid">
+        <div><span>Status</span><strong id="drawerStatusText">—</strong></div>
+        <div><span>Owner Name</span><strong id="drawerOwnerText">—</strong></div>
+        <div><span>Contact</span><strong id="drawerContactText">—</strong></div>
+        <div><span>Follow-up</span><strong id="drawerFollowupText">—</strong></div>
+        <div class="wide"><span>Remarks</span><strong id="drawerRemarksText">—</strong></div>
+        <div><span>Appointment</span><strong id="drawerAppointmentText">—</strong></div>
+        <div><span>Team</span><strong id="drawerTeamText">—</strong></div>
+      </div>
+      <div class="legacy-box" id="drawerLegacy"></div>
+      <div class="drawer-shortcuts">
+        <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey / Follow-up</button>
+        <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>
+      </div>
     </div>
   </aside>
 
-  <main class="main">
-    <header class="topbar">
-      <div>
-        <h2 id="pageTitle">Dashboard</h2>
-        <p id="pageSubtitle">Overall ELU upgrading progress across all 6 zones.</p>
-      </div>
-      <div class="top-actions">
-        <span class="live-pill"><span class="live-dot"></span> Project Active</span>
-        <button class="secondary" id="resetDemoBtn">Reset Demo Data</button>
-      </div>
-    </header>
-
-    <section id="dashboard" class="view active-view">
-      <div class="stats-grid">
-        <article class="stat-card">
-          <span>Total Zones</span>
-          <strong>6</strong>
-          <small>Zones 1–6</small>
-        </article>
-        <article class="stat-card">
-          <span>Total Blocks</span>
-          <strong id="totalBlocks">0</strong>
-          <small>All project blocks</small>
-        </article>
-        <article class="stat-card">
-          <span>Overall Progress</span>
-          <strong id="overallProgress">0%</strong>
-          <small>Average block progress</small>
-        </article>
-        <article class="stat-card">
-          <span>Open Issues</span>
-          <strong id="openIssues">0</strong>
-          <small>Pending / active issues</small>
-        </article>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h3>Zone Progress</h3>
-            <p>Live roll-up from block progress.</p>
-          </div>
-        </div>
-        <div id="dashboardZones" class="zone-progress-list"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h3>Latest Daily Updates</h3>
-            <p>Most recent site entries.</p>
-          </div>
-        </div>
-        <div id="latestUpdates" class="table-wrap"></div>
-      </div>
-    </section>
-
-    <section id="zones" class="view">
-      <div id="zoneCards" class="zone-card-grid"></div>
-    </section>
-
-    <section id="blocks" class="view">
-      <div class="toolbar">
-        <label>
-          Zone
-          <select id="blockZoneFilter"></select>
-        </label>
-      </div>
-      <div class="panel">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Zone</th>
-                <th>Block</th>
-                <th>Status</th>
-                <th>Progress %</th>
-                <th>Remarks</th>
-                <th>Save</th>
-              </tr>
-            </thead>
-            <tbody id="blockTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="daily" class="view">
-      <div class="two-col">
-        <form id="dailyForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add Daily Update</h3></div>
-          <label>Date<input type="date" id="dailyDate" required /></label>
-          <label>Zone<select id="dailyZone" required></select></label>
-          <label>Block<select id="dailyBlock" required></select></label>
-          <label>Manpower<input type="number" id="dailyManpower" min="0" value="0" required /></label>
-          <label>Work Done<textarea id="dailyWork" rows="4" required></textarea></label>
-          <label>Remarks<textarea id="dailyRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Daily Update</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Daily Update Register</h3></div>
-          <div id="dailyTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="photos" class="view">
-      <div class="two-col">
-        <form id="photoForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add Photo Record</h3></div>
-          <label>Zone<select id="photoZone" required></select></label>
-          <label>Block<select id="photoBlock" required></select></label>
-          <label>Stage
-            <select id="photoStage" required>
-              <option>Before</option>
-              <option>During</option>
-              <option>After</option>
-            </select>
-          </label>
-          <label>Photo<input type="file" id="photoFile" accept="image/*" required /></label>
-          <label>Remarks<textarea id="photoRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Photo Record</button>
-          <p class="hint">For this first version, image previews are stored only in this browser.</p>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Photo Gallery</h3></div>
-          <div id="photoGallery" class="photo-grid"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="issues" class="view">
-      <div class="two-col">
-        <form id="issueForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add Issue</h3></div>
-          <label>Date<input type="date" id="issueDate" required /></label>
-          <label>Zone<select id="issueZone" required></select></label>
-          <label>Block<select id="issueBlock" required></select></label>
-          <label>Site Issue<textarea id="issueText" rows="3" required></textarea></label>
-          <label>Pending Item<textarea id="pendingItem" rows="3"></textarea></label>
-          <label>Responsible Person<input type="text" id="responsiblePerson" /></label>
-          <label>Status
-            <select id="issueStatus">
-              <option>Open</option>
-              <option>In Progress</option>
-              <option>Closed</option>
-            </select>
-          </label>
-          <button type="submit" class="primary">Save Issue</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Issue Register</h3></div>
-          <div id="issueTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-
-    <section id="units" class="view">
-      <div class="two-col">
-        <form id="unitForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add / Update Unit</h3></div>
-          <label>Block No<select id="unitBlock" required></select></label>
-          <label>Unit No<input type="text" id="unitNo" placeholder="e.g. 05-123" required></label>
-          <div class="check-row">
-            <label><input type="checkbox" id="optIn"> Opt In</label>
-            <label><input type="checkbox" id="optOut"> Opt Out</label>
-            <label><input type="checkbox" id="nr"> NR</label>
-          </div>
-          <label>Owner Name<input type="text" id="ownerName"></label>
-          <label>Contact<input type="text" id="ownerContact"></label>
-          <label>Date & Time<input type="datetime-local" id="unitDateTime"></label>
-          <label>Remarks<textarea id="unitRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Unit</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Unit Register</h3></div>
-          <div id="unitTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="appointments" class="view">
-      <div class="two-col">
-        <form id="appointmentForm" class="panel form-panel">
-          <div class="panel-head"><h3>Book Appointment</h3></div>
-          <label>Unit<select id="appointmentUnit" required></select></label>
-          <label>Owner Name<input type="text" id="appointmentOwner" readonly></label>
-          <label>Contact<input type="text" id="appointmentContact" readonly></label>
-          <label>Date<input type="date" id="appointmentDate" required></label>
-          <label>Time Slot
-            <select id="appointmentSlot" required>
-              <option>9am–11am</option>
-              <option>11am–1pm</option>
-              <option>2pm–4pm</option>
-              <option>4pm–6pm</option>
-            </select>
-          </label>
-          <label>Remarks<textarea id="appointmentRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Appointment</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Appointment Register</h3></div>
-          <div id="appointmentTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="complaints" class="view">
-      <div class="two-col">
-        <form id="complaintForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add Complaint</h3></div>
-          <label>Unit<select id="complaintUnit" required></select></label>
-          <label>Owner Name<input type="text" id="complaintOwner" readonly></label>
-          <label>Contact<input type="text" id="complaintContact" readonly></label>
-          <label>Date<input type="date" id="complaintDate" required></label>
-          <label>Complaint<textarea id="complaintText" rows="4" required></textarea></label>
-          <label>Status
-            <select id="complaintStatus">
-              <option>Open</option>
-              <option>In Progress</option>
-              <option>Closed</option>
-            </select>
-          </label>
-          <label>Remarks<textarea id="complaintRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Complaint</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Complaint Register</h3></div>
-          <div id="complaintTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="surveys" class="view">
-      <div class="two-col">
-        <form id="surveyForm" class="panel form-panel">
-          <div class="panel-head"><h3>Add Survey</h3></div>
-          <label>Unit<select id="surveyUnit" required></select></label>
-          <label>Owner Name<input type="text" id="surveyOwner" readonly></label>
-          <label>Contact<input type="text" id="surveyContact" readonly></label>
-          <label>Date<input type="date" id="surveyDate" required></label>
-          <label>Survey Result
-            <select id="surveyResult">
-              <option>Pending</option>
-              <option>Completed</option>
-              <option>Follow-up Required</option>
-            </select>
-          </label>
-          <label>Remarks<textarea id="surveyRemarks" rows="3"></textarea></label>
-          <button type="submit" class="primary">Save Survey</button>
-        </form>
-
-        <div class="panel">
-          <div class="panel-head"><h3>Survey Register</h3></div>
-          <div id="surveyTable" class="table-wrap"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="reports" class="view">
-      <div class="report-grid">
-        <article class="panel">
-          <h3>Block Progress Report</h3>
-          <p>Export all block statuses and progress percentages.</p>
-          <button class="primary" id="exportBlocks">Export CSV</button>
-        </article>
-        <article class="panel">
-          <h3>Daily Update Report</h3>
-          <p>Export all daily site update entries.</p>
-          <button class="primary" id="exportDaily">Export CSV</button>
-        </article>
-        <article class="panel">
-          <h3>Issues Report</h3>
-          <p>Export current site issues and responsibility details.</p>
-          <button class="primary" id="exportIssues">Export CSV</button>
-        </article>
-        <article class="panel">
-          <h3>Unit Register Report</h3>
-          <p>Export owner and unit records.</p>
-          <button class="primary" id="exportUnits">Export CSV</button>
-        </article>
-        <article class="panel">
-          <h3>Appointment Report</h3>
-          <p>Export appointment bookings.</p>
-          <button class="primary" id="exportAppointments">Export CSV</button>
-        </article>
-        <article class="panel">
-          <h3>Complaint Report</h3>
-          <p>Export complaint records.</p>
-          <button class="primary" id="exportComplaints">Export CSV</button>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <div id="toast" class="toast"></div>
+  <div class="toast" id="toast"></div>
+  <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
