@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v10";
-const PREV_STORAGE_KEY="elu_premium_v9";
+const STORAGE_KEY="elu_premium_v11";
+const PREV_STORAGE_KEY="elu_premium_v10";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -75,8 +75,8 @@ function mergeSavedIntoFresh(saved){
         userRemarks:Boolean(clean.userRemarks||isUserAppointment(clean)),
         source:isUserAppointment(clean)?clean.source:seed.source,
         team:clean.team||seed.team||"",
-        scheduleState:clean.scheduleState||seed.scheduleState||"Active",
-        workStatus:clean.workStatus||seed.workStatus||"Pending"
+        scheduleState:isUserAppointment(clean)?(clean.scheduleState||seed.scheduleState||"Active"):(seed.scheduleState||"Active"),
+        workStatus:isUserAppointment(clean)?(clean.workStatus||seed.workStatus||"Pending"):(seed.workStatus||"Pending")
       };
     }else if(isUserAppointment(clean)){
       fresh.appointments.push(clean);
@@ -148,19 +148,30 @@ function rebuildUnitMaster(key){
   }
   const latestAppt=preferredMasterAppointment(key);
   if(latestAppt){
-    base.appointmentDate=latestAppt.date||"";
-    base.appointmentSlot=latestAppt.slot||"";
-    base.team=latestAppt.team||"";
+    const userAppt=isUserAppointment(latestAppt);
+    const importedExcel=String(latestAppt.source||"").includes("Excel");
+    const showImportedSchedule=!["D","NR",""] .includes(base.response);
+    if(userAppt||showImportedSchedule){
+      base.appointmentDate=latestAppt.date||"";
+      base.appointmentSlot=latestAppt.slot||"";
+      base.team=latestAppt.team||"";
+    }
     if(latestAppt.ownerName)base.ownerName=latestAppt.ownerName;
     if(latestAppt.contact)base.contact=latestAppt.contact;
-    if(latestAppt.remarks){
+    if(latestAppt.remarks&&(userAppt||latestAppt.userRemarks)){
       const parts=[base.remarks,latestAppt.remarks].map(v=>String(v||"").trim()).filter(Boolean);
       base.remarks=[...new Set(parts)].join(" · ");
     }
-    if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
-      latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
-    }else{
-      base.response="C";
+    if(userAppt){
+      if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
+        latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
+      }else{
+        base.response="C";
+      }
+    }else if(!importedExcel){
+      if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
+        latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
+      }else{base.response="C"}
     }
   }
   state.units[key]=base;

@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.18
+# ELU Upgrading — Premium V7.19
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -180,3 +180,14 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Removed lightning, flash effects, transformer artwork, water-photo theme and animated name treatment.
 - Restored the classic blue command hero, white sidebar, clean KPI cards and original profile-name chip.
 - Kept all later working corrections: Zone/Block separation, Zone-wise Team dashboard, Planner custom times in the same sheet, reschedule/history logic, Block 537 correction, Unit Register updates, blank imported Remarks and Block Board percentages.
+
+
+## V7.19 source-data audit correction
+- Classic V7.18 visual style retained unchanged.
+- Rebuilt the PR3 Appointment source with day/month-safe date handling. Blk 564 #08-132 is correctly 12 Mar 2026, not 03 Dec 2026.
+- Blocks 564–569 now have no future imported appointment; the stray Blk 566 #04-114 future row is excluded because the latest survey source records it as No Response.
+- Added valid custom-time schedule rows that were previously skipped.
+- Corrected imported survey response seeds so dashboard source totals align with the uploaded Progress Summary sheets.
+- Schedule Excel records no longer overwrite NR / D / blank survey responses or inflate Opt-In / Completed totals.
+- Imported Excel schedules remain visible in Planner/Register; future appointments entered by the user in Planner still drive C and auto C → A / Completed.
+- Browser storage key moved to v11 so stale imported source rows are dropped while manual Survey / Planner / Complaint records are retained.
