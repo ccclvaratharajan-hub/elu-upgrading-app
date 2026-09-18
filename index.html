@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.11">
+  <link rel="stylesheet" href="styles.css?v=7.12">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -213,7 +213,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> appointment schedules imported from your Excel sheets.</p></div><div class="register-tools"><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">Completed History</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> schedule records loaded from the latest Excel data. Rescheduled entries stay as history, not active bookings.</p></div><div class="register-tools"><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">History / Rescheduled</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
             <div id="appointmentTable" class="table-shell"></div>
           </article>
         </div>
@@ -283,7 +283,7 @@
 
         <article class="panel planner-entry-panel">
           <div class="panel-head"><div><span class="section-label">QUICK ENTRY</span><h3>Add to selected day</h3><p>New entries and existing imported appointments use the same appointment record.</p></div></div>
-          <div class="planner-rule-note"><strong>One unit = one slot per date.</strong> If the same unit is entered in another slot on the same date, the old slot will be replaced — not duplicated.</div>
+          <div class="planner-rule-note"><strong>One active appointment per unit.</strong> If the unit is rescheduled to another date or slot, the old booking moves to Rescheduled history automatically.</div>
           <form id="plannerForm" class="planner-form">
             <input type="hidden" id="plannerEditId">
             <label>Block<select id="plannerBlock"></select></label>

@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.11
+# ELU Upgrading — Premium V7.12
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -126,3 +126,16 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - D / Opt-Out and NR / No Response show no date line.
 - Existing automatic C → A conversion remains unchanged.
 - No workflow, Planner, Master Data, Report, Complaint, Survey or colour logic changed.
+
+
+## V7.12 latest Excel refresh + reschedule safety
+- Latest uploaded Unit Survey files for Blocks 531–536, 544–550 and 564–569 refreshed into the master seed.
+- Owner Name and Contact values from those sheets are prefilled into Master Data where available.
+- Latest PR3 appointment schedule was converted into Planner source records with Team 1 / Team 2 where available.
+- Current Survey schedule is treated as the source of truth for those refreshed blocks; older mismatched bookings are marked Rescheduled history.
+- Four obvious block-number/unit mismatches in the schedule source were corrected using the sheet's block range and exact project unit layout.
+- Planner now allows only one pending active appointment per unit across dates. Rescheduling moves the old booking to history instead of leaving it active.
+- Appointment Register has Active / Completed / Rescheduled / History schedule state.
+- Unit Register now shows Appointment Date + Slot before Remarks, with Remarks last.
+- Added a light-dark Electrical Steel visual theme without changing the status-colour mapping.
+- Existing browser data migrates from V7 storage into the refreshed source while retaining manual Planner / Survey / Complaint work.

@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v7";
-const PREV_STORAGE_KEY="elu_premium_v6";
+const STORAGE_KEY="elu_premium_v8";
+const PREV_STORAGE_KEY="elu_premium_v7";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -25,7 +25,9 @@ function slotToCustomTimes(slot){return {start:minutesTo24(slotStartMinutes(slot
 
 
 function importedAppointmentId(block,floor,unit){return 600000000+Number(block)*100000+Number(floor)*1000+Number(unit)}
-function seedAppointments(){const out=[];Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.seed||{}).forEach(([fu,seed])=>{const date=legacyDateISO(seed.legacySchedule);if(!date)return;const [floor,unit]=fu.split("-").map(Number),slot=legacySlot(seed.legacySchedule);if(!slot)return;const response=normalizeStatus(seed.response);if(response==="D"||response==="NR")return;out.push({id:importedAppointmentId(block,floor,unit),unitKey:unitKey(block,floor,unit),zone:Number(d.zone),block:Number(block),floor,unit,unitDisplay:unitDisplay(floor,unit),ownerName:"",contact:seed.contact||"",date,slot,team:"",remarks:seed.legacyRemark||"",source:"Excel",sourceSchedule:seed.legacySchedule||"",workStatus:seed.completed?"Completed":"Pending"})}));return out.sort((a,b)=>a.date.localeCompare(b.date)||a.block-b.block||a.floor-b.floor||a.unit-b.unit)}
+function seedAppointments(){
+  return (SOURCE_APPOINTMENTS||[]).map(a=>({...a,scheduleState:a.scheduleState||"Active"}))
+}
 function unitKey(block,floor,unit){return `${block}-${floor}-${unit}`}
 function unitDisplay(floor,unit){return `#${String(floor).padStart(2,"0")}-${unit}`}
 function esc(v=""){return String(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s]))}
@@ -40,7 +42,7 @@ function baseUnit(block,floor,unit){
   const d=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];const seed=(d?.seed||{})[`${floor}-${unit}`]||{};
   return {
     key:unitKey(block,floor,unit),zone:Number(d?.zone||0),block:Number(block),floor:Number(floor),unit:Number(unit),
-    response:normalizeStatus(seed.response),ownerName:"",contact:seed.contact||"",remarks:"",
+    response:normalizeStatus(seed.response),ownerName:seed.ownerName||"",contact:seed.contact||"",remarks:seed.remarks||"",
     followUpDate:"",lastFollowUp:"",appointmentDate:"",appointmentSlot:"",team:"",
     workStatus:seed.completed?"Completed":"Pending",
     legacySchedule:seed.legacySchedule||"",legacyRemark:seed.legacyRemark||""
@@ -56,10 +58,27 @@ function migratePrevious(){
   try{
     const old=JSON.parse(localStorage.getItem(PREV_STORAGE_KEY)||"null");if(!old)return fresh;
     fresh.surveys=(old.surveys||[]).map(s=>({...s,response:normalizeStatus(s.response),createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()}));
-    (old.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{const clean={...a,status:undefined,workStatus:a.workStatus||"Pending",source:a.source||"Manual"};const idx=fresh.appointments.findIndex(x=>x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot);if(idx>=0)fresh.appointments[idx]={...fresh.appointments[idx],...clean,id:fresh.appointments[idx].id};else fresh.appointments.push(clean)});
+    (old.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{
+      const clean={...a,status:undefined,scheduleState:a.scheduleState||"Active",workStatus:a.workStatus||"Pending",source:a.source||"Manual"};
+      const idx=fresh.appointments.findIndex(x=>x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot);
+      const isUserRecord=clean.source==="Planner"||clean.source==="Manual"||Number(clean.id)>1000000000000;
+      if(idx>=0){
+        const seeded=fresh.appointments[idx];
+        fresh.appointments[idx]={
+          ...seeded,
+          ownerName:clean.ownerName||seeded.ownerName||"",
+          contact:clean.contact||seeded.contact||"",
+          remarks:clean.remarks||seeded.remarks||"",
+          team:clean.team||seeded.team||"",
+          id:seeded.id
+        };
+      }else if(isUserRecord){
+        fresh.appointments.push(clean);
+      }
+    });
     fresh.complaints=old.complaints||[];
   }catch{}
-  return fresh;
+  return fresh
 }
 function loadState(){
   try{
@@ -73,6 +92,7 @@ function loadState(){
   return migratePrevious();
 }
 let state=loadState();
+normalizeManualOverrides();
 
 function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
@@ -83,6 +103,31 @@ function appointmentHasEnded(a){
   const end=SLOT_END_MINUTES[a.slot]??slotEndMinutes(a.slot);return end==null?false:now.minutes>=Number(end);
 }
 function latestById(arr){return [...arr].sort((a,b)=>Number(b.id)-Number(a.id))[0]||null}
+function isInactiveSchedule(a){return ["Rescheduled","Cancelled","History"].includes(a?.scheduleState)}
+function activeAppointmentsForUnit(key){return state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a))}
+function preferredMasterAppointment(key){
+  const arr=activeAppointmentsForUnit(key);if(!arr.length)return null;
+  const pending=arr.filter(a=>a.workStatus!=="Completed"&&!appointmentHasEnded(a));
+  if(pending.length){
+    const manual=pending.filter(a=>a.source==="Planner"||a.source==="Manual");
+    const pool=manual.length?manual:pending;
+    return [...pool].sort((a,b)=>b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot)||Number(b.id)-Number(a.id))[0]
+  }
+  return [...arr].sort((a,b)=>b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot)||Number(b.id)-Number(a.id))[0]
+}
+function normalizeManualOverrides(){
+  const by={};
+  state.appointments.forEach(a=>{
+    if(isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a))return;
+    (by[a.unitKey]||(by[a.unitKey]=[])).push(a)
+  });
+  Object.values(by).forEach(arr=>{
+    const manual=arr.filter(a=>a.source==="Planner"||a.source==="Manual");
+    if(!manual.length)return;
+    const keep=[...manual].sort((a,b)=>Number(b.id)-Number(a.id))[0];
+    arr.forEach(a=>{if(a!==keep)a.scheduleState="Rescheduled"})
+  })
+}
 function rebuildUnitMaster(key){
   const current=state.units[key];if(!current)return;
   const base=baseUnit(current.block,current.floor,current.unit);
@@ -95,7 +140,7 @@ function rebuildUnitMaster(key){
     base.lastFollowUp=latestSurvey.createdAt?latestSurvey.createdAt.slice(0,10):"";
     base.remarks=latestSurvey.remarks||"";
   }
-  const appts=state.appointments.filter(a=>a.unitKey===key),latestAppt=latestById(appts);
+  const latestAppt=preferredMasterAppointment(key);
   if(latestAppt){
     base.appointmentDate=latestAppt.date||"";
     base.appointmentSlot=latestAppt.slot||"";
@@ -116,7 +161,7 @@ function save(msg){rebuildAllMasters();persist();renderAll();if(msg)toast(msg)}
 function autoCompleteAppointments(showToast=false){
   let changed=0;
   state.appointments.forEach(a=>{
-    if(a.workStatus!=="Completed"&&appointmentHasEnded(a)){a.workStatus="Completed";changed++}
+    if(!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&appointmentHasEnded(a)){a.workStatus="Completed";changed++}
   });
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
@@ -164,12 +209,7 @@ function syncPairUnits(prefix){document.getElementById(prefix+"Unit").innerHTML=
 function syncPlannerUnits(){document.getElementById("plannerUnit").innerHTML=unitOptionsForBlock(document.getElementById("plannerBlock").value)}
 function autofillSurvey(){const u=getUnit(document.getElementById("surveyUnit").value);if(!u)return;document.getElementById("surveyOwner").value=u.ownerName||"";document.getElementById("surveyContact").value=u.contact||"";document.getElementById("surveyResponse").value=u.response==="C"?"A":normalizeStatus(u.response)}
 
-function preferredUnitAppointment(key){
-  const arr=state.appointments.filter(a=>a.unitKey===key);if(!arr.length)return null;
-  const today=isoTodaySG(),future=arr.filter(a=>a.date>=today).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  if(future.length)return future[0];
-  return [...arr].sort((a,b)=>b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot))[0]||null
-}
+function preferredUnitAppointment(key){return preferredMasterAppointment(key)}
 function appointmentTargetForForm(key){
   const editId=Number(document.getElementById("appointmentEditId").value);
   if(editId)return state.appointments.find(a=>a.id===editId)||null;
@@ -274,7 +314,7 @@ document.getElementById("appointmentForm").addEventListener("submit",e=>{
   a.ownerName=document.getElementById("appointmentOwner").value.trim();
   a.contact=document.getElementById("appointmentContact").value.trim();
   a.remarks=document.getElementById("appointmentRemarks").value.trim();
-  if(!a.source)a.source="Planner";
+  if(!a.source)a.source="Planner";if(!a.scheduleState)a.scheduleState="Active";
   document.getElementById("appointmentEditId").value="";
   save("Resident details saved · Master Data updated")
 });
@@ -297,17 +337,19 @@ function deleteAppointment(id){if(!confirm("Delete this appointment? The Unit Re
 document.getElementById("appointmentFilterDate").addEventListener("change",renderAppointmentTable);document.getElementById("appointmentMode").addEventListener("change",renderAppointmentTable);
 function renderAppointmentTable(){
   const f=document.getElementById("appointmentFilterDate").value,mode=document.getElementById("appointmentMode").value;let r=[...state.appointments];
-  const imported=r.filter(a=>a.source==="Excel").length;const ic=document.getElementById("importedScheduleCount");if(ic)ic.textContent=imported.toLocaleString();
-  if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>a.workStatus==="Completed"||appointmentHasEnded(a));
-  r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||b.id-a.id:a.date.localeCompare(b.date)||SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot));
-  document.getElementById("appointmentTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${r.slice(0,700).map(a=>{const u=getUnit(a.unitKey);return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td>${statusPill(u?.response)}</td><td><span class="pill ${a.source==="Excel"?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set"><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>${r.length>700?`<div class="empty-state">Showing first 700 records. Use View or Date filter to narrow the schedule.</div>`:""}`:`<div class="empty-state">No appointments found for this view.</div>`;
+  const imported=r.filter(a=>String(a.source||"").includes("Excel")).length;const ic=document.getElementById("importedScheduleCount");if(ic)ic.textContent=imported.toLocaleString();
+  if(f)r=r.filter(a=>a.date===f);
+  else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());
+  else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
+  r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
+  document.getElementById("appointmentTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${r.slice(0,900).map(a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed";return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set"><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>${r.length>900?`<div class="empty-state">Showing first 900 records. Use View or Date filter to narrow the schedule.</div>`:""}`:`<div class="empty-state">No appointments found for this view.</div>`;
 }
 document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
 
 document.getElementById("unitSearch").addEventListener("input",renderUnitTable);document.getElementById("unitZoneFilter").addEventListener("change",renderUnitTable);
 function renderUnitTable(){
   const q=document.getElementById("unitSearch").value.trim().toLowerCase(),zf=document.getElementById("unitZoneFilter").value;let r=unitsArray();if(zf!=="all")r=r.filter(u=>u.zone===Number(zf));if(q)r=r.filter(u=>`blk ${u.block} ${unitDisplay(u.floor,u.unit)} ${u.ownerName} ${u.contact}`.toLowerCase().includes(q));
-  document.getElementById("unitTable").innerHTML=r.length?`<table><thead><tr><th>Block No</th><th>Unit No</th><th>Status</th><th>Owner Name</th><th>Contact</th><th>Remarks</th><th>Appointment Date</th><th>Slot</th></tr></thead><tbody>${r.map(u=>`<tr><td>Blk ${u.block}</td><td><strong>${unitDisplay(u.floor,u.unit)}</strong></td><td>${statusPill(u.response)}</td><td>${esc(u.ownerName||"—")}</td><td>${esc(u.contact||"—")}</td><td>${esc(u.remarks||"—")}</td><td>${safeDate(u.appointmentDate)||"—"}</td><td>${esc(u.appointmentSlot||"—")}</td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No matching unit records.</div>`
+  document.getElementById("unitTable").innerHTML=r.length?`<table><thead><tr><th>Block No</th><th>Unit No</th><th>Status</th><th>Owner Name</th><th>Contact</th><th>Appointment Date</th><th>Slot</th><th>Remarks</th></tr></thead><tbody>${r.map(u=>`<tr><td>Blk ${u.block}</td><td><strong>${unitDisplay(u.floor,u.unit)}</strong></td><td>${statusPill(u.response)}</td><td>${esc(u.ownerName||"—")}</td><td>${esc(u.contact||"—")}</td><td>${safeDate(u.appointmentDate)||"—"}</td><td>${esc(u.appointmentSlot||"—")}</td><td>${esc(u.remarks||"—")}</td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No matching unit records.</div>`
 }
 
 function resetComplaintForm(){document.getElementById("complaintEditId").value="";document.getElementById("complaintSaveBtn").textContent="Save Complaint";document.getElementById("complaintCancelEdit").classList.add("hidden");document.getElementById("complaintText").value="";document.getElementById("complaintRemarks").value="";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("complaintStatus").value="Open";autofillPair("complaint")}
@@ -326,21 +368,21 @@ function addDaysISO(date,days){const d=new Date(date+"T12:00:00+08:00");d.setDat
 function plannerDateLabel(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
 function plannerDateShort(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
 function appointmentForPlanner(a){const u=getUnit(a.unitKey);return {...a,ownerName:u?.ownerName||a.ownerName||"",contact:u?.contact||a.contact||""}}
-function plannerEntries(date,team,slot){return state.appointments.filter(a=>a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
+function plannerEntries(date,team,slot){return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
 function plannerRemarks(entries){return entries.map(a=>a.remarks||"").filter(Boolean).join(" · ")||"—"}
 function plannerTeamCell(entries,team,slot){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`}
 function renderPlanner(){
   const date=document.getElementById("teamDate").value||isoTodaySG();document.getElementById("plannerDateTitle").textContent=`${plannerDateLabel(date)} unit appointments`;
   const rows=SLOTS.map((slot,i)=>{const t1=plannerEntries(date,"Team 1",slot),t2=plannerEntries(date,"Team 2",slot);return `<tr>${i===0?`<td class="date-cell" rowspan="4">${esc(plannerDateShort(date))}</td>`:""}<td class="slot-cell">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t1,"Team 1",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t1))}</td><td class="slot-cell team2-start">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t2,"Team 2",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t2))}</td></tr>`}).join("");
   document.getElementById("plannerTable").innerHTML=`<table class="planner-table"><thead><tr><th>Date</th><th>Time</th><th>Team 1</th><th>Remarks</th><th class="team2-start">Time</th><th>Team 2</th><th>Remarks</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const special=state.appointments.filter(a=>a.date===date&&!SLOTS.includes(a.slot)).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
+  const special=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&!SLOTS.includes(a.slot)).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
   document.getElementById("plannerSpecialTimes").innerHTML=special.length?`<div class="special-time-title"><h4>Special Time Appointments</h4><span>${special.length} booking${special.length===1?"":"s"}</span></div>${special.map(a=>`<div class="special-time-card"><span class="special-time-badge">${esc(a.slot)}</span><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.team||"Unassigned")}</span><span>${esc(a.remarks||"—")}</span><div class="planner-entry-actions"><button class="table-action" data-planner-edit="${a.id}">Edit</button><button class="table-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")}`:"";
-  const un=state.appointments.filter(a=>a.date===date&&!a.team).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
+  const un=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&!a.team).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
   document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}${a.source==="Excel"?" · Excel":""}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button><button class="remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this date.</div>`;
 }
 function renderTodayTeamBoard(){
   const date=isoTodaySG();document.getElementById("todayTeamBoard").innerHTML=["Team 1","Team 2"].map(team=>{
-    const all=state.appointments.filter(a=>a.date===date&&a.team===team),special=all.filter(a=>!SLOTS.includes(a.slot)).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
+    const all=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&a.team===team),special=all.filter(a=>!SLOTS.includes(a.slot)).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
     return `<div class="today-team-col"><div class="today-team-head"><strong>${team}</strong><span>${all.length} appointment${all.length===1?"":"s"}</span></div>${SLOTS.map(slot=>{const arr=plannerEntries(date,team,slot);return `<div class="today-slot"><div class="today-slot-time">${esc(slot)}</div><div class="today-slot-work">${arr.length?arr.map(a=>`<div class="today-appt-chip"><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong>${a.remarks?` · ${esc(a.remarks)}`:""}</div>`).join(""):`<div class="today-empty">No appointment</div>`}</div></div>`}).join("")}${special.length?`<div class="today-slot"><div class="today-slot-time">Special</div><div class="today-slot-work">${special.map(a=>`<div class="today-appt-chip"><strong>${esc(a.slot)} · Blk ${a.block} · ${esc(a.unitDisplay)}</strong>${a.remarks?` · ${esc(a.remarks)}`:""}</div>`).join("")}</div></div>`:""}</div>`
   }).join("")
 }
@@ -407,56 +449,33 @@ function savePlannerAppointment(){
 
   if(editId){
     const a=state.appointments.find(x=>x.id===editId);if(!a)return;
-    const othersSameDay=state.appointments.filter(x=>x.id!==editId&&x.unitKey===key&&x.date===date);
-    if(othersSameDay.length){
-      const oldSlots=[...new Set(othersSameDay.map(x=>x.slot))].join(", ");
-      if(!confirm(`This unit already has another booking on ${safeDate(date)} (${oldSlots}). Keep only ${slot} and clear the other slot?`))return;
-      state.appointments=state.appointments.filter(x=>!(x.id!==editId&&x.unitKey===key&&x.date===date));
+    const changed=a.date!==date||a.slot!==slot||a.unitKey!==key;
+    if(changed){
+      state.appointments.push({...a,id:Date.now()+1,scheduleState:"Rescheduled",source:"Planner History"});
     }
+    state.appointments.filter(x=>x.id!==editId&&x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)).forEach(x=>x.scheduleState="Rescheduled");
     a.unitKey=key;a.zone=u.zone;a.block=u.block;a.floor=u.floor;a.unit=u.unit;a.unitDisplay=unitDisplay(u.floor,u.unit);
-    a.date=date;a.slot=slot;a.team=team;a.remarks=remarks;a.source=a.source||"Planner";a.workStatus=appointmentHasEnded(a)?"Completed":"Pending";
+    a.date=date;a.slot=slot;a.team=team;a.remarks=remarks;a.source="Planner";a.scheduleState="Active";a.workStatus=appointmentHasEnded(a)?"Completed":"Pending";
     if(!a.ownerName)a.ownerName=u.ownerName||"";if(!a.contact)a.contact=u.contact||"";
-    resetPlannerForm();
-    save("Planner appointment updated · old duplicate slot cleared");
-    return
+    resetPlannerForm();save(changed?"Appointment rescheduled · old booking kept in history":"Planner appointment updated");return
   }
 
-  const sameDay=state.appointments.filter(x=>x.unitKey===key&&x.date===date);
-  if(sameDay.length){
-    const exact=sameDay.find(x=>x.slot===slot);
-    if(exact){
-      exact.team=team;
-      if(remarks)exact.remarks=remarks;
-      exact.workStatus=appointmentHasEnded(exact)?"Completed":"Pending";
-      if(sameDay.length>1){
-        state.appointments=state.appointments.filter(x=>x===exact||!(x.unitKey===key&&x.date===date));
-      }
-      resetPlannerForm();
-      save("Planner updated · duplicate slot cleared");
-      return
-    }
-
-    const oldSlots=[...new Set(sameDay.map(x=>x.slot))].join(", ");
-    if(!confirm(`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)} is already booked on ${safeDate(date)} at ${oldSlots}. Move it to ${slot}? The old slot will be cleared.`))return;
-
-    const keep=[...sameDay].sort((a,b)=>Number(b.id)-Number(a.id))[0];
-    state.appointments=state.appointments.filter(x=>x===keep||!(x.unitKey===key&&x.date===date));
-    keep.date=date;
-    keep.slot=slot;
-    keep.team=team;
-    keep.remarks=remarks;
-    keep.source=keep.source||"Planner";
-    keep.workStatus=appointmentHasEnded(keep)?"Completed":"Pending";
-    if(!keep.ownerName)keep.ownerName=u.ownerName||"";
-    if(!keep.contact)keep.contact=u.contact||"";
-    resetPlannerForm();
-    save("Appointment moved · old slot cleared automatically");
-    return
+  const exact=state.appointments.find(x=>x.unitKey===key&&x.date===date&&x.slot===slot&&!isInactiveSchedule(x));
+  if(exact){
+    exact.team=team;exact.remarks=remarks||exact.remarks;exact.source=exact.source||"Planner";exact.scheduleState="Active";
+    exact.workStatus=appointmentHasEnded(exact)?"Completed":"Pending";
+    resetPlannerForm();save("Planner updated");return
   }
 
-  state.appointments.push({id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date,slot,team,remarks,source:"Planner",workStatus:"Pending"});
-  resetPlannerForm();
-  save("Planner updated · Master Data synced")
+  const existing=state.appointments.filter(x=>x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x));
+  if(existing.length){
+    const desc=existing.map(x=>`${safeDate(x.date)} · ${x.slot}`).join(", ");
+    if(!confirm(`This unit already has an active booking: ${desc}. Reschedule it to ${safeDate(date)} · ${slot}?`))return;
+    existing.forEach(x=>x.scheduleState="Rescheduled");
+  }
+
+  state.appointments.push({id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date,slot,team,remarks,source:"Planner",scheduleState:"Active",workStatus:"Pending"});
+  resetPlannerForm();save(existing.length?"Appointment rescheduled · old booking moved to history":"Planner updated · Master Data synced")
 }
 document.getElementById("plannerForm").addEventListener("submit",e=>{e.preventDefault();savePlannerAppointment()});
 document.getElementById("plannerCancelEdit").addEventListener("click",resetPlannerForm);
