@@ -1205,3 +1205,7 @@ body.secure-locked .toast{visibility:hidden}
   body.board-print-page{background:#fff}
   body.board-print-page .board-print-shell{padding:0}
 }
+
+
+/* V7.31 — Block Board A4 export */
+#downloadBlockBoardBtn{white-space:nowrap}

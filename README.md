@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.30 Secure
+# ELU Upgrading — Premium V7.31 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -306,3 +306,20 @@ The security password is intentionally NOT written into this ZIP or README. Keep
   - print directly, or
   - choose **Save as PDF** to download it.
 - V7.29 report charts, PPT fix, privacy rules, login and secure local data remain unchanged.
+
+
+## V7.31 field corrections
+- Appointment Register now shows **C · Confirmation** for every active user-created / Planner appointment, so confirmed appointments do not appear blank.
+- Imported Excel schedule protection remains unchanged; an imported row does not automatically overwrite D / NR / blank master status.
+- Block Board print was changed to **A4 Landscape · One Page**.
+- The print view focuses on the actual colour board (not the large summary tiles) and keeps:
+  - A green
+  - C pink
+  - D yellow
+  - NR red
+  - colour legend
+  - floor labels
+  - unit cards
+  - appointment / done date line
+- The board auto-scales to fit the selected Block / Floor on one A4 landscape sheet.
+- Login, encryption, secure local storage and project data are unchanged from V7.30.

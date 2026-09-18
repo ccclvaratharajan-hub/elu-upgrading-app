@@ -652,7 +652,7 @@ function renderAppointmentTable(){
   if(zf!=="all")r=r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===Number(zf));if(bf!=="all")r=r.filter(a=>Number(a.block)===Number(bf));
   if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
   r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a);const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
+  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a),displayStatus=(active&&isUserAppointment(a))?"C":(u?.response||"");const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(displayStatus)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
   const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
   if(!r.length){document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No appointments found.</div>`;return}
   document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"appointments")}${table(x)}</section>`).join("")}</div>`:table(r)
@@ -1004,7 +1004,6 @@ function exportBlockBoardPrint(){
   const block=document.getElementById("boardBlock").value;
   const floor=document.getElementById("boardFloor").value;
   const floorLabel=floor==="all"?"All floors":`Floor ${floor}`;
-  const headline=document.getElementById("blockHeadline").outerHTML;
   const legend=document.querySelector("#blockboard .legend").outerHTML;
   const boardHtml=board.outerHTML;
   const stamp=new Date().toLocaleString("en-SG",{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});
@@ -1022,36 +1021,73 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.30">
+<link rel="stylesheet" href="styles.css?v=7.31">
 <style>
-  body{margin:0;background:#fff;font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4 landscape;margin:5mm}
+  html,body{margin:0;padding:0;background:#fff}
+  body{font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .a4-page{width:287mm;height:198mm;overflow:hidden;background:#fff;box-sizing:border-box}
+  .a4-fit{transform-origin:top left;width:1120px}
+  .board-print-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 8px;padding:0 2px}
+  .board-print-head h1{margin:0;font-size:21px;color:#17384e}
+  .board-print-head p{margin:3px 0 0;font-size:10px;font-weight:800;color:#60798a}
+  .board-print-note{font-size:8px;line-height:1.4;text-align:right;color:#718795;font-weight:700}
+  .legend{margin:4px 0 8px!important;gap:10px!important;font-size:9px!important}
+  .floor-board{gap:5px!important}
+  .floor-row{gap:6px!important;padding:5px!important;border-radius:8px!important;break-inside:avoid!important}
+  .floor-label{width:42px!important;min-width:42px!important;border-radius:7px!important}
+  .floor-label strong{font-size:15px!important}
+  .floor-label span{font-size:7px!important}
+  .unit-grid{gap:4px!important}
+  .unit-card{min-height:42px!important;padding:5px 4px!important;border-radius:7px!important;border-width:1px!important;box-shadow:none!important}
+  .u-no{font-size:10px!important}
+  .u-status{font-size:6.6px!important;line-height:1.1!important;margin-top:2px!important}
+  .u-date{font-size:6px!important;margin-top:2px!important;gap:2px!important}
+  .u-date span{font-size:5.7px!important}
+  button.unit-card{appearance:none;-webkit-appearance:none}
+  @media print{
+    .a4-page{width:287mm;height:198mm}
+    body{overflow:hidden}
+  }
 </style>
 </head>
 <body class="board-print-page">
-  <div class="board-print-shell">
-    <div class="board-print-head">
-      <div>
-        <h1>ELU Block Board</h1>
-        <p>Zone ${zone} · Block ${block} · ${floorLabel}</p>
+  <div class="a4-page" id="printPage">
+    <div class="a4-fit" id="printFit">
+      <div class="board-print-head">
+        <div>
+          <h1>ELU Block Board · Block ${block}</h1>
+          <p>Zone ${zone} · ${floorLabel}</p>
+        </div>
+        <div class="board-print-note">Generated ${stamp}<br>A4 Landscape · One Page</div>
       </div>
-      <div class="board-print-note">Generated ${stamp}<br>Use browser Print / Save as PDF to download this colourful board.</div>
+      ${legend}
+      ${boardHtml}
     </div>
-    ${headline}
-    ${legend}
-    ${boardHtml}
   </div>
   <script>
+    function fitBoardToA4(){
+      const page=document.getElementById("printPage"),fit=document.getElementById("printFit");
+      if(!page||!fit)return;
+      fit.style.transform="none";
+      const naturalW=fit.scrollWidth,naturalH=fit.scrollHeight;
+      const targetW=page.clientWidth,targetH=page.clientHeight;
+      const scale=Math.min(1,targetW/naturalW,targetH/naturalH);
+      fit.style.transform="scale("+scale+")";
+      fit.style.width=(naturalW)+"px";
+    }
     window.addEventListener("load",function(){
       setTimeout(function(){
-        window.focus();
-        window.print();
+        fitBoardToA4();
+        setTimeout(function(){window.focus();window.print()},250);
       },350);
     });
   <\/script>
 </body>
 </html>`);
   win.document.close();
-  toast("Block Board print window opened");
+  toast("A4 one-page Block Board opened");
 }
 
 function exportBlockChartPDF(){const r=managerReportData();if(!r.rows.length){toast("No block data for this filter");return}downloadBlob(`ELU_Block_Chart_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(blockChartPdfPages(r,true)));toast("Block Chart PDF downloaded")}
