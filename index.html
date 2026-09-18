@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.14">
+  <link rel="stylesheet" href="styles.css?v=7.15">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -72,9 +72,29 @@
       <section class="view active" id="dashboard">
         <div class="command-hero">
           <div class="command-copy">
-            <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
-            <p>Survey, appointment, unit status and weekly progress — connected to one master register across all 6 zones.</p>
-            <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
+            <div class="command-kicker"><span class="live-dot"></span> POWERING SAFER HOMES · BRIGHTER TOMORROWS</div>
+            <h2>ELU Upgrading Works</h2>
+            <p>People · Projects · Progress — survey, appointments, unit status and completed work connected across all 6 zones.</p>
+            <div class="hero-motto">Reliable upgrades. Brighter living.</div>
+            <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Master data connected</span></div>
+          </div>
+          <div class="hero-power-scene" aria-hidden="true">
+            <svg viewBox="0 0 240 170" role="presentation">
+              <g class="spark-lines">
+                <path d="M18 33 L48 13 L39 45 L70 29 L55 63"/>
+                <path d="M168 18 L152 45 L179 39 L160 76"/>
+              </g>
+              <g class="transformer-art">
+                <line x1="158" y1="25" x2="158" y2="48"/><line x1="184" y1="25" x2="184" y2="48"/>
+                <circle cx="158" cy="22" r="7"/><circle cx="184" cy="22" r="7"/>
+                <rect x="132" y="48" width="78" height="78" rx="12"/>
+                <path class="bolt" d="M173 61 L155 90 H171 L160 116 L193 82 H176 L189 61 Z"/>
+                <line x1="142" y1="137" x2="200" y2="137"/>
+              </g>
+              <g class="water-ripples">
+                <path d="M95 143 C125 135 154 151 224 142"/><path d="M74 154 C119 145 168 164 232 151"/><path d="M113 164 C152 157 185 168 220 163"/>
+              </g>
+            </svg>
           </div>
           <div class="hero-orbit-wrap">
             <div class="hero-orbit" id="heroOrbit">
@@ -106,7 +126,7 @@
         </div>
 
         <article class="panel today-team-panel">
-          <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Team 1 and Team 2 are pulled directly from the Appointment Planner.</p></div><button class="text-btn" data-go="teams">Open Planner</button></div>
+          <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Each Zone is separated first, with Team 1 and Team 2 shown inside that Zone.</p></div><button class="text-btn" data-go="teams">Open Planner</button></div>
           <div id="todayTeamBoard" class="today-team-board"></div>
         </article>
 
@@ -311,7 +331,7 @@
         <article class="panel planner-sheet-panel">
           <div class="planner-sheet-title"><div><span class="section-label">DAILY SHEET</span><h3 id="plannerDateTitle">Daily appointment sheet</h3></div><div class="planner-sheet-actions"><span class="panel-badge">LIVE</span></div></div>
           <div id="plannerTable" class="planner-table-wrap"></div>
-          <div id="plannerSpecialTimes" class="planner-special-times"></div>
+          <div id="plannerSpecialTimes" class="planner-special-times integrated-special-times" aria-hidden="true"></div>
         </article>
 
         <article class="panel unassigned-panel">

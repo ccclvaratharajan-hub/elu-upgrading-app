@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.14
+# ELU Upgrading — Premium V7.15
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -160,3 +160,16 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Imported Excel Remarks are cleared. Remarks start blank and only user-entered working remarks can populate the master.
 - Unit Register layout is rebalanced and Remarks remains the final column.
 - Existing V7.13 Owner Name, Contact, appointment/reschedule logic, Block Board status mapping and V7.11 visual design are retained.
+
+
+## V7.15 selected clean-light electrical theme + consolidated corrections
+- Applied the selected bright Theme 1 direction: clean water/reflection feel, transparent electrical sparks and subtle transformer artwork.
+- Manoharan Varatharajan remains the only profile text; the name has a restrained electrical-flash treatment.
+- Added project wording: “Powering Safer Homes · Brighter Tomorrows”, “People · Projects · Progress”, and “Reliable upgrades. Brighter living.”
+- Dashboard Today Team Schedule is Zone-first. Each Zone contains its own Team 1 and Team 2 schedule; zones are no longer mixed under one team column.
+- Appointment Planner keeps every standard and custom time inside the same Zone/Team daily sheet. The old separate Special Time section is hidden.
+- Planner dynamically includes any custom Excel time (8am–10am, 10am–12pm, 1pm–3pm, 3pm–5pm, etc.) in chronological order alongside the four standard slots.
+- Block Board summary is redesigned with Total Units plus A/C/D/NR counts and percentages.
+- Current appointment lookup ignores stale Rescheduled history where a live appointment exists.
+- Dashboard upcoming list ignores inactive history and sorts custom time slots by actual time.
+- V7.14 Zone/Block filters, Block 537 corrected layout, blank imported Remarks, Owner/Contact data, reschedule history and locked status colours are retained.
