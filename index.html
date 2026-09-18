@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.28">
+  <link rel="stylesheet" href="styles.css?v=7.30">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -144,7 +144,10 @@
             <label>Block<select id="boardBlock"></select></label>
             <label>Floor<select id="boardFloor"><option value="all">All floors</option></select></label>
           </div>
-          <div class="search-box"><svg><use href="#i-search"/></svg><input id="boardSearch" placeholder="Search unit e.g. 13-132"></div>
+          <div class="toolbar-actions">
+            <div class="search-box"><svg><use href="#i-search"/></svg><input id="boardSearch" placeholder="Search unit e.g. 13-132"></div>
+            <button class="ghost-btn" id="downloadBlockBoardBtn">Download / Print Block Board</button>
+          </div>
         </div>
 
         <div id="blockHeadline" class="block-headline"></div>
@@ -384,15 +387,16 @@
               <label class="mini-filter">Block<select id="reportBlockFilter"></select></label>
             </div>
           </div>
-          <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes a score-style progress bar, zone progress, block completion chart and weekly meeting table. Unit Summary exports exclude Owner Name, Contact and free-text Remarks.</span></div>
+          <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes a colour-coded block percentage chart, zone progress and weekly meeting table. Unit Summary exports exclude Owner Name, Contact and free-text Remarks.</span></div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>
-          <div class="report-score-panel">
-            <div class="report-score-head"><div><span class="section-label">OVERALL SCORE</span><h3>Work Completion Progress</h3></div><strong id="reportScoreValue">0%</strong></div>
-            <div class="report-score-rail" id="reportScoreRail"><i></i><b></b></div>
-            <div class="report-score-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
-          </div>
           <div class="report-chart-panel">
-            <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Completion by Block</h3></div><span class="panel-badge">NO PERSONAL DATA</span></div>
+            <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Block Status % Comparison</h3><p>Side-by-side percentage columns for Opt-In, Completed, Opt-Out and NR.</p></div><span class="panel-badge">NO PERSONAL DATA</span></div>
+            <div class="report-chart-legend">
+              <span><i class="legend-agree"></i>Opt-In A+C</span>
+              <span><i class="legend-done"></i>Completed</span>
+              <span><i class="legend-d"></i>Opt-Out D</span>
+              <span><i class="legend-nr"></i>NR</span>
+            </div>
             <div id="reportBlockChart" class="report-block-chart"></div>
           </div>
           <div id="reportTable" class="table-shell"></div>
@@ -428,8 +432,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.28"></script>
-  <script src="pptxgen.min.js?v=7.27"></script>
-  <script src="app.js?v=7.28"></script>
+  <script src="data.js?v=7.30"></script>
+<script src="app.js?v=7.30"></script>
 </body>
 </html>

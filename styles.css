@@ -1163,3 +1163,45 @@ body.secure-locked .toast{visibility:hidden}
 @media (max-width:900px){
   .report-data-downloads{margin-left:0;width:100%}
 }
+
+
+/* V7.29 — grouped vertical block status chart */
+.report-chart-head p{margin:4px 0 0;color:#718795;font-size:12px}
+.report-chart-legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 2px 4px;font-size:11px;font-weight:800;color:#496777}
+.report-chart-legend span{display:inline-flex;align-items:center;gap:6px}
+.report-chart-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.report-chart-legend .legend-agree{background:#278f5e}
+.report-chart-legend .legend-done{background:#1474ad}
+.report-chart-legend .legend-d{background:#e6a819}
+.report-chart-legend .legend-nr{background:#c42131}
+.report-block-chart{position:relative;min-height:310px;display:flex;align-items:stretch;gap:8px;padding:8px 0 0}
+.report-cluster-yaxis{width:44px;height:250px;margin-top:8px;padding-bottom:30px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;color:#8194a0;font-size:9px;font-weight:700;flex:0 0 auto}
+.report-cluster-scroll{overflow-x:auto;overflow-y:hidden;flex:1;padding-bottom:8px}
+.report-cluster-grid{min-width:max-content;height:280px;display:flex;gap:10px;align-items:flex-end;padding:0 10px;background:linear-gradient(to top,rgba(206,219,228,.55) 1px,transparent 1px) 0 0/100% 25%;border-bottom:1px solid #cad9e3}
+.report-cluster-group{width:82px;height:280px;flex:0 0 82px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.report-cluster-group>strong{height:28px;display:grid;place-items:center;font-size:10px;color:#294b61}
+.report-cluster-bars{height:240px;display:flex;gap:3px;align-items:flex-end;justify-content:center}
+.report-cluster-bar-wrap{height:100%;width:15px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.report-cluster-bar-wrap b{position:absolute;transform:none;font-size:7px;line-height:1;color:#334f60;font-weight:800}
+.report-cluster-bar{width:100%;min-height:1px;border-radius:3px 3px 0 0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.report-cluster-bar.agree{background:#278f5e}
+.report-cluster-bar.done{background:#1474ad}
+.report-cluster-bar.d{background:#e6a819}
+.report-cluster-bar.nr{background:#c42131}
+
+
+/* V7.30 — Block Board print / PDF export */
+.toolbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.board-print-shell{padding:24px;background:#fff;color:#17384e;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.board-print-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:14px}
+.board-print-head h1{margin:0;font-size:24px;color:#17384e}
+.board-print-head p{margin:6px 0 0;color:#647d90;font-size:12px;font-weight:700}
+.board-print-note{font-size:11px;color:#718795;font-weight:700}
+.board-print-shell .legend{margin:8px 0 18px}
+.board-print-shell .block-headline{margin-bottom:18px}
+.board-print-shell .floor-row{break-inside:avoid;page-break-inside:avoid}
+.board-print-shell .unit-card{break-inside:avoid;page-break-inside:avoid}
+@media print{
+  body.board-print-page{background:#fff}
+  body.board-print-page .board-print-shell{padding:0}
+}

@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.28 Secure
+# ELU Upgrading — Premium V7.30 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -275,3 +275,34 @@ The security password is intentionally NOT written into this ZIP or README. Keep
 - Main report buttons remain together: Manager PDF, Manager PPT, Unit Summary PDF and Block Chart PDF.
 - Progress CSV and Unit Summary CSV remain available in a separate **Data Export** group on the side.
 - No report generation logic, login, encryption, resident data, or storage behavior changed from V7.27.
+
+
+## V7.29 chart + PPT fix
+- Fixed the **PPT engine not loaded** error by switching Manager PPT to the built-in native PPTX generator.
+- Removed the missing external `pptxgen.min.js` dependency.
+- Removed the long Overall Work Completion rail and old horizontal Completion-by-Block bars.
+- Added a grouped vertical **Block Status % Comparison** chart.
+- Per block, four side-by-side percentage columns are shown: Opt-In A+C (green), Completed (blue), Opt-Out D (yellow), and NR (red).
+- Percentage values appear above each column.
+- The same chart style is used in the Reports screen, Manager PDF, Block Chart PDF, and Manager PPT.
+- Unit Summary privacy is unchanged: Owner Name, Contact and free-text Remarks are excluded.
+- Login, encryption, secure local storage and project data are unchanged from V7.28.
+
+
+## V7.30 — colourful Block Board download / print
+- Added a dedicated **Download / Print Block Board** button inside the Block Board screen.
+- This exports only the colourful Block Board view (not the summary report).
+- The print view keeps the same status colours:
+  - A / Opt-In = green
+  - C / Confirmation = pink
+  - D / Opt-Out = yellow
+  - NR / No Response = red
+- The exported view includes:
+  - current Zone / Block / Floor scope
+  - Block Board headline
+  - colour legend
+  - floor-wise unit cards
+- Clicking the button opens a print window where you can:
+  - print directly, or
+  - choose **Save as PDF** to download it.
+- V7.29 report charts, PPT fix, privacy rules, login and secure local data remain unchanged.

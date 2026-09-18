@@ -441,6 +441,7 @@ function autofillPair(prefix){
   }
 }
 document.getElementById("boardZone").addEventListener("change",syncBoardBlocks);document.getElementById("boardBlock").addEventListener("change",()=>{renderBoardFloorOptions();renderBlockBoard()});document.getElementById("boardFloor").addEventListener("change",renderBlockBoard);document.getElementById("boardSearch").addEventListener("input",renderBlockBoard);
+document.getElementById("downloadBlockBoardBtn").addEventListener("click",exportBlockBoardPrint);
 document.getElementById("surveyZone").addEventListener("change",syncSurveyBlocks);document.getElementById("surveyBlock").addEventListener("change",syncSurveyUnits);document.getElementById("surveyUnit").addEventListener("change",autofillSurvey);
 document.getElementById("appointmentZone").addEventListener("change",syncAppointmentBlocks);document.getElementById("appointmentBlock").addEventListener("change",()=>syncPairUnits("appointment"));document.getElementById("appointmentUnit").addEventListener("change",()=>autofillPair("appointment"));
 document.getElementById("complaintZone").addEventListener("change",syncComplaintBlocks);document.getElementById("complaintBlock").addEventListener("change",()=>syncPairUnits("complaint"));document.getElementById("complaintUnit").addEventListener("change",()=>autofillPair("complaint"));
@@ -836,10 +837,7 @@ function pct(v){return`${v.toFixed(1)}%`}
 function renderReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
   document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
-  const score=Math.max(0,Math.min(100,t.donePct));
-  document.getElementById("reportScoreValue").textContent=pct(score);
-  const scoreRail=document.getElementById("reportScoreRail");scoreRail.querySelector("i").style.width=`${score.toFixed(1)}%`;scoreRail.querySelector("b").style.left=`${score.toFixed(1)}%`;
-  document.getElementById("reportBlockChart").innerHTML=rows.length?rows.map(r=>`<div class="report-block-bar"><span>Blk ${r.block}</span><div class="report-block-track"><i style="width:${Math.max(0,Math.min(100,r.donePct)).toFixed(1)}%"></i></div><b>${pct(r.donePct)}</b></div>`).join(""):`<div class="empty-state">No blocks for this filter.</div>`;
+  document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
   document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><colgroup><col style="width:5%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2" class="weekly-head">S/N</th><th rowspan="2" class="weekly-head">BLK NO.</th><th rowspan="2" class="weekly-head">TOTAL UNITS</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Agree = A + C)</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Work Completed)</th><th colspan="2" class="weekly-head">UNITS OPT-OUT<br>(D)</th><th colspan="2" class="weekly-head">UNITS NO RESPONSE<br>(NR)</th></tr><tr><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
 }
 document.getElementById("reportZoneFilter").addEventListener("change",()=>{const z=document.getElementById("reportZoneFilter").value;document.getElementById("reportBlockFilter").innerHTML=filterBlockOptions(z,true);renderReport()});
@@ -904,12 +902,23 @@ function pptShape(id,x,y,w,h,text,opt={}){const fill=opt.fill===null?'<a:noFill/
 function pptSlideXml(shapes){return`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`}
 function pptTitle(sh,idRef,title,sub){let id=idRef.value;sh.push(pptShape(id++,.45,.32,12.4,.52,title,{fontSize:24,bold:true,color:'17384E',fill:null,line:null}));sh.push(pptShape(id++,.47,.85,12.1,.34,sub,{fontSize:9,color:'718795',fill:null,line:null}));sh.push(pptShape(id++,.45,1.27,12.4,.03,'',{fill:'D7E6F2',line:null}));idRef.value=id}
 function pptFooter(sh,idRef,page){sh.push(pptShape(idRef.value++,.5,7.08,12.2,.22,`ELU Upgrading · Manager Report · ${page}`,{fontSize:7,color:'8AA0AE',fill:null,line:null,align:'r'}))}
-function managerPptSlides(r){const slides=[];
-  {const sh=[],id={value:2};sh.push(pptShape(id.value++,0,0,13.333,7.5,'',{fill:'F5FAFE',line:null}));sh.push(pptShape(id.value++,.62,.75,1.05,1.05,'ELU',{fontSize:23,bold:true,color:'FFFFFF',fill:'1474AD',line:null,radius:true,align:'ctr'}));sh.push(pptShape(id.value++,.64,2.05,11.9,.8,'ELU UPGRADING',{fontSize:34,bold:true,color:'17384E',fill:null,line:null}));sh.push(pptShape(id.value++,.64,2.83,11.9,.56,'Manager Progress Report',{fontSize:22,bold:true,color:'1474AD',fill:null,line:null}));sh.push(pptShape(id.value++,.66,3.55,11.6,.38,`${r.scope} · Generated ${r.stamp}`,{fontSize:11,color:'60798A',fill:null,line:null}));sh.push(pptShape(id.value++,.66,4.35,5.8,.58,'Progress summary · Zone view · Block completion · Weekly meeting table',{fontSize:12,color:'294B61',fill:'FFFFFF',line:'D7E6F2',radius:true}));sh.push(pptShape(id.value++,.66,5.18,5.8,.52,'Resident names and contact numbers are excluded',{fontSize:10,bold:true,color:'1474AD',fill:'EAF5FC',line:'CFE4F2',radius:true}));pptFooter(sh,id,1);slides.push(pptSlideXml(sh.join('')))}
-  {const sh=[],id={value:2};pptTitle(sh,id,'Executive Summary',`${r.scope} · Manager view · no personal data`);const cards=[['TOTAL UNITS',r.totals.total,'1474AD'],['OPT-IN A+C',r.totals.agree,'278F5E'],['COMPLETED',r.totals.done,'278F5E'],['OPT-OUT D',r.totals.d,'C79012'],['NO RESPONSE NR',r.totals.nr,'C42131']];cards.forEach((c,i)=>{const x=.5+i*2.5;sh.push(pptShape(id.value++,x,1.58,2.25,1.05,'',{fill:'FFFFFF',line:'DCE9F2',radius:true}));sh.push(pptShape(id.value++,x+.15,1.74,1.95,.22,c[0],{fontSize:8,bold:true,color:'718795',fill:null,line:null}));sh.push(pptShape(id.value++,x+.15,2.03,1.95,.42,String(c[1]),{fontSize:23,bold:true,color:c[2],fill:null,line:null}))});const bars=[['Opt-In A+C',r.totals.agree,'278F5E'],['Work Completed',r.totals.done,'1474AD'],['Opt-Out D',r.totals.d,'C79012'],['No Response NR',r.totals.nr,'C42131']];bars.forEach((b,i)=>{const y=3.18+i*.72,p=r.totals.total?b[1]/r.totals.total:0;sh.push(pptShape(id.value++,.68,y,2.0,.28,b[0],{fontSize:10,bold:true,color:'294B61',fill:null,line:null}));sh.push(pptShape(id.value++,2.75,y+.03,7.65,.20,'',{fill:'ECF1F5',line:null,radius:true}));if(p>0)sh.push(pptShape(id.value++,2.75,y+.03,7.65*Math.min(1,p),.20,'',{fill:b[2],line:null,radius:true}));sh.push(pptShape(id.value++,10.58,y-.01,1.75,.30,`${b[1]} · ${(p*100).toFixed(1)}%`,{fontSize:9,bold:true,color:'17384E',fill:null,line:null,align:'r'}))});pptFooter(sh,id,2);slides.push(pptSlideXml(sh.join('')))}
-  {const sh=[],id={value:2};pptTitle(sh,id,'Zone Progress',`${r.scope} · work completed by zone`);const cols=[.55,2.0,3.15,4.45,5.75,7.15,8.5,9.85,11.25],heads=['ZONE','BLOCKS','UNITS','A+C','DONE','D','NR','DONE %','PROGRESS'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,cols[i],1.58,i===8?1.45:1.0,.35,h,{fontSize:7,bold:true,color:'60798A',fill:'EDF6FC',line:'DCE9F2',align:'ctr'})));r.zones.forEach((z,i)=>{const y=2.05+i*.68,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`];vals.forEach((v,j)=>sh.push(pptShape(id.value++,cols[j],y,j===0?1.25:1.0,.38,String(v),{fontSize:9,bold:j===0,color:'17384E',fill:i%2?'F8FBFD':'FFFFFF',line:'E5EEF4',align:'ctr'})));sh.push(pptShape(id.value++,11.25,y+.10,1.35,.18,'',{fill:'ECF1F5',line:null,radius:true}));if(z.donePct>0)sh.push(pptShape(id.value++,11.25,y+.10,1.35*Math.min(1,z.donePct/100),.18,'',{fill:'1474AD',line:null,radius:true}))});pptFooter(sh,id,3);slides.push(pptSlideXml(sh.join('')))}
-  const chunks=[];for(let i=0;i<r.rows.length;i+=16)chunks.push(r.rows.slice(i,i+16));chunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Block Completion Progress${chunks.length>1?` ${ci+1}/${chunks.length}`:''}`,`${r.scope} · Work Completed / Total Units`);chunk.forEach((x,i)=>{const y=1.55+i*.33;sh.push(pptShape(id.value++,.58,y,1.0,.24,`Blk ${x.block}`,{fontSize:8,bold:true,color:'17384E',fill:null,line:null}));sh.push(pptShape(id.value++,1.65,y+.04,8.7,.14,'',{fill:'ECF1F5',line:null,radius:true}));if(x.donePct>0)sh.push(pptShape(id.value++,1.65,y+.04,8.7*Math.min(1,x.donePct/100),.14,'',{fill:'1474AD',line:null,radius:true}));sh.push(pptShape(id.value++,10.55,y-.01,2.0,.25,`${x.done}/${x.total} · ${x.donePct.toFixed(1)}%`,{fontSize:8,bold:true,color:'294B61',fill:null,line:null,align:'r'}))});pptFooter(sh,id,4+ci);slides.push(pptSlideXml(sh.join('')));});
-  const tableChunks=[];for(let i=0;i<r.rows.length;i+=12)tableChunks.push(r.rows.slice(i,i+12));tableChunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Weekly Meeting Summary${tableChunks.length>1?` ${ci+1}/${tableChunks.length}`:''}`,`${r.scope} · A+C = Opt-In Agree`);const xs=[.42,1.08,1.85,2.65,3.7,4.72,5.62,6.6,7.48,8.5,9.45],ws=[.6,.72,.72,.98,.96,.84,.92,.82,.95,.86,1.0],heads=['S/N','BLK','TOTAL','A+C','A+C %','DONE','DONE %','D','D %','NR','NR %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,xs[i],1.50,ws[i],.34,h,{fontSize:6.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'})));chunk.forEach((x,i)=>{const y=1.90+i*.39,vals=[ci*12+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>sh.push(pptShape(id.value++,xs[j],y,ws[j],.34,String(v),{fontSize:7.2,bold:j===1,color:'294B61',fill:i%2?'F8FBFD':'FFFFFF',line:'E5EEF4',align:'ctr'})))});if(ci===tableChunks.length-1){const y=1.90+chunk.length*.39+.12;sh.push(pptShape(id.value++,.42,y,1.38,.36,'TOTAL DU',{fontSize:7.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}));const vals=[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'];for(let j=0;j<vals.length;j++)sh.push(pptShape(id.value++,xs[j+2],y,ws[j+2],.36,String(vals[j]),{fontSize:7,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}))}pptFooter(sh,id,4+chunks.length+ci);slides.push(pptSlideXml(sh.join('')));});
+function managerPptSlides(r){
+  const slides=[],C={ink:'17384E',muted:'60798A',blue:'1474AD',green:'278F5E',yellow:'C79012',red:'C42131',soft:'F5FAFE',line:'DCE9F2',grid:'DDE7EE',white:'FFFFFF'};
+  const legend=(sh,id,y)=>{const items=[['A+C',C.green],['Completed',C.blue],['D',C.yellow],['NR',C.red]];let x=7.1;items.forEach(it=>{sh.push(pptShape(id.value++,x,y,.16,.16,'',{fill:it[1],line:null}));sh.push(pptShape(id.value++,x+.20,y-.03,.78,.22,it[0],{fontSize:7,bold:true,color:C.ink,fill:null,line:null}));x+=it[0]==='Completed'?1.35:.92})};
+  {const sh=[],id={value:2};sh.push(pptShape(id.value++,0,0,13.333,7.5,'',{fill:C.soft,line:null}));sh.push(pptShape(id.value++,.62,.75,1.05,1.05,'ELU',{fontSize:23,bold:true,color:C.white,fill:C.blue,line:null,radius:true,align:'ctr'}));sh.push(pptShape(id.value++,.64,2.05,11.9,.8,'ELU UPGRADING',{fontSize:34,bold:true,color:C.ink,fill:null,line:null}));sh.push(pptShape(id.value++,.64,2.83,11.9,.56,'Manager Progress Report',{fontSize:22,bold:true,color:C.blue,fill:null,line:null}));sh.push(pptShape(id.value++,.66,3.55,11.6,.38,`${r.scope} · Generated ${r.stamp}`,{fontSize:11,color:C.muted,fill:null,line:null}));sh.push(pptShape(id.value++,.66,4.35,6.8,.58,'Colour-coded block percentages · Zone progress · Weekly meeting table',{fontSize:12,color:'294B61',fill:C.white,line:'D7E6F2',radius:true}));sh.push(pptShape(id.value++,.66,5.18,5.8,.52,'Resident names and contact numbers are excluded',{fontSize:10,bold:true,color:C.blue,fill:'EAF5FC',line:'CFE4F2',radius:true}));pptFooter(sh,id,1);slides.push(pptSlideXml(sh.join('')))}
+  {const sh=[],id={value:2};pptTitle(sh,id,'Executive Summary',`${r.scope} · No personal data`);const cards=[['TOTAL UNITS',r.totals.total,C.blue],['OPT-IN A+C',r.totals.agree,C.green],['COMPLETED',r.totals.done,C.blue],['OPT-OUT D',r.totals.d,C.yellow],['NO RESPONSE NR',r.totals.nr,C.red]];cards.forEach((c,i)=>{const x=.5+i*2.5;sh.push(pptShape(id.value++,x,1.48,2.25,.92,'',{fill:C.white,line:C.line,radius:true}));sh.push(pptShape(id.value++,x+.15,1.62,1.95,.20,c[0],{fontSize:8,bold:true,color:'718795',fill:null,line:null}));sh.push(pptShape(id.value++,x+.15,1.90,1.95,.34,String(c[1]),{fontSize:22,bold:true,color:c[2],fill:null,line:null}))});
+    sh.push(pptShape(id.value++,.62,2.70,3.2,.28,'OVERALL STATUS %',{fontSize:11,bold:true,color:C.ink,fill:null,line:null}));legend(sh,id,2.72);
+    const top=3.18,bottom=6.35,h=bottom-top,x0=1.1,x1=12.1,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.55,y-.09,.45,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});
+    const vals=[['A+C',r.totals.agreePct,C.green],['Completed',r.totals.donePct,C.blue],['D',r.totals.dPct,C.yellow],['NR',r.totals.nrPct,C.red]];
+    vals.forEach((v,i)=>{const bw=.72,x=2.05+i*2.45,val=Math.max(0,Math.min(100,v[1])),bh=h*val/100;sh.push(pptShape(id.value++,x,bottom-bh,bw,bh,'',{fill:v[2],line:null}));sh.push(pptShape(id.value++,x-.02,Math.max(3.03,bottom-bh-.27),.78,.22,val.toFixed(1),{fontSize:8,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}));sh.push(pptShape(id.value++,x-.28,6.46,1.3,.25,v[0],{fontSize:8,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,2);slides.push(pptSlideXml(sh.join('')))}
+  {const sh=[],id={value:2};pptTitle(sh,id,'Zone Progress',`${r.scope} · work completed by zone`);const cols=[.55,2.05,3.2,4.5,5.8,7.2,8.55,9.9],heads=['ZONE','BLOCKS','UNITS','A+C','DONE','D','NR','DONE %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,cols[i],1.58,i===0?1.3:1.0,.35,h,{fontSize:7,bold:true,color:C.muted,fill:'EDF6FC',line:C.line,align:'ctr'})));r.zones.forEach((z,i)=>{const y=2.05+i*.68,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`];vals.forEach((v,j)=>sh.push(pptShape(id.value++,cols[j],y,j===0?1.3:1.0,.38,String(v),{fontSize:9,bold:j===0,color:C.ink,fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});pptFooter(sh,id,3);slides.push(pptSlideXml(sh.join('')))}
+  const chunks=[];for(let i=0;i<r.rows.length;i+=7)chunks.push(r.rows.slice(i,i+7));
+  chunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Block Status % Comparison${chunks.length>1?` ${ci+1}/${chunks.length}`:''}`,`${r.scope} · Side-by-side percentage columns`);legend(sh,id,1.42);
+    const top=1.95,bottom=6.35,h=bottom-top,x0=.9,x1=12.75,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.40,y-.08,.42,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});
+    const groupW=w/chunk.length,barW=Math.min(.25,groupW*.13),gap=.045,series=[['agreePct',C.green],['donePct',C.blue],['dPct',C.yellow],['nrPct',C.red]];
+    chunk.forEach((x,gi)=>{const totalBars=barW*4+gap*3,start=x0+gi*groupW+(groupW-totalBars)/2;series.forEach((s,si)=>{const val=Math.max(0,Math.min(100,Number(x[s[0]])||0)),bh=h*val/100,bx=start+si*(barW+gap);if(bh>0)sh.push(pptShape(id.value++,bx,bottom-bh,barW,bh,'',{fill:s[1],line:null}));sh.push(pptShape(id.value++,bx-.04,Math.max(1.76,bottom-bh-.25),barW+.08,.20,val.toFixed(1),{fontSize:6.2,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});sh.push(pptShape(id.value++,x0+gi*groupW,6.45,groupW,.24,`Blk ${x.block}`,{fontSize:7.5,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,4+ci);slides.push(pptSlideXml(sh.join('')))});
+  const tableChunks=[];for(let i=0;i<r.rows.length;i+=12)tableChunks.push(r.rows.slice(i,i+12));
+  tableChunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Weekly Meeting Summary${tableChunks.length>1?` ${ci+1}/${tableChunks.length}`:''}`,`${r.scope} · A+C = Opt-In Agree`);const xs=[.42,1.08,1.85,2.65,3.7,4.72,5.62,6.6,7.48,8.5,9.45],ws=[.6,.72,.72,.98,.96,.84,.92,.82,.95,.86,1.0],heads=['S/N','BLK','TOTAL','A+C','A+C %','DONE','DONE %','D','D %','NR','NR %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,xs[i],1.50,ws[i],.34,h,{fontSize:6.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'})));chunk.forEach((x,i)=>{const y=1.90+i*.39,vals=[ci*12+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>sh.push(pptShape(id.value++,xs[j],y,ws[j],.34,String(v),{fontSize:7.2,bold:j===1,color:'294B61',fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});if(ci===tableChunks.length-1){const y=1.90+chunk.length*.39+.12;sh.push(pptShape(id.value++,.42,y,1.38,.36,'TOTAL DU',{fontSize:7.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}));const vals=[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'];for(let j=0;j<vals.length;j++)sh.push(pptShape(id.value++,xs[j+2],y,ws[j+2],.36,String(vals[j]),{fontSize:7,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}))}pptFooter(sh,id,4+chunks.length+ci);slides.push(pptSlideXml(sh.join('')))});
   return slides
 }
 function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
@@ -929,25 +938,49 @@ function pdfScoreRail(top,label,value,total,color=[0.08,0.40,0.62]){
   const mx=x+w*p/100;s+=pdfRect(Math.max(x,Math.min(x+w-3,mx-2)),top-5,4,h+10,[0.05,0.26,0.43]);s+=pdfText(668,top-25,17,`${p.toFixed(1)}%`,true,color);s+=pdfText(668,top-4,8,`${value} / ${total}`,true,ink);return s
 }
 function managerPdfPagesV727(r){
-  const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19];
-  let c="";c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(625,28,9,"NO RESIDENT PERSONAL DATA",true,blue);
+  const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
+  let c="";
+  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(625,28,9,"NO RESIDENT PERSONAL DATA",true,blue);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*154;c+=pdfRect(xx,94,142,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+12,108,8,x[0],true,muted);c+=pdfText(xx+12,128,19,String(x[1]),true,x[2])});
-  c+=pdfText(38,181,14,"Overall Work Completion Score",true,ink);c+=pdfScoreRail(215,"Completed",r.totals.done,r.totals.total,blue);
-  c+=pdfText(38,292,13,"Status Snapshot",true,ink);
-  const bars=[['Opt-In A+C',r.totals.agree,green],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
-  bars.forEach((b,i)=>{const top=322+i*38,p=r.totals.total?b[1]/r.totals.total*100:0;c+=pdfText(38,top,9,b[0],true,ink);c+=pdfRect(145,top-2,500,14,[0.92,0.94,0.96]);c+=pdfRect(145,top-2,500*Math.min(1,p/100),14,b[2]);c+=pdfText(662,top,9,`${b[1]} (${p.toFixed(1)}%)`,true,ink)});
-  c+=pdfText(38,454,13,"Zone Progress",true,ink);const cols=[38,112,207,309,415,526,636,747];['Zone','Blocks','Units','A+C','Completed','D','NR','Done %'].forEach((h,i)=>c+=pdfText(cols[i],480,8,h,true,muted));c+=pdfLine(38,496,804,496);
-  r.zones.slice(0,6).forEach((z,i)=>{const top=510+i*13;c+=pdfText(cols[0],top,7.5,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.5,String(v),false,ink))});pages.push(c);
+  c+=pdfText(38,181,14,"Overall Status %",true,ink);
+  const overall=[["A+C",r.totals.agreePct,green],["Completed",r.totals.donePct,blue],["D",r.totals.dPct,yellow],["NR",r.totals.nrPct,red]];
+  const obottom=350,otop=215,oh=obottom-otop;
+  [0,25,50,75,100].forEach(v=>{const yy=obottom-oh*v/100;c+=pdfLine(80,yy,545,yy,grid,.4);c+=pdfText(48,yy-4,7,`${v}%`,false,muted)});
+  overall.forEach((s,i)=>{const x=125+i*100,val=Math.max(0,Math.min(100,s[1])),bh=oh*val/100;c+=pdfRect(x,obottom-bh,42,bh,s[2]);c+=pdfText(x+5,Math.max(196,obottom-bh-13),7,val.toFixed(1),true,ink);c+=pdfText(x+1,365,7,s[0],true,ink)});
+  c+=pdfText(585,204,12,"Colour Code",true,ink);overall.forEach((s,i)=>{c+=pdfRect(588,230+i*29,12,12,s[2]);c+=pdfText(608,231+i*29,8,s[0],true,ink)});
+  c+=pdfText(38,405,13,"Zone Progress",true,ink);const cols=[38,112,207,309,415,526,636,747];['Zone','Blocks','Units','A+C','Completed','D','NR','Done %'].forEach((h,i)=>c+=pdfText(cols[i],430,8,h,true,muted));c+=pdfLine(38,447,804,447);
+  r.zones.slice(0,6).forEach((z,i)=>{const top=462+i*18;c+=pdfText(cols[0],top,7.5,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.5,String(v),false,ink))});
+  pages.push(c);
   pages.push(...blockChartPdfPages(r,false));
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=13)tableChunks.push(r.rows.slice(i,i+13));
   tableChunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | A+C = Opt-In Agree`,false,muted);const xs=[38,84,145,220,296,374,456,530,606,680,758],heads=['S/N','Block','Total','A+C','A+C %','Done','Done %','D','D %','NR','NR %'];p+=pdfRect(34,72,774,30,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],84,7,h,true,ink));chunk.forEach((x,i)=>{const top=112+i*30;if(i%2===1)p+=pdfRect(34,top-7,774,25,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,7,String(v),j===1,ink));p+=pdfLine(34,top+12,808,top+12)});if(ci===tableChunks.length-1){const top=112+chunk.length*30+4;p+=pdfRect(34,top-8,774,27,[0.90,0.95,0.99]);p+=pdfText(84,top,8,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,7,String(v),true,ink))}pages.push(p)});
   return pages
 }
 function blockChartPdfPages(r,standalone=true){
-  const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57];
-  const chunks=[];for(let i=0;i<r.rows.length;i+=17)chunks.push(r.rows.slice(i,i+17));
-  chunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Block Completion Chart${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | Work Completed / Total Units | Score-bar view`,false,muted);if(ci===0)p+=pdfScoreRail(78,"Overall",r.totals.done,r.totals.total,blue);const start=ci===0?146:82;chunk.forEach((x,i)=>{const top=start+i*24,pc=x.donePct;p+=pdfText(42,top,8,`Blk ${x.block}`,true,ink);p+=pdfRect(104,top-2,590,12,[0.92,0.94,0.96]);p+=pdfRect(104,top-2,590*Math.min(1,pc/100),12,blue);[25,50,75].forEach(t=>p+=pdfLine(104+590*t/100,top-3,104+590*t/100,top+11,[0.78,0.83,0.87],.35));p+=pdfText(710,top,8,`${x.done}/${x.total}  ${pc.toFixed(1)}%`,true,ink)});pages.push(p)});return pages
+  const pages=[],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],green=[0.15,0.57,0.35],blue=[0.08,0.40,0.62],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
+  const series=[["A+C",green,"agreePct"],["Completed",blue,"donePct"],["D",yellow,"dPct"],["NR",red,"nrPct"]];
+  const chunks=[];for(let i=0;i<r.rows.length;i+=8)chunks.push(r.rows.slice(i,i+8));
+  chunks.forEach((chunk,ci)=>{
+    let p="";
+    p+=pdfText(38,28,18,`Block Status % Chart${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);
+    p+=pdfText(38,51,9,`${r.scope} | Side-by-side percentage comparison`,false,muted);
+    let lx=365;series.forEach(s=>{p+=pdfRect(lx,66,10,10,s[1]);p+=pdfText(lx+15,67,7,s[0],true,ink);lx+=s[0]==="Completed"?102:72});
+    const x0=68,x1=812,top=112,bottom=516,h=bottom-top,w=x1-x0;
+    [0,25,50,75,100].forEach(v=>{const yy=bottom-h*v/100;p+=pdfLine(x0,yy,x1,yy,grid,.45);p+=pdfText(35,yy-4,7,`${v}%`,false,muted)});
+    const groupW=w/chunk.length,barW=Math.min(13,groupW*.14),gap=Math.min(4,groupW*.035);
+    chunk.forEach((x,gi)=>{
+      const totalBars=barW*4+gap*3,start=x0+gi*groupW+(groupW-totalBars)/2;
+      series.forEach((s,si)=>{
+        const val=Math.max(0,Math.min(100,Number(x[s[2]])||0)),bh=h*val/100,bTop=bottom-bh,bx=start+si*(barW+gap);
+        if(bh>0)p+=pdfRect(bx,bTop,barW,bh,s[1]);
+        p+=pdfText(bx-1,Math.max(91,bTop-11),5.8,val.toFixed(1),true,ink)
+      });
+      p+=pdfText(x0+gi*groupW+groupW/2-18,536,7,`Blk ${x.block}`,true,ink)
+    });
+    pages.push(p)
+  });
+  return pages
 }
 function unitSummaryRowsForReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value;
@@ -959,30 +992,75 @@ function unitSummaryPdfPages(){
   chunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Unit Summary - No Personal Data${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,"Owner Name, Contact and free-text Remarks are excluded",false,muted);const xs=[38,83,132,205,305,430,548,658,752],heads=['Zone','Block','Unit','Status','Work','Appt Date','Slot','Team','Source'];p+=pdfRect(34,72,774,28,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],83,7,h,true,ink));chunk.forEach((u,i)=>{const top=110+i*23;if(i%2===1)p+=pdfRect(34,top-6,774,20,soft);const a=preferredMasterAppointment(u.key),source=a?String(a.source||'Manual'):'-';const vals=[u.zone,u.block,unitDisplay(u.floor,u.unit),statusLabel(u.response),u.workStatus||'-',u.appointmentDate?safeDate(u.appointmentDate):'-',u.appointmentSlot||'-',u.team||'-',source.includes('Excel')?'Imported':'Manual'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,6.7,String(v),j===2,ink))});pages.push(p)});return pages
 }
 function exportManagerPDFV727(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}downloadBlob(`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(managerPdfPagesV727(r)));toast("Manager PDF downloaded")}
+
+function exportBlockBoardPrint(){
+  renderBlockBoard();
+  const board=document.getElementById("floorBoard");
+  if(!board||!board.children.length||/No units match this filter/i.test(board.textContent||"")){
+    toast("No Block Board data to print");
+    return;
+  }
+  const zone=document.getElementById("boardZone").value;
+  const block=document.getElementById("boardBlock").value;
+  const floor=document.getElementById("boardFloor").value;
+  const floorLabel=floor==="all"?"All floors":`Floor ${floor}`;
+  const headline=document.getElementById("blockHeadline").outerHTML;
+  const legend=document.querySelector("#blockboard .legend").outerHTML;
+  const boardHtml=board.outerHTML;
+  const stamp=new Date().toLocaleString("en-SG",{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const baseHref=location.href.replace(/[^/]*$/,"");
+  const title=`ELU Block Board - Zone ${zone} Block ${block}`;
+  const win=window.open("","_blank","width=1400,height=900");
+  if(!win){
+    toast("Allow pop-ups to print or save the Block Board");
+    return;
+  }
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${title}</title>
+<base href="${baseHref}">
+<link rel="stylesheet" href="styles.css?v=7.30">
+<style>
+  body{margin:0;background:#fff;font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+</style>
+</head>
+<body class="board-print-page">
+  <div class="board-print-shell">
+    <div class="board-print-head">
+      <div>
+        <h1>ELU Block Board</h1>
+        <p>Zone ${zone} · Block ${block} · ${floorLabel}</p>
+      </div>
+      <div class="board-print-note">Generated ${stamp}<br>Use browser Print / Save as PDF to download this colourful board.</div>
+    </div>
+    ${headline}
+    ${legend}
+    ${boardHtml}
+  </div>
+  <script>
+    window.addEventListener("load",function(){
+      setTimeout(function(){
+        window.focus();
+        window.print();
+      },350);
+    });
+  <\/script>
+</body>
+</html>`);
+  win.document.close();
+  toast("Block Board print window opened");
+}
+
 function exportBlockChartPDF(){const r=managerReportData();if(!r.rows.length){toast("No block data for this filter");return}downloadBlob(`ELU_Block_Chart_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(blockChartPdfPages(r,true)));toast("Block Chart PDF downloaded")}
 function exportUnitSummaryPDF(){const pages=unitSummaryPdfPages();if(!pages.length){toast("No units for this filter");return}const r=managerReportData();downloadBlob(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(pages));toast("Unit Summary PDF downloaded")}
 
-async function exportManagerPPTV727(){
-  const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}
-  if(typeof PptxGenJS!=="function"){toast("PPT engine not loaded");return}
-  try{
-    const pptx=new PptxGenJS();pptx.layout="LAYOUT_WIDE";pptx.author="ELU Upgrading";pptx.subject="Manager Progress Report";pptx.title="ELU Upgrading Manager Progress Report";pptx.company="ELU Upgrading";pptx.lang="en-SG";pptx.theme={headFontFace:"Aptos Display",bodyFontFace:"Aptos",lang:"en-SG"};
-    const C={ink:"17384E",muted:"60798A",blue:"1474AD",green:"278F5E",yellow:"C79012",red:"C42131",soft:"F5FAFE",line:"DCE9F2",track:"EAF0F4",white:"FFFFFF"};
-    const footer=(s,n)=>s.addText(`ELU Upgrading · Manager Report · ${n}`,{x:.5,y:7.12,w:12.2,h:.18,fontSize:7,color:"8AA0AE",align:"right",margin:0});
-    const title=(s,t,sub)=>{s.addText(t,{x:.48,y:.28,w:12.1,h:.45,fontSize:24,bold:true,color:C.ink,margin:0});s.addText(sub,{x:.5,y:.82,w:12,h:.24,fontSize:9,color:C.muted,margin:0});s.addShape(pptx.ShapeType.line,{x:.48,y:1.17,w:12.2,h:0,line:{color:"D7E6F2",pt:1}})};
-    const rail=(s,y,label,value,total,color=C.blue)=>{const pc=total?Math.max(0,Math.min(1,value/total)):0;s.addText(label,{x:.65,y:y-.02,w:1.65,h:.25,fontSize:10,bold:true,color:C.ink,margin:0});s.addShape(pptx.ShapeType.roundRect,{x:2.25,y,w:8.25,h:.22,rectRadius:.05,fill:{color:C.track},line:{color:C.track,transparency:100}});if(pc>0)s.addShape(pptx.ShapeType.roundRect,{x:2.25,y,w:8.25*pc,h:.22,fill:{color},line:{color,transparency:100}});[0,.25,.5,.75,1].forEach((v,i)=>{const x=2.25+8.25*v;s.addShape(pptx.ShapeType.line,{x,y:y-.05,w:0,h:.34,line:{color:"B7C5CF",pt:.5}});s.addText(`${i*25}%`,{x:x-.18,y:y+.29,w:.42,h:.18,fontSize:6.5,color:C.muted,align:"center",margin:0})});s.addText(`${value}/${total}  ${(pc*100).toFixed(1)}%`,{x:10.7,y:y-.05,w:1.85,h:.28,fontSize:9.5,bold:true,color,align:"right",margin:0})};
-    let page=1;
-    {const s=pptx.addSlide();s.background={color:C.soft};s.addShape(pptx.ShapeType.roundRect,{x:.62,y:.72,w:1.05,h:1.05,fill:{color:C.blue},line:{color:C.blue}});s.addText("ELU",{x:.62,y:.99,w:1.05,h:.28,fontSize:23,bold:true,color:C.white,align:"center",margin:0});s.addText("ELU UPGRADING",{x:.64,y:2.0,w:11.8,h:.5,fontSize:34,bold:true,color:C.ink,margin:0});s.addText("Manager Progress Report",{x:.64,y:2.72,w:11.8,h:.42,fontSize:22,bold:true,color:C.blue,margin:0});s.addText(`${r.scope} · Generated ${r.stamp}`,{x:.66,y:3.35,w:11.5,h:.28,fontSize:11,color:C.muted,margin:0});s.addText("Score-style progress · Zone view · Block chart · Weekly meeting table",{x:.66,y:4.22,w:6.9,h:.48,fontSize:12,color:"294B61",fill:{color:C.white},line:{color:"D7E6F2"},radius:.08,margin:.1});s.addText("No resident names or contact numbers",{x:.66,y:5.0,w:5.4,h:.42,fontSize:10,bold:true,color:C.blue,fill:{color:"EAF5FC"},line:{color:"CFE4F2"},margin:.09});footer(s,page++)}
-    {const s=pptx.addSlide();title(s,"Executive Summary",`${r.scope} · No personal data`);const cards=[["TOTAL UNITS",r.totals.total,C.blue],["OPT-IN A+C",r.totals.agree,C.green],["COMPLETED",r.totals.done,C.blue],["OPT-OUT D",r.totals.d,C.yellow],["NO RESPONSE NR",r.totals.nr,C.red]];cards.forEach((c,i)=>{const x=.48+i*2.5;s.addShape(pptx.ShapeType.roundRect,{x,y:1.48,w:2.25,h:1.0,fill:{color:C.white},line:{color:C.line}});s.addText(c[0],{x:x+.13,y:1.66,w:1.98,h:.16,fontSize:8,bold:true,color:"718795",margin:0});s.addText(String(c[1]),{x:x+.13,y:1.92,w:1.98,h:.35,fontSize:23,bold:true,color:c[2],margin:0})});s.addText("OVERALL WORK COMPLETION SCORE",{x:.65,y:2.88,w:3.8,h:.25,fontSize:11,bold:true,color:C.ink,margin:0});rail(s,3.28,"Completed",r.totals.done,r.totals.total,C.blue);rail(s,4.16,"Opt-In A+C",r.totals.agree,r.totals.total,C.green);rail(s,5.04,"Opt-Out D",r.totals.d,r.totals.total,C.yellow);rail(s,5.92,"No Response NR",r.totals.nr,r.totals.total,C.red);footer(s,page++)}
-    {const s=pptx.addSlide();title(s,"Zone Progress",`${r.scope} · Work completed by zone`);const headers=["ZONE","BLOCKS","UNITS","A+C","DONE","D","NR","DONE %"];const xs=[.52,1.72,2.76,3.78,4.84,5.87,6.84,7.82],ws=[1.1,.95,.95,.95,.95,.9,.9,1.05];headers.forEach((h,i)=>s.addText(h,{x:xs[i],y:1.5,w:ws[i],h:.32,fontSize:7,bold:true,color:C.muted,fill:{color:"EDF6FC"},line:{color:C.line},align:"center",margin:.02}));r.zones.forEach((z,i)=>{const y=1.94+i*.67,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`];vals.forEach((v,j)=>s.addText(String(v),{x:xs[j],y,w:ws[j],h:.34,fontSize:9,bold:j===0,color:C.ink,fill:{color:i%2?"F8FBFD":C.white},line:{color:"E5EEF4"},align:"center",margin:.03}));s.addShape(pptx.ShapeType.roundRect,{x:9.05,y:y+.08,w:3.0,h:.16,fill:{color:C.track},line:{color:C.track,transparency:100}});if(z.donePct>0)s.addShape(pptx.ShapeType.roundRect,{x:9.05,y:y+.08,w:3.0*Math.min(1,z.donePct/100),h:.16,fill:{color:C.blue},line:{color:C.blue,transparency:100}})});footer(s,page++)}
-    const chunks=[];for(let i=0;i<r.rows.length;i+=15)chunks.push(r.rows.slice(i,i+15));chunks.forEach((chunk,ci)=>{const s=pptx.addSlide();title(s,`Block Completion Chart${chunks.length>1?` ${ci+1}/${chunks.length}`:""}`,`${r.scope} · Score-bar view`);if(ci===0)rail(s,1.48,"Overall",r.totals.done,r.totals.total,C.blue);const start=ci===0?2.15:1.5;chunk.forEach((x,i)=>{const y=start+i*.31,pc=Math.max(0,Math.min(1,x.donePct/100));s.addText(`Blk ${x.block}`,{x:.58,y,w:.8,h:.2,fontSize:8,bold:true,color:C.ink,margin:0});s.addShape(pptx.ShapeType.roundRect,{x:1.45,y:y+.03,w:8.9,h:.13,fill:{color:C.track},line:{color:C.track,transparency:100}});if(pc>0)s.addShape(pptx.ShapeType.roundRect,{x:1.45,y:y+.03,w:8.9*pc,h:.13,fill:{color:C.blue},line:{color:C.blue,transparency:100}});s.addText(`${x.done}/${x.total} · ${x.donePct.toFixed(1)}%`,{x:10.55,y:y-.02,w:1.8,h:.23,fontSize:8,bold:true,color:"294B61",align:"right",margin:0})});footer(s,page++)});
-    const tChunks=[];for(let i=0;i<r.rows.length;i+=11)tChunks.push(r.rows.slice(i,i+11));tChunks.forEach((chunk,ci)=>{const s=pptx.addSlide();title(s,`Weekly Meeting Summary${tChunks.length>1?` ${ci+1}/${tChunks.length}`:""}`,`${r.scope} · A+C = Opt-In Agree`);const heads=['S/N','BLK','TOTAL','A+C','A+C %','DONE','DONE %','D','D %','NR','NR %'];const xs=[.38,.95,1.55,2.24,3.12,4.03,4.85,5.72,6.48,7.35,8.12],ws=[.52,.55,.64,.82,.84,.76,.82,.7,.82,.7,.84];heads.forEach((h,i)=>s.addText(h,{x:xs[i],y:1.45,w:ws[i],h:.32,fontSize:6.5,bold:true,color:"315F8B",fill:{color:"E7F3FC"},line:{color:"CFE2F3"},align:"center",margin:.01}));chunk.forEach((x,i)=>{const y=1.83+i*.42,vals=[ci*11+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>s.addText(String(v),{x:xs[j],y,w:ws[j],h:.34,fontSize:7.1,bold:j===1,color:"294B61",fill:{color:i%2?"F8FBFD":C.white},line:{color:"E5EEF4"},align:"center",margin:.01}))});s.addText("Unit-level details are available in Unit Summary PDF/CSV without names or contact numbers.",{x:9.15,y:1.48,w:3.55,h:1.0,fontSize:10,color:C.muted,fill:{color:"F7FBFE"},line:{color:C.line},margin:.12,breakLine:false});s.addText(`TOTAL DU\n${r.totals.total}\nCompleted ${r.totals.done} (${r.totals.donePct.toFixed(1)}%)`,{x:9.15,y:2.75,w:3.55,h:1.35,fontSize:12,bold:true,color:C.blue,fill:{color:"EAF5FC"},line:{color:"CFE4F2"},margin:.15});footer(s,page++)});
-    await pptx.writeFile({fileName:`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pptx`});toast("Manager PPT downloaded")
-  }catch(err){console.error(err);toast("PPT export failed - please retry")}
-}
+async function exportManagerPPTV727(){return exportManagerPPT()}
 
 document.getElementById("exportManagerPdfBtn").addEventListener("click",exportManagerPDFV727);
-document.getElementById("exportManagerPptBtn").addEventListener("click",exportManagerPPTV727);
+document.getElementById("exportManagerPptBtn").addEventListener("click",exportManagerPPT);
 document.getElementById("exportUnitSummaryPdfBtn").addEventListener("click",exportUnitSummaryPDF);
 document.getElementById("exportBlockChartPdfBtn").addEventListener("click",exportBlockChartPDF);
 
