@@ -970,3 +970,91 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
 @media(max-width:620px){
   .block-summary-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+
+/* V7.20 — COLOUR-ONLY PATCH
+   A = Green | C = Bright Magenta | D = Yellow | NR = Strong Red
+   No workflow / data / layout changes.
+*/
+
+/* Global status pills */
+.pill.c{
+  background:#ffe3f4 !important;
+  color:#a90062 !important;
+  border:1px solid #f18ac6 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55) !important;
+}
+.pill.nr{
+  background:#ffe1e4 !important;
+  color:#b51626 !important;
+  border:1px solid #ef6f7a !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55) !important;
+}
+
+/* Block Board — make Confirmation unmistakably magenta */
+#blockboard .unit-card.status-c{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.78), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, #ffd9f0 0%, #f9b9df 100%) !important;
+  border-color:#e85aa8 !important;
+  box-shadow:
+    inset 5px 0 0 #d91b83,
+    0 10px 18px rgba(217,27,131,.16),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+#blockboard .unit-card.status-c:before{
+  background:#d91b83 !important;
+  box-shadow:0 0 0 4px rgba(217,27,131,.12) !important;
+}
+#blockboard .unit-card.status-c .u-no{color:#8f0d56 !important}
+#blockboard .unit-card.status-c .u-status{color:#b3156c !important}
+#blockboard .unit-card.status-c .u-date.appt-date{
+  background:rgba(255,255,255,.72) !important;
+  border:1px solid rgba(217,27,131,.32) !important;
+  color:#980d5a !important;
+}
+
+/* Block Board — NR stays true red, clearly different from C */
+#blockboard .unit-card.status-nr{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.76), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, #ffdadd 0%, #f6a8af 100%) !important;
+  border-color:#df4d5d !important;
+  box-shadow:
+    inset 5px 0 0 #c91f31,
+    0 10px 18px rgba(201,31,49,.16),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+#blockboard .unit-card.status-nr:before{
+  background:#c91f31 !important;
+  box-shadow:0 0 0 4px rgba(201,31,49,.12) !important;
+}
+#blockboard .unit-card.status-nr .u-no{color:#8f1724 !important}
+#blockboard .unit-card.status-nr .u-status{color:#b32231 !important}
+
+
+/* V7.21 — workflow controls only; V7.20 theme retained */
+.table-action.cancel,
+.planner-mini-action.cancel,
+.unassigned-actions .cancel{
+  background:#fff3f3 !important;
+  color:#b8404c !important;
+  border:1px solid #efc7cc !important;
+}
+.table-action.cancel:hover,
+.planner-mini-action.cancel:hover,
+.unassigned-actions .cancel:hover{
+  background:#ffe9eb !important;
+  border-color:#eaa8b0 !important;
+}
+.pill.cancelled{
+  background:#f3f0f1 !important;
+  color:#8d6268 !important;
+  border:1px solid #ddd0d2 !important;
+}
+#appointmentCustomTimeRow{
+  padding:10px;
+  border:1px dashed #cfe0ee;
+  border-radius:13px;
+  background:#f8fbfe;
+}

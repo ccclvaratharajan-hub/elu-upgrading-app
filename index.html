@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.19">
+  <link rel="stylesheet" href="styles.css?v=7.21">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -183,7 +183,7 @@
       <section class="view" id="appointments">
         <div class="form-layout">
           <article class="panel form-card">
-            <div class="panel-head"><div><span class="section-label">APPOINTMENT DETAILS</span><h3>Resident Details</h3><p>Schedule comes from the Planner. Enter only resident details here.</p></div></div>
+            <div class="panel-head"><div><span class="section-label">APPOINTMENT ENTRY</span><h3>Direct Appointment / Resident Details</h3><p>Direct visit? Enter Date + Slot + Team here. The same record appears in Planner, Appointment Register and Unit Register.</p></div></div>
             <form id="appointmentForm" class="premium-form">
               <input type="hidden" id="appointmentEditId">
               <div class="form-row three">
@@ -192,10 +192,35 @@
                 <label>Unit<select id="appointmentUnit"></select></label>
               </div>
 
+              <div class="form-row three">
+                <label>Appointment Date<input type="date" id="appointmentDate"></label>
+                <label>Time Slot
+                  <select id="appointmentSlot">
+                    <option>9am–11am</option>
+                    <option>11am–1pm</option>
+                    <option>2pm–4pm</option>
+                    <option>4pm–6pm</option>
+                    <option value="CUSTOM">Custom Time</option>
+                  </select>
+                </label>
+                <label>Team
+                  <select id="appointmentTeam">
+                    <option>Team 1</option>
+                    <option>Team 2</option>
+                    <option value="">Unassigned</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="planner-custom-time hidden" id="appointmentCustomTimeRow">
+                <label>Custom Start<input type="time" id="appointmentCustomStart"></label>
+                <label>Custom End<input type="time" id="appointmentCustomEnd"></label>
+              </div>
+
               <div class="planned-schedule-card" id="appointmentPlanCard">
-                <div><span>Planned Date</span><strong id="appointmentPlanDate">—</strong></div>
-                <div><span>Time / Slot</span><strong id="appointmentPlanSlot">—</strong></div>
-                <div><span>Team</span><strong id="appointmentPlanTeam">—</strong></div>
+                <div><span>Current Booking</span><strong id="appointmentPlanDate">—</strong></div>
+                <div><span>Current Slot</span><strong id="appointmentPlanSlot">—</strong></div>
+                <div><span>Current Team</span><strong id="appointmentPlanTeam">—</strong></div>
               </div>
 
               <div class="form-row two">
@@ -204,12 +229,12 @@
               </div>
 
               <label>Appointment Note<textarea id="appointmentRemarks" rows="3" placeholder="Resident / access note"></textarea></label>
-              <div class="inline-sync-note" id="appointmentSyncNote">Date, time and team come from Appointment Planner automatically.</div>
+              <div class="inline-sync-note" id="appointmentSyncNote">One booking record only. Direct entry here automatically appears in Planner; Planner updates appear here too.</div>
               <div class="form-actions">
-                <button class="primary-btn" id="appointmentSaveBtn" type="submit">Save Resident Details</button>
+                <button class="primary-btn" id="appointmentSaveBtn" type="submit">Save Appointment</button>
                 <button class="ghost-btn hidden" id="appointmentCancelEdit" type="button">Cancel Edit</button>
               </div>
-              <div class="form-hint">No double entry: set Date + Slot + Team once in Appointment Planner. This page is only for Owner Name, Contact and appointment note. Master Data updates automatically.</div>
+              <div class="form-hint">Two routes, one record: Survey follow-up can open this form, or you can create a direct appointment here. Existing bookings are rescheduled instead of duplicated.</div>
             </form>
           </article>
 

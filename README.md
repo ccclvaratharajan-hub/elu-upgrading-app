@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.19
+# ELU Upgrading — Premium V7.21
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -191,3 +191,15 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Schedule Excel records no longer overwrite NR / D / blank survey responses or inflate Opt-In / Completed totals.
 - Imported Excel schedules remain visible in Planner/Register; future appointments entered by the user in Planner still drive C and auto C → A / Completed.
 - Browser storage key moved to v11 so stale imported source rows are dropped while manual Survey / Planner / Complaint records are retained.
+
+
+## V7.21 manual appointment workflow
+- Direct visit appointments can be entered completely in Appointment Register: Zone → Block → Unit → Date → Slot / Custom Time → Team → Owner / Contact → Note.
+- Direct Appointment automatically appears in Planner and Unit Register. No Survey entry is required.
+- Survey Register has an **Appointment** button that opens the same Appointment form with Unit / Owner / Contact prefilled.
+- One unit keeps one active pending appointment. A changed date / slot becomes a Reschedule; the old booking remains in history.
+- Active Appointment Register rows have **Edit · Reschedule · Cancel · Delete**.
+- Planner uses **Cancel** instead of destructive Remove.
+- Cancelled appointments remain in History, disappear from the active Planner slot, and no longer keep the unit at C.
+- Owner Name / Contact remain available after cancellation.
+- V7.20 status colours and project data are preserved.

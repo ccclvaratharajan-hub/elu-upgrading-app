@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v11";
-const PREV_STORAGE_KEY="elu_premium_v10";
+const STORAGE_KEY="elu_premium_v12";
+const PREV_STORAGE_KEY="elu_premium_v11";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -146,6 +146,11 @@ function rebuildUnitMaster(key){
     base.lastFollowUp=latestSurvey.createdAt?latestSurvey.createdAt.slice(0,10):"";
     base.remarks=latestSurvey.remarks||"";
   }
+  const latestIdentityAppt=latestById(state.appointments.filter(a=>a.unitKey===key&&(a.ownerName||a.contact)));
+  if(latestIdentityAppt){
+    if(latestIdentityAppt.ownerName)base.ownerName=latestIdentityAppt.ownerName;
+    if(latestIdentityAppt.contact)base.contact=latestIdentityAppt.contact;
+  }
   const latestAppt=preferredMasterAppointment(key);
   if(latestAppt){
     const userAppt=isUserAppointment(latestAppt);
@@ -241,13 +246,49 @@ function appointmentTargetForForm(key){
   if(editId)return state.appointments.find(a=>a.id===editId)||null;
   return preferredUnitAppointment(key)
 }
+function toggleAppointmentCustomTime(){
+  const row=document.getElementById("appointmentCustomTimeRow");
+  if(row)row.classList.toggle("hidden",document.getElementById("appointmentSlot").value!=="CUSTOM")
+}
+function appointmentSlotValue(){
+  const sel=document.getElementById("appointmentSlot");
+  if(sel.value!=="CUSTOM")return sel.value;
+  const start=document.getElementById("appointmentCustomStart").value,end=document.getElementById("appointmentCustomEnd").value;
+  if(!start||!end)return "";
+  return customSlotLabel(start,end)
+}
+function fillAppointmentScheduleInputs(a){
+  const date=document.getElementById("appointmentDate"),slot=document.getElementById("appointmentSlot"),team=document.getElementById("appointmentTeam");
+  if(!date||!slot||!team)return;
+  if(a){
+    date.value=a.date||isoTodaySG();
+    team.value=a.team||"";
+    if(SLOTS.includes(a.slot)){
+      slot.value=a.slot;
+      document.getElementById("appointmentCustomStart").value="";
+      document.getElementById("appointmentCustomEnd").value="";
+    }else{
+      slot.value="CUSTOM";
+      const t=slotToCustomTimes(a.slot);
+      document.getElementById("appointmentCustomStart").value=t.start;
+      document.getElementById("appointmentCustomEnd").value=t.end;
+    }
+  }else{
+    date.value=date.value||isoTodaySG();
+    slot.value=SLOTS[0];
+    team.value="Team 1";
+    document.getElementById("appointmentCustomStart").value="";
+    document.getElementById("appointmentCustomEnd").value="";
+  }
+  toggleAppointmentCustomTime()
+}
 function renderAppointmentPlan(a){
   const card=document.getElementById("appointmentPlanCard"),note=document.getElementById("appointmentSyncNote");
   document.getElementById("appointmentPlanDate").textContent=a?safeDate(a.date):"—";
   document.getElementById("appointmentPlanSlot").textContent=a?(a.slot||"—"):"—";
   document.getElementById("appointmentPlanTeam").textContent=a?(a.team||"Unassigned"):"—";
   card.classList.toggle("no-plan",!a);
-  if(note)note.textContent=a?`Schedule synced from Planner: ${safeDate(a.date)} · ${a.slot}${a.team?` · ${a.team}`:""}`:"No planner booking found for this unit. Add Date + Slot in Appointment Planner first."
+  if(note)note.textContent=a?`Current active booking: ${safeDate(a.date)} · ${a.slot}${a.team?` · ${a.team}`:""}. Edit here or in Planner — both update the same record.`:"No active booking yet. Enter Date + Slot + Team here for a direct appointment."
 }
 function autofillPair(prefix){
   const u=getUnit(document.getElementById(prefix+"Unit").value);if(!u)return;
@@ -262,6 +303,7 @@ function autofillPair(prefix){
     }else{
       document.getElementById("appointmentRemarks").value="";
     }
+    fillAppointmentScheduleInputs(a);
     renderAppointmentPlan(a)
   }
 }
@@ -271,6 +313,7 @@ document.getElementById("appointmentZone").addEventListener("change",syncAppoint
 document.getElementById("complaintZone").addEventListener("change",syncComplaintBlocks);document.getElementById("complaintBlock").addEventListener("change",()=>syncPairUnits("complaint"));document.getElementById("complaintUnit").addEventListener("change",()=>autofillPair("complaint"));
 document.getElementById("plannerZone").addEventListener("change",syncPlannerBlocks);document.getElementById("plannerBlock").addEventListener("change",syncPlannerUnits);
 document.getElementById("plannerSlot").addEventListener("change",togglePlannerCustomTime);
+document.getElementById("appointmentSlot").addEventListener("change",toggleAppointmentCustomTime);
 
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
@@ -322,48 +365,100 @@ function editSurvey(id){
 }
 function deleteSurvey(id){if(!confirm("Delete this survey entry?"))return;state.surveys=state.surveys.filter(x=>x.id!==id);save("Survey entry deleted")}
 function renderSurveyTable(){
-  const r=[...state.surveys].sort((a,b)=>b.id-a.id);document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Status</th><th>Follow-up</th><th>Note</th><th>Action</th></tr></thead><tbody>${r.map(s=>`<tr><td>${safeDate((s.createdAt||"").slice(0,10))}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${statusPill(s.response)}</td><td>${safeDate(s.followUpDate)||"—"}</td><td>${esc(s.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No survey entries yet.</div>`
+  const r=[...state.surveys].sort((a,b)=>b.id-a.id);document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Status</th><th>Follow-up</th><th>Note</th><th>Action</th></tr></thead><tbody>${r.map(s=>`<tr><td>${safeDate((s.createdAt||"").slice(0,10))}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${statusPill(s.response)}</td><td>${safeDate(s.followUpDate)||"—"}</td><td>${esc(s.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No survey entries yet.</div>`
 }
-document.getElementById("surveyTable").addEventListener("click",e=>{let b=e.target.closest("[data-survey-edit]");if(b)return editSurvey(Number(b.dataset.surveyEdit));b=e.target.closest("[data-survey-delete]");if(b)deleteSurvey(Number(b.dataset.surveyDelete))});
+function startAppointmentFromSurvey(id){
+  const s=state.surveys.find(x=>x.id===id);if(!s)return;
+  setView("appointments");resetAppointmentForm();
+  document.getElementById("appointmentZone").value=String(s.zone);syncAppointmentBlocks();
+  document.getElementById("appointmentBlock").value=String(s.block);syncPairUnits("appointment");
+  document.getElementById("appointmentUnit").value=s.unitKey;autofillPair("appointment");
+  if(s.ownerName)document.getElementById("appointmentOwner").value=s.ownerName;
+  if(s.contact)document.getElementById("appointmentContact").value=s.contact;
+  if(s.remarks&&!document.getElementById("appointmentRemarks").value)document.getElementById("appointmentRemarks").value=s.remarks;
+  window.scrollTo({top:0,behavior:"smooth"})
+}
+document.getElementById("surveyTable").addEventListener("click",e=>{let b=e.target.closest("[data-survey-book]");if(b)return startAppointmentFromSurvey(Number(b.dataset.surveyBook));b=e.target.closest("[data-survey-edit]");if(b)return editSurvey(Number(b.dataset.surveyEdit));b=e.target.closest("[data-survey-delete]");if(b)deleteSurvey(Number(b.dataset.surveyDelete))});
 
 function resetAppointmentForm(){
   document.getElementById("appointmentEditId").value="";
-  document.getElementById("appointmentSaveBtn").textContent="Save Resident Details";
+  document.getElementById("appointmentSaveBtn").textContent="Save Appointment";
   document.getElementById("appointmentCancelEdit").classList.add("hidden");
-  autofillPair("appointment")
+  document.getElementById("appointmentDate").value=isoTodaySG();
+  document.getElementById("appointmentSlot").value=SLOTS[0];
+  document.getElementById("appointmentTeam").value="Team 1";
+  document.getElementById("appointmentCustomStart").value="";
+  document.getElementById("appointmentCustomEnd").value="";
+  toggleAppointmentCustomTime();autofillPair("appointment")
 }
 document.getElementById("appointmentCancelEdit").addEventListener("click",resetAppointmentForm);
-document.getElementById("appointmentForm").addEventListener("submit",e=>{
-  e.preventDefault();
+
+function saveDirectAppointment(){
   const key=document.getElementById("appointmentUnit").value,u=getUnit(key);if(!u)return;
-  const a=appointmentTargetForForm(key);
-  if(!a){toast("Set Date + Slot in Appointment Planner first");return}
-  a.ownerName=document.getElementById("appointmentOwner").value.trim();
-  a.contact=document.getElementById("appointmentContact").value.trim();
-  a.remarks=document.getElementById("appointmentRemarks").value.trim();
-  a.userRemarks=true;
-  if(!a.source)a.source="Planner";if(!a.scheduleState)a.scheduleState="Active";
-  document.getElementById("appointmentEditId").value="";
-  save("Resident details saved · Master Data updated")
-});
-function editAppointment(id){
+  const date=document.getElementById("appointmentDate").value,slot=appointmentSlotValue(),team=document.getElementById("appointmentTeam").value;
+  const ownerName=document.getElementById("appointmentOwner").value.trim(),contact=document.getElementById("appointmentContact").value.trim(),remarks=document.getElementById("appointmentRemarks").value.trim();
+  const editId=Number(document.getElementById("appointmentEditId").value||0);
+  if(!date){toast("Select appointment date");return}
+  if(!slot){toast("Enter custom Start and End time");return}
+
+  if(editId){
+    const a=state.appointments.find(x=>x.id===editId);if(!a)return;
+    if(isInactiveSchedule(a)){toast("History record cannot be edited as an active booking. Create a new appointment instead.");return}
+    const changed=a.date!==date||a.slot!==slot||a.unitKey!==key;
+    if(changed){
+      state.appointments.push({...a,id:Date.now()+1,scheduleState:"Rescheduled",source:"Appointment History"});
+      state.appointments.filter(x=>x.id!==editId&&x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)).forEach(x=>x.scheduleState="Rescheduled");
+    }
+    a.unitKey=key;a.zone=u.zone;a.block=u.block;a.floor=u.floor;a.unit=u.unit;a.unitDisplay=unitDisplay(u.floor,u.unit);
+    a.ownerName=ownerName;a.contact=contact;a.date=date;a.slot=slot;a.team=team;a.remarks=remarks;a.userRemarks=true;a.source="Manual";a.scheduleState="Active";
+    a.workStatus=appointmentHasEnded(a)?"Completed":"Pending";
+    resetAppointmentForm();save(changed?"Appointment rescheduled · old booking kept in history":"Appointment updated · Planner and Unit Register synced");return
+  }
+
+  const active=state.appointments.filter(x=>x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x));
+  const exact=active.find(x=>x.date===date&&x.slot===slot);
+  if(exact){
+    exact.ownerName=ownerName;exact.contact=contact;exact.team=team;exact.remarks=remarks;exact.userRemarks=true;exact.source="Manual";exact.scheduleState="Active";
+    resetAppointmentForm();save("Appointment updated · no duplicate created");return
+  }
+
+  if(active.length){
+    const desc=active.map(x=>`${safeDate(x.date)} · ${x.slot}`).join(", ");
+    if(!confirm(`This unit already has an active booking: ${desc}. Reschedule it to ${safeDate(date)} · ${slot}?`))return;
+    active.forEach(x=>x.scheduleState="Rescheduled");
+  }
+
+  const a={id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName,contact,date,slot,team,remarks,userRemarks:true,source:"Manual",scheduleState:"Active",workStatus:"Pending"};
+  a.workStatus=appointmentHasEnded(a)?"Completed":"Pending";state.appointments.push(a);
+  resetAppointmentForm();save(active.length?"Appointment rescheduled · old booking moved to history":"Appointment saved · Planner and Unit Register synced")
+}
+document.getElementById("appointmentForm").addEventListener("submit",e=>{e.preventDefault();saveDirectAppointment()});
+
+function editAppointment(id,reschedule=false){
   const a=state.appointments.find(x=>x.id===id);if(!a)return;
+  if(isInactiveSchedule(a)){toast("This is a history record. Create a new appointment if the resident books again.");return}
   setView("appointments");
   document.getElementById("appointmentEditId").value=String(a.id);
-  document.getElementById("appointmentZone").value=String(a.zone||zoneOfBlock(a.block));
-  syncAppointmentBlocks();
-  document.getElementById("appointmentBlock").value=String(a.block);
-  syncPairUnits("appointment");
+  document.getElementById("appointmentZone").value=String(a.zone||zoneOfBlock(a.block));syncAppointmentBlocks();
+  document.getElementById("appointmentBlock").value=String(a.block);syncPairUnits("appointment");
   document.getElementById("appointmentUnit").value=a.unitKey;
   document.getElementById("appointmentOwner").value=a.ownerName||getUnit(a.unitKey)?.ownerName||"";
   document.getElementById("appointmentContact").value=a.contact||getUnit(a.unitKey)?.contact||"";
   document.getElementById("appointmentRemarks").value=a.remarks||"";
-  document.getElementById("appointmentSaveBtn").textContent="Update Resident Details";
+  fillAppointmentScheduleInputs(a);
+  document.getElementById("appointmentSaveBtn").textContent=reschedule?"Save Reschedule":"Update Appointment";
   document.getElementById("appointmentCancelEdit").classList.remove("hidden");
-  renderAppointmentPlan(a);
-  window.scrollTo({top:0,behavior:"smooth"})
+  renderAppointmentPlan(a);window.scrollTo({top:0,behavior:"smooth"})
 }
-function deleteAppointment(id){if(!confirm("Delete this appointment? The Unit Register will recalculate automatically."))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
+function cancelAppointment(id){
+  const a=state.appointments.find(x=>x.id===id);if(!a||isInactiveSchedule(a))return;
+  if(!confirm(`Cancel appointment for Blk ${a.block} · ${a.unitDisplay} on ${safeDate(a.date)} · ${a.slot}?`))return;
+  a.scheduleState="Cancelled";a.cancelledAt=new Date().toISOString();
+  if(Number(document.getElementById("appointmentEditId").value)===id)resetAppointmentForm();
+  if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
+  save("Appointment cancelled · active slot cleared · history retained")
+}
+function deleteAppointment(id){if(!confirm("Delete this appointment record permanently?"))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
 document.getElementById("appointmentFilterDate").addEventListener("change",renderAppointmentTable);document.getElementById("appointmentMode").addEventListener("change",renderAppointmentTable);
 document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{const z=document.getElementById("appointmentZoneFilter").value;document.getElementById("appointmentBlockFilter").innerHTML=filterBlockOptions(z,true);renderAppointmentTable()});
 document.getElementById("appointmentBlockFilter").addEventListener("change",renderAppointmentTable);
@@ -373,12 +468,12 @@ function renderAppointmentTable(){
   if(zf!=="all")r=r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===Number(zf));if(bf!=="all")r=r.filter(a=>Number(a.block)===Number(bf));
   if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
   r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed";return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set"><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button></div></td></tr>`};
+  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a);const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
   const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
   if(!r.length){document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No appointments found.</div>`;return}
   document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"appointments")}${table(x)}</section>`).join("")}</div>`:table(r)
 }
-document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
+document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
 
 document.getElementById("unitSearch").addEventListener("input",renderUnitTable);
 document.getElementById("unitZoneFilter").addEventListener("change",()=>{const z=document.getElementById("unitZoneFilter").value;document.getElementById("unitBlockFilter").innerHTML=filterBlockOptions(z,true);renderUnitTable()});
@@ -418,7 +513,7 @@ function plannerDateShort(date){const d=new Date(date+"T00:00:00+08:00");return 
 function appointmentForPlanner(a){const u=getUnit(a.unitKey);return {...a,ownerName:u?.ownerName||a.ownerName||"",contact:u?.contact||a.contact||""}}
 function plannerEntries(date,team,slot){return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
 function plannerRemarks(entries){return entries.map(a=>a.remarks||"").filter(Boolean).join(" · ")||"—"}
-function plannerTeamCell(entries,team,slot,zone){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`}
+function plannerTeamCell(entries,team,slot,zone){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action cancel" data-planner-cancel="${a.id}">Cancel</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`}
 function renderPlanner(){
   const date=document.getElementById("teamDate").value||isoTodaySG(),zv=document.getElementById("plannerViewZone").value,bv=document.getElementById("plannerViewBlock").value;
   document.getElementById("plannerDateTitle").textContent=`${plannerDateLabel(date)} unit appointments`;
@@ -438,7 +533,7 @@ function renderPlanner(){
   document.getElementById("plannerTable").innerHTML=zones.map(section).join("");
   document.getElementById("plannerSpecialTimes").innerHTML="";
   const un=state.appointments.filter(a=>visible(a)&&!a.team).sort((a,b)=>Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
-  document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Zone ${a.zone||zoneOfBlock(a.block)} · Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}${String(a.source||"").includes("Excel")?" · Excel":""}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button><button class="remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this Zone / Block / Date.</div>`;
+  document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Zone ${a.zone||zoneOfBlock(a.block)} · Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}${String(a.source||"").includes("Excel")?" · Excel":""}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button><button class="cancel" data-planner-cancel="${a.id}">Cancel</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this Zone / Block / Date.</div>`;
 }
 function renderTodayTeamBoard(){
   const date=isoTodaySG(),active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date);
@@ -502,13 +597,7 @@ function editPlannerAppointment(id){
   renderPlanner();
   document.getElementById("plannerBlock").focus()
 }
-function removePlannerAppointment(id){
-  const a=state.appointments.find(x=>x.id===id);if(!a)return;
-  if(!confirm(`Remove Blk ${a.block} · ${a.unitDisplay} from ${a.slot}?`))return;
-  state.appointments=state.appointments.filter(x=>x.id!==id);
-  if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
-  save("Planner entry removed · Master Data recalculated")
-}
+function removePlannerAppointment(id){cancelAppointment(id)}
 function savePlannerAppointment(){
   const date=document.getElementById("teamDate").value||isoTodaySG(),key=document.getElementById("plannerUnit").value,u=getUnit(key);if(!u)return;
   const team=document.getElementById("plannerTeam").value,slot=plannerSlotValue(),remarks=document.getElementById("plannerRemarks").value.trim(),editId=Number(document.getElementById("plannerEditId").value||0);
@@ -552,9 +641,9 @@ document.getElementById("teamDate").addEventListener("change",()=>{if(document.g
 document.getElementById("plannerPrevDay").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),-1);renderPlanner()});
 document.getElementById("plannerNextDay").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),1);renderPlanner()});
 document.getElementById("plannerToday").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
-document.getElementById("plannerTable").addEventListener("click",e=>{let b=e.target.closest("[data-planner-prefill]");if(b){resetPlannerForm();const [team,slot,zone]=b.dataset.plannerPrefill.split("|");document.getElementById("plannerTeam").value=team;document.getElementById("plannerSlot").value=slot;if(zone){document.getElementById("plannerZone").value=zone;syncPlannerBlocks()}togglePlannerCustomTime();document.getElementById("plannerBlock").focus();return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
-document.getElementById("plannerSpecialTimes").addEventListener("click",e=>{let b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
-document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
+document.getElementById("plannerTable").addEventListener("click",e=>{let b=e.target.closest("[data-planner-prefill]");if(b){resetPlannerForm();const [team,slot,zone]=b.dataset.plannerPrefill.split("|");document.getElementById("plannerTeam").value=team;document.getElementById("plannerSlot").value=slot;if(zone){document.getElementById("plannerZone").value=zone;syncPlannerBlocks()}togglePlannerCustomTime();document.getElementById("plannerBlock").focus();return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
+document.getElementById("plannerSpecialTimes").addEventListener("click",e=>{let b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
+document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
 
 function buildReportRows(zoneFilter="all",blockFilter="all"){
   const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
@@ -576,5 +665,5 @@ document.getElementById("exportBackupBtn").addEventListener("click",()=>download
 
 function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderReport()}
 document.getElementById("todayChip").textContent=fmtDate.format(new Date());document.getElementById("appointmentFilterDate").value="";document.getElementById("appointmentMode").value="upcoming";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("teamDate").value=isoTodaySG();
-initSelectors();togglePlannerCustomTime();renderAll();autoCompleteAppointments();
+initSelectors();togglePlannerCustomTime();toggleAppointmentCustomTime();resetAppointmentForm();renderAll();autoCompleteAppointments();
 setInterval(()=>autoCompleteAppointments(true),60000);
