@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.12
+# ELU Upgrading — Premium V7.13
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -139,3 +139,13 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Unit Register now shows Appointment Date + Slot before Remarks, with Remarks last.
 - Added a light-dark Electrical Steel visual theme without changing the status-colour mapping.
 - Existing browser data migrates from V7 storage into the refreshed source while retaining manual Planner / Survey / Complaint work.
+
+
+## V7.13 correction after field review
+- Restored the V7.11 visual design. The Electrical Steel theme from V7.12 was removed.
+- Latest uploaded Unit Survey data is retained for Owner Name, Contact, status and Remarks.
+- Appointment Planner is now seeded from **PR3_Appointments.xlsx only**; survey-sheet dates are not used to create competing Planner bookings.
+- The app now rebuilds Excel-source records from `data.js` every time it loads, then merges your saved manual Survey / Planner / Complaint work. This prevents stale browser storage from hiding a newly uploaded Excel refresh.
+- Resident details saved against an existing appointment are preserved when the source schedule refreshes.
+- Unit Register keeps Remarks as the last column.
+- Rescheduling in Planner keeps only the current booking active; the old booking goes to Rescheduled history.

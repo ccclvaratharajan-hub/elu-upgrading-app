@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v8";
-const PREV_STORAGE_KEY="elu_premium_v7";
+const STORAGE_KEY="elu_premium_v9";
+const PREV_STORAGE_KEY="elu_premium_v8";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -53,43 +53,47 @@ function makeInitialState(){
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
   return {units,surveys:[],appointments:seedAppointments(),complaints:[],createdAt:new Date().toISOString()};
 }
-function migratePrevious(){
+function isUserAppointment(a){
+  return ["Planner","Manual","Planner History"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
+}
+function mergeSavedIntoFresh(saved){
   const fresh=makeInitialState();
-  try{
-    const old=JSON.parse(localStorage.getItem(PREV_STORAGE_KEY)||"null");if(!old)return fresh;
-    fresh.surveys=(old.surveys||[]).map(s=>({...s,response:normalizeStatus(s.response),createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()}));
-    (old.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{
-      const clean={...a,status:undefined,scheduleState:a.scheduleState||"Active",workStatus:a.workStatus||"Pending",source:a.source||"Manual"};
-      const idx=fresh.appointments.findIndex(x=>x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot);
-      const isUserRecord=clean.source==="Planner"||clean.source==="Manual"||Number(clean.id)>1000000000000;
-      if(idx>=0){
-        const seeded=fresh.appointments[idx];
-        fresh.appointments[idx]={
-          ...seeded,
-          ownerName:clean.ownerName||seeded.ownerName||"",
-          contact:clean.contact||seeded.contact||"",
-          remarks:clean.remarks||seeded.remarks||"",
-          team:clean.team||seeded.team||"",
-          id:seeded.id
-        };
-      }else if(isUserRecord){
-        fresh.appointments.push(clean);
-      }
-    });
-    fresh.complaints=old.complaints||[];
-  }catch{}
+  if(!saved)return fresh;
+  fresh.surveys=(saved.surveys||[]).map(s=>({...s,response:normalizeStatus(s.response),createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()}));
+  fresh.complaints=saved.complaints||[];
+
+  (saved.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{
+    const clean={...a,status:undefined,scheduleState:a.scheduleState||"Active",workStatus:a.workStatus||"Pending",source:a.source||"Manual"};
+    const idx=fresh.appointments.findIndex(x=>x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot);
+    if(idx>=0){
+      const seed=fresh.appointments[idx];
+      fresh.appointments[idx]={
+        ...seed,
+        ownerName:clean.ownerName||seed.ownerName||"",
+        contact:clean.contact||seed.contact||"",
+        remarks:clean.remarks||seed.remarks||"",
+        team:clean.team||seed.team||"",
+        scheduleState:clean.scheduleState||seed.scheduleState||"Active",
+        workStatus:clean.workStatus||seed.workStatus||"Pending"
+      };
+    }else if(isUserAppointment(clean)){
+      fresh.appointments.push(clean);
+    }
+  });
   return fresh
+}
+function migratePrevious(){
+  try{
+    const old=JSON.parse(localStorage.getItem(PREV_STORAGE_KEY)||"null");
+    return mergeSavedIntoFresh(old)
+  }catch{return makeInitialState()}
 }
 function loadState(){
   try{
-    const saved=localStorage.getItem(STORAGE_KEY);
-    if(saved){
-      const s=JSON.parse(saved),fresh=makeInitialState();
-      fresh.surveys=s.surveys||[];fresh.appointments=s.appointments||[];fresh.complaints=s.complaints||[];
-      return fresh;
-    }
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    if(saved)return mergeSavedIntoFresh(saved)
   }catch{}
-  return migratePrevious();
+  return migratePrevious()
 }
 let state=loadState();
 normalizeManualOverrides();
@@ -147,6 +151,10 @@ function rebuildUnitMaster(key){
     base.team=latestAppt.team||"";
     if(latestAppt.ownerName)base.ownerName=latestAppt.ownerName;
     if(latestAppt.contact)base.contact=latestAppt.contact;
+    if(latestAppt.remarks){
+      const parts=[base.remarks,latestAppt.remarks].map(v=>String(v||"").trim()).filter(Boolean);
+      base.remarks=[...new Set(parts)].join(" · ");
+    }
     if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
       latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
     }else{
@@ -171,7 +179,7 @@ function viewTitle(view){return {
 dashboard:["Executive Dashboard","One view of A, C, D, NR, appointments and completed work."],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
 survey:["Survey & Follow-up","First-entry register. Unit Register updates automatically."],
-appointments:["Appointment Schedule","Schedule date/time comes from Planner. Enter resident details here without double entry."],
+appointments:["Appointment Schedule","Planner is prefilled from the uploaded PR3 schedule. Enter resident details here without double entry."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 teams:["Appointment Planner","Plan Team 1 and Team 2 across four standard slots, plus special custom time when needed."],
