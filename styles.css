@@ -747,3 +747,46 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
     border-radius:15px !important;
   }
 }
+
+/* V7.9 Planner correction controls */
+.planner-form-actions{
+  display:flex;
+  align-items:end;
+  gap:8px;
+}
+.planner-entry-actions{
+  display:flex;
+  gap:5px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.planner-mini-action.remove,
+.table-action.remove{
+  color:#c74b57 !important;
+  background:#fff1f2 !important;
+  border-color:#f3c4c8 !important;
+}
+.planner-mini-action.remove:hover,
+.table-action.remove:hover{
+  background:#ffe5e8 !important;
+  border-color:#eaa4ab !important;
+}
+#plannerSaveBtn.editing{
+  background:linear-gradient(145deg,#4e9be8,#347fd0);
+}
+@media(max-width:760px){
+  .planner-form-actions{grid-column:1/-1;width:100%}
+}
+
+/* V7.10 planner duplicate-safety note */
+.planner-rule-note{
+  margin:0 0 10px;
+  padding:9px 11px;
+  border:1px solid #dbe9f6;
+  border-radius:12px;
+  background:linear-gradient(145deg,#fbfdff,#f2f8ff);
+  color:#6f87a0;
+  font-size:10px;
+  line-height:1.45;
+}
+.planner-rule-note strong{color:#3f6f9f}

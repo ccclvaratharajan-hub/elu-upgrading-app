@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.8">
+  <link rel="stylesheet" href="styles.css?v=7.10">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -283,7 +283,9 @@
 
         <article class="panel planner-entry-panel">
           <div class="panel-head"><div><span class="section-label">QUICK ENTRY</span><h3>Add to selected day</h3><p>New entries and existing imported appointments use the same appointment record.</p></div></div>
+          <div class="planner-rule-note"><strong>One unit = one slot per date.</strong> If the same unit is entered in another slot on the same date, the old slot will be replaced — not duplicated.</div>
           <form id="plannerForm" class="planner-form">
+            <input type="hidden" id="plannerEditId">
             <label>Block<select id="plannerBlock"></select></label>
             <label>Unit<select id="plannerUnit"></select></label>
             <label>Team<select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select></label>
@@ -293,7 +295,10 @@
               <label>End<input type="time" id="plannerCustomEnd"></label>
             </div>
             <label class="planner-remarks">Remarks<input id="plannerRemarks" placeholder="Access note / resident note"></label>
-            <button class="primary-btn" type="submit">Add to Planner</button>
+            <div class="planner-form-actions">
+              <button class="primary-btn" id="plannerSaveBtn" type="submit">Add to Planner</button>
+              <button class="ghost-btn hidden" id="plannerCancelEdit" type="button">Cancel Edit</button>
+            </div>
           </form>
         </article>
 

@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.8
+# ELU Upgrading — Premium V7.10
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -100,3 +100,21 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Reduced empty-looking gaps by making the unit grid fuller and the cards slightly richer.
 - Improved the board row itself with a better 3D premium-card look.
 - No workflow, planner logic, report logic, or data structure was changed.
+
+
+## V7.9 minor Planner correction
+- Each saved planner appointment now has **Edit** and **Remove** directly in the Planner.
+- Edit keeps you inside the Planner and lets you correct Date, Block, Unit, Team, Slot, Custom Time and Remarks.
+- **Update Planner** changes the existing record instead of creating a duplicate.
+- **Remove** asks for confirmation, then clears the mistaken appointment and recalculates Master Data automatically.
+- Cancel Edit returns the Planner form to normal Add mode.
+- No Survey, Complaint, Meeting Report, status-colour, block-board or master-data structure changes.
+
+
+## V7.10 minor Planner safety correction
+- Rule added: **one unit can have only one appointment slot per date**.
+- Example: if a unit was mistakenly saved at 9am–11am and then entered again at 4pm–6pm on the same date, the app asks whether to move it.
+- When confirmed, the old 9am–11am entry is cleared and the same appointment moves to 4pm–6pm.
+- Existing accidental duplicates for the same unit/date are cleaned when the booking is updated.
+- Direct **Edit** and **Remove** from V7.9 remain available.
+- No changes to Survey, Complaint, Meeting Report, Block Board, status colours, or master-data structure.
