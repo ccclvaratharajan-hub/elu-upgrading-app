@@ -553,3 +553,197 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
   .planner-custom-time{grid-template-columns:1fr}
   .special-time-card{grid-template-columns:1fr}
 }
+
+
+/* V7.8 minor visual correction — Block/Floor Board only
+   Goal:
+   - Make Confirmation and No Response clearly different
+   - Add glossy / watery / bubble-like attractiveness
+   - Reduce empty-looking gaps
+   - Give the board a richer 3D card look
+*/
+
+/* richer 3D board row */
+#blockboard .floor-row{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,255,255,.92), rgba(255,255,255,0) 24%),
+    linear-gradient(145deg, rgba(255,255,255,.96), rgba(244,249,255,.93));
+  border:1px solid #d7e6f4 !important;
+  border-radius:22px !important;
+  box-shadow:
+    0 18px 34px rgba(68,112,158,.08),
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -10px 24px rgba(222,233,244,.22) !important;
+}
+#blockboard .floor-row::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(255,255,255,.45), rgba(255,255,255,0) 22%),
+    linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 34%);
+}
+
+/* nicer floor label */
+#blockboard .floor-label{
+  border-right:1px solid rgba(212,226,240,.88) !important;
+  padding-right:6px;
+}
+#blockboard .floor-label strong{
+  font-size:20px !important;
+  color:#315d88 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.9);
+}
+#blockboard .floor-label span{
+  font-size:10px !important;
+  color:#8ea4bb !important;
+}
+
+/* tighter, fuller unit layout */
+#blockboard .unit-grid{
+  grid-template-columns:repeat(auto-fit,minmax(112px,1fr)) !important;
+  gap:10px !important;
+  align-items:stretch !important;
+}
+#blockboard .unit-card{
+  position:relative;
+  min-height:78px !important;
+  max-width:none !important;
+  padding:12px 11px !important;
+  border-radius:18px !important;
+  border-width:1.2px !important;
+  box-shadow:
+    0 8px 16px rgba(83,110,140,.06),
+    inset 0 1px 0 rgba(255,255,255,.88) !important;
+  overflow:hidden;
+}
+
+/* remove old dot and use card finish instead */
+#blockboard .unit-card::before{
+  display:none !important;
+  content:none !important;
+}
+#blockboard .unit-card::after{
+  content:"";
+  display:block !important;
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.62), rgba(255,255,255,0) 22%),
+    radial-gradient(circle at 78% 74%, rgba(255,255,255,.18), rgba(255,255,255,0) 16%),
+    linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,0) 36%);
+}
+#blockboard .unit-card .u-no{
+  font-size:12px !important;
+  line-height:1.18 !important;
+  letter-spacing:.01em;
+  text-shadow:0 1px 0 rgba(255,255,255,.38);
+}
+#blockboard .unit-card .u-status{
+  margin-top:6px !important;
+  font-size:9.4px !important;
+  font-weight:850 !important;
+  line-height:1.26 !important;
+  letter-spacing:.01em;
+}
+
+/* Blank */
+#blockboard .unit-card:not(.status-a):not(.status-c):not(.status-out):not(.status-nr){
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.72), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, rgba(255,255,255,.96), rgba(243,247,251,.92)) !important;
+  border-color:#dbe5ef !important;
+  box-shadow:
+    inset 4px 0 0 #c4d2de,
+    0 8px 16px rgba(83,110,140,.05),
+    inset 0 1px 0 rgba(255,255,255,.90) !important;
+}
+
+/* A = Green */
+#blockboard .unit-card.status-a{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.72), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, rgba(228,250,239,.94), rgba(206,243,225,.92)) !important;
+  border-color:#6fd4a6 !important;
+  box-shadow:
+    inset 4px 0 0 #2eb678,
+    0 10px 18px rgba(46,182,120,.12),
+    inset 0 1px 0 rgba(255,255,255,.90) !important;
+}
+#blockboard .unit-card.status-a .u-no{color:#127453 !important}
+#blockboard .unit-card.status-a .u-status{color:#238563 !important}
+
+/* C = Confirmation — more glossy pink / magenta */
+#blockboard .unit-card.status-c{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.76), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, rgba(255,236,245,.98), rgba(251,222,236,.95)) !important;
+  border-color:#ea91bb !important;
+  box-shadow:
+    inset 4px 0 0 #e56d9d,
+    0 10px 18px rgba(229,109,157,.13),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+#blockboard .unit-card.status-c .u-no{color:#b24372 !important}
+#blockboard .unit-card.status-c .u-status{color:#cb5d8e !important}
+
+/* D = Opt-Out — strong yellow */
+#blockboard .unit-card.status-out{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.78), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, rgba(255,249,216,.98), rgba(247,232,156,.95)) !important;
+  border-color:#d7b22e !important;
+  box-shadow:
+    inset 4px 0 0 #d0aa1d,
+    0 10px 18px rgba(208,170,29,.13),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+#blockboard .unit-card.status-out .u-no{color:#886608 !important}
+#blockboard .unit-card.status-out .u-status{color:#9c7509 !important}
+
+/* NR = No Response — clearly stronger red, not like pink */
+#blockboard .unit-card.status-nr{
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.76), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, rgba(255,235,238,.98), rgba(255,214,219,.95)) !important;
+  border-color:#ea7681 !important;
+  box-shadow:
+    inset 4px 0 0 #df4d5d,
+    0 10px 18px rgba(223,77,93,.13),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+#blockboard .unit-card.status-nr .u-no{color:#ba3647 !important}
+#blockboard .unit-card.status-nr .u-status{color:#d14657 !important}
+
+/* Legend follows the refreshed palette */
+#blockboard .legend .dot{
+  width:12px !important;
+  height:12px !important;
+  box-shadow:0 0 0 2px #fff, 0 3px 8px rgba(82,111,143,.12) !important;
+}
+#blockboard .legend .dot.optin{background:#2eb678 !important}
+#blockboard .legend .dot.confirm{background:#e56d9d !important}
+#blockboard .legend .dot.optout{background:#d0aa1d !important}
+#blockboard .legend .dot.nr{background:#df4d5d !important}
+
+/* richer hover */
+#blockboard .unit-card:hover{
+  transform:translateY(-2px) scale(1.01) !important;
+  filter:saturate(1.03);
+}
+
+/* phone */
+@media(max-width:760px){
+  #blockboard .unit-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+  #blockboard .unit-card{
+    min-height:74px !important;
+    border-radius:15px !important;
+  }
+}

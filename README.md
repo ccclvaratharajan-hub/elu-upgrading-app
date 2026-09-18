@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.7
+# ELU Upgrading — Premium V7.8
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -92,3 +92,11 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Special-time appointments are shown separately in Planner and on today's Dashboard team schedule.
 - Existing C → A automatic completion logic also works with custom time because the custom end time is read from the slot label.
 - No change to Survey, Complaint, Weekly Report, status colours or block/unit mapping.
+
+
+## V7.8 minor Block/Floor Board visual refinement
+- Confirmation (C) and No Response (NR) colours are now more clearly different.
+- Added a glossy / watery / bubble-like surface effect to unit cards.
+- Reduced empty-looking gaps by making the unit grid fuller and the cards slightly richer.
+- Improved the board row itself with a better 3D premium-card look.
+- No workflow, planner logic, report logic, or data structure was changed.
