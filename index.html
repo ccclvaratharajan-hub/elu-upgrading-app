@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.21">
+  <link rel="stylesheet" href="styles.css?v=7.22">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -41,7 +41,7 @@
       <nav class="nav" id="nav">
         <button class="nav-item active" data-view="dashboard"><svg><use href="#i-dashboard"/></svg><span>Dashboard</span></button>
         <button class="nav-item" data-view="blockboard"><svg><use href="#i-building"/></svg><span>Block Board</span></button>
-        <button class="nav-item" data-view="survey"><svg><use href="#i-survey"/></svg><span>Survey & Follow-up</span></button>
+        <button class="nav-item" data-view="survey"><svg><use href="#i-survey"/></svg><span>Survey Visits</span></button>
         <button class="nav-item" data-view="appointments"><svg><use href="#i-calendar"/></svg><span>Appointment Schedule</span></button>
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
@@ -51,7 +51,7 @@
 
       <div class="sidebar-note">
         <strong>Field-first workflow</strong>
-        <span>Survey → Unit → Appointment</span>
+        <span>Survey Visit → Appointment → Unit</span>
       </div>
     </aside>
 
@@ -90,7 +90,7 @@
           <article class="kpi-card accent-cyan"><div class="kpi-icon cyan"><svg><use href="#i-building"/></svg></div><div><span>Work Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
           <article class="kpi-card accent-amber"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Requires follow-up</small></div></article>
           <article class="kpi-card accent-rose"><div class="kpi-icon rose">D</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
-          <article class="kpi-card accent-violet"><div class="kpi-icon violet"><svg><use href="#i-survey"/></svg></div><div><span>Follow-ups</span><strong id="kpiFollowups">0</strong><small>Scheduled follow-ups</small></div></article>
+          <article class="kpi-card accent-violet"><div class="kpi-icon violet"><svg><use href="#i-survey"/></svg></div><div><span>Survey Visits</span><strong id="kpiFollowups">0</strong><small>Upcoming visit appointments</small></div></article>
         </div>
 
         <div class="dashboard-grid dashboard-grid-wow">
@@ -111,7 +111,7 @@
         </article>
 
         <article class="panel attention-panel">
-          <div class="panel-head"><div><span class="section-label">FIELD ATTENTION</span><h3>Follow-ups requiring attention</h3></div><button class="text-btn" data-go="survey">Open Survey</button></div>
+          <div class="panel-head"><div><span class="section-label">FIELD VISITS</span><h3>Upcoming survey visits</h3></div><button class="text-btn" data-go="survey">Open Survey</button></div>
           <div id="followupAttention" class="attention-grid"></div>
         </article>
       </section>
@@ -141,7 +141,7 @@
       <section class="view" id="survey">
         <div class="form-layout">
           <article class="panel form-card">
-            <div class="panel-head"><div><span class="section-label">NEW ENTRY</span><h3>Survey / Resident Follow-up</h3><p>This is the entry point. Nothing from other registers is pushed back here automatically.</p></div></div>
+            <div class="panel-head"><div><span class="section-label">VISIT DIARY</span><h3>Survey Visit Register</h3><p>Reference for when you need to visit a resident. No A / C / D / NR status is set here.</p></div></div>
             <form id="surveyForm" class="premium-form">
               <input type="hidden" id="surveyEditId">
               <div class="form-row three">
@@ -150,26 +150,19 @@
                 <label>Unit<select id="surveyUnit"></select></label>
               </div>
               <div class="form-row two">
-                <label>Owner Name<input id="surveyOwner" autocomplete="off" placeholder="Owner / resident name"></label>
+                <label>Owner Name · Optional<input id="surveyOwner" autocomplete="off" placeholder="Leave blank if not known"></label>
                 <label>Contact<input id="surveyContact" inputmode="tel" autocomplete="off" placeholder="Contact number"></label>
               </div>
               <div class="form-row two">
-                <label>Resident Response
-                  <select id="surveyResponse">
-                    <option value="">Select status</option>
-                    <option value="A">A · Opt-In</option>
-                    <option value="D">D · Opt-Out</option>
-                    <option value="NR">NR · No Response</option>
-                  </select>
-                </label>
-                <label>Next Follow-up Date<input type="date" id="surveyFollowup"></label>
+                <label>Survey Visit Date<input type="date" id="surveyVisitDate"></label>
+                <label>Visit Time<input type="time" id="surveyVisitTime"></label>
               </div>
-              <label>Survey / Follow-up Note<textarea id="surveyRemarks" rows="4" placeholder="Resident request, preferred day, call note, access note..."></textarea></label>
+              <label>Visit Note<textarea id="surveyRemarks" rows="4" placeholder="Call note, access note, resident request..."></textarea></label>
               <div class="form-actions">
-                <button class="primary-btn" id="surveySaveBtn" type="submit">Save Survey Entry → Update Unit Register</button>
+                <button class="primary-btn" id="surveySaveBtn" type="submit">Save Survey Visit</button>
                 <button class="ghost-btn hidden" id="surveyCancelEdit" type="button">Cancel Edit</button>
               </div>
-              <div class="form-hint">C is not entered here. C is set automatically when an appointment is confirmed.</div>
+              <div class="form-hint">Survey is a visit diary only. Visit date, time and note stay here. Contact is used only as a backup when the Unit Register has no contact. Appointment Register remains the main source.</div>
             </form>
           </article>
 
@@ -248,7 +241,7 @@
       <section class="view" id="units">
         <article class="panel">
           <div class="panel-head register-head">
-            <div><span class="section-label">MASTER DATA · READ ONLY</span><h3>Unit Register</h3><p>Automatically populated from Survey and Appointment. This master register cannot be edited directly.</p></div>
+            <div><span class="section-label">MASTER DATA · READ ONLY</span><h3>Unit Register</h3><p>Appointment Register is the main source. Survey contributes contact only when the master contact is blank.</p></div>
             <div class="register-tools">
               <div class="search-box small"><svg><use href="#i-search"/></svg><input id="unitSearch" placeholder="Search block / unit / owner / contact"></div>
               <select id="unitZoneFilter"></select>
@@ -378,21 +371,21 @@
         <div><span>Status</span><strong id="drawerStatusText">—</strong></div>
         <div><span>Owner Name</span><strong id="drawerOwnerText">—</strong></div>
         <div><span>Contact</span><strong id="drawerContactText">—</strong></div>
-        <div><span>Follow-up</span><strong id="drawerFollowupText">—</strong></div>
+        <div><span>Survey Visit</span><strong id="drawerFollowupText">—</strong></div>
         <div class="wide"><span>Remarks</span><strong id="drawerRemarksText">—</strong></div>
         <div><span>Appointment</span><strong id="drawerAppointmentText">—</strong></div>
         <div><span>Team</span><strong id="drawerTeamText">—</strong></div>
       </div>
       <div class="legacy-box" id="drawerLegacy"></div>
       <div class="drawer-shortcuts">
-        <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey / Follow-up</button>
+        <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey Visit</button>
         <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>
       </div>
     </div>
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.19"></script>
-  <script src="app.js?v=7.19"></script>
+  <script src="data.js?v=7.22"></script>
+  <script src="app.js?v=7.22"></script>
 </body>
 </html>

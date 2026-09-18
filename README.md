@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.21
+# ELU Upgrading — Premium V7.22
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -203,3 +203,16 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Cancelled appointments remain in History, disappear from the active Planner slot, and no longer keep the unit at C.
 - Owner Name / Contact remain available after cancellation.
 - V7.20 status colours and project data are preserved.
+
+
+## V7.22 Survey Visit workflow
+- Survey Register is now a **visit diary / reference only**.
+- Survey fields: Zone → Block → Unit → optional Owner Name → Contact → Survey Visit Date → exact Visit Time → Visit Note.
+- A / C / D / NR status has been removed from Survey Register.
+- Survey Visit Date, Time and Note do **not** flow into the Unit Register.
+- Survey Contact is used only as a fallback when the Unit Register has no contact.
+- Appointment Register remains the primary operational source for Owner, Contact, Appointment Date, Slot, Team and appointment status.
+- The Survey **Appointment** button still opens the same Appointment form and carries Unit / Owner / Contact only; Survey notes are not copied into Appointment remarks.
+- Existing older Survey Follow-up Dates are migrated to Survey Visit Dates. Existing exact times remain blank until entered.
+- Dashboard Follow-ups card is now Upcoming Survey Visits and shows exact visit time.
+- V7.21 appointment / reschedule / cancel logic and V7.20 status colours are retained.

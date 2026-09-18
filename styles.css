@@ -1058,3 +1058,13 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
   border-radius:13px;
   background:#f8fbfe;
 }
+
+
+/* V7.22 — Survey Visit diary only */
+#surveyTable td:nth-child(1),
+#surveyTable td:nth-child(2){
+  white-space:nowrap;
+}
+#surveyVisitTime{
+  font-variant-numeric:tabular-nums;
+}

@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v12";
-const PREV_STORAGE_KEY="elu_premium_v11";
+const STORAGE_KEY="elu_premium_v13";
+const PREV_STORAGE_KEY="elu_premium_v12";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -59,7 +59,12 @@ function isUserAppointment(a){
 function mergeSavedIntoFresh(saved){
   const fresh=makeInitialState();
   if(!saved)return fresh;
-  fresh.surveys=(saved.surveys||[]).map(s=>({...s,response:normalizeStatus(s.response),createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()}));
+  fresh.surveys=(saved.surveys||[]).map(s=>({
+    ...s,
+    visitDate:s.visitDate||s.followUpDate||"",
+    visitTime:s.visitTime||"",
+    createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()
+  }));
   fresh.complaints=saved.complaints||[];
 
   (saved.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{
@@ -138,13 +143,8 @@ function rebuildUnitMaster(key){
   const current=state.units[key];if(!current)return;
   const base=baseUnit(current.block,current.floor,current.unit);
   const surveys=state.surveys.filter(s=>s.unitKey===key),latestSurvey=latestById(surveys);
-  if(latestSurvey){
-    base.ownerName=latestSurvey.ownerName||"";
-    base.contact=latestSurvey.contact||base.contact;
-    base.response=normalizeStatus(latestSurvey.response)||base.response;
-    base.followUpDate=latestSurvey.followUpDate||"";
-    base.lastFollowUp=latestSurvey.createdAt?latestSurvey.createdAt.slice(0,10):"";
-    base.remarks=latestSurvey.remarks||"";
+  if(latestSurvey&&latestSurvey.contact&&!base.contact){
+    base.contact=latestSurvey.contact;
   }
   const latestIdentityAppt=latestById(state.appointments.filter(a=>a.unitKey===key&&(a.ownerName||a.contact)));
   if(latestIdentityAppt){
@@ -196,8 +196,8 @@ rebuildAllMasters();persist();
 function viewTitle(view){return {
 dashboard:["Executive Dashboard","One view of A, C, D, NR, appointments and completed work."],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
-survey:["Survey & Follow-up","First-entry register. Unit Register updates automatically."],
-appointments:["Appointment Schedule","Planner is prefilled from the uploaded PR3 schedule. Enter resident details here without double entry."],
+survey:["Survey Visit Register","Visit diary for resident calls: date, exact time and contact reference."],
+appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 teams:["Appointment Planner","Zone-first Team 1 / Team 2 planning. Standard and custom times stay together in one daily sheet."],
@@ -238,7 +238,11 @@ function syncComplaintBlocks(){document.getElementById("complaintBlock").innerHT
 function syncPlannerBlocks(){document.getElementById("plannerBlock").innerHTML=blockOptions(document.getElementById("plannerZone").value);syncPlannerUnits()}
 function syncPairUnits(prefix){document.getElementById(prefix+"Unit").innerHTML=unitOptionsForBlock(document.getElementById(prefix+"Block").value);autofillPair(prefix)}
 function syncPlannerUnits(){document.getElementById("plannerUnit").innerHTML=unitOptionsForBlock(document.getElementById("plannerBlock").value)}
-function autofillSurvey(){const u=getUnit(document.getElementById("surveyUnit").value);if(!u)return;document.getElementById("surveyOwner").value=u.ownerName||"";document.getElementById("surveyContact").value=u.contact||"";document.getElementById("surveyResponse").value=u.response==="C"?"A":normalizeStatus(u.response)}
+function autofillSurvey(){
+  const u=getUnit(document.getElementById("surveyUnit").value);if(!u)return;
+  document.getElementById("surveyOwner").value=u.ownerName||"";
+  document.getElementById("surveyContact").value=u.contact||""
+}
 
 function preferredUnitAppointment(key){return preferredMasterAppointment(key)}
 function appointmentTargetForForm(key){
@@ -317,7 +321,7 @@ document.getElementById("appointmentSlot").addEventListener("change",toggleAppoi
 
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
-  const agree=a+c,openFollowups=state.surveys.filter(s=>s.followUpDate&&s.followUpDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
+  const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
   document.getElementById("heroTotalUnits").textContent=total.toLocaleString();const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
   document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${Math.round(agree/total*100)}% · A + C`;
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
@@ -326,7 +330,8 @@ function renderDashboard(){
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,pct=Math.round(zc/zu.length*100);return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
-  const follow=state.surveys.filter(s=>s.followUpDate&&s.followUpDate>=isoTodaySG()).sort((a,b)=>a.followUpDate.localeCompare(b.followUpDate)).slice(0,6);document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Owner not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.followUpDate)}</b></div>`).join(""):`<div class="empty-state">No follow-ups scheduled.</div>`;
+  const follow=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).sort((a,b)=>a.visitDate.localeCompare(b.visitDate)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))).slice(0,6);
+  document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Name not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.visitDate)}${s.visitTime?` · ${esc(s.visitTime)}`:""}</b></div>`).join(""):`<div class="empty-state">No upcoming survey visits.</div>`;
   renderTodayTeamBoard();
 }
 function renderBlockBoard(){
@@ -342,7 +347,9 @@ function latestAppointment(key){return preferredMasterAppointment(key)||latestBy
 function openDrawer(key){
   const u=getUnit(key);if(!u)return;const a=latestAppointment(key);
   document.getElementById("drawerUnitKey").value=key;document.getElementById("drawerUnitTitle").textContent=`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;document.getElementById("drawerUnitMeta").textContent=`Zone ${u.zone} · Floor ${u.floor}`;
-  document.getElementById("drawerStatusText").textContent=statusLabel(u.response);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=safeDate(u.followUpDate)||"—";document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
+  const survey=latestById(state.surveys.filter(s=>s.unitKey===key));
+  const surveyVisit=survey?.visitDate?`${safeDate(survey.visitDate)}${survey.visitTime?` · ${survey.visitTime}`:""}`:"—";
+  document.getElementById("drawerStatusText").textContent=statusLabel(u.response);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
   const legacy=document.getElementById("drawerLegacy"),txt=[u.legacySchedule&&`Imported schedule: ${u.legacySchedule}`,u.legacyRemark&&`Imported Excel remark: ${u.legacyRemark}`].filter(Boolean).join("<br>");legacy.innerHTML=txt;legacy.classList.toggle("show",!!txt);
   document.getElementById("drawerBackdrop").classList.add("open");document.getElementById("unitDrawer").classList.add("open");
 }
@@ -352,20 +359,64 @@ function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerU
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));
 
 function resetSurveyForm(){
-  document.getElementById("surveyEditId").value="";document.getElementById("surveySaveBtn").textContent="Save Survey Entry → Update Unit Register";document.getElementById("surveyCancelEdit").classList.add("hidden");document.getElementById("surveyRemarks").value="";document.getElementById("surveyFollowup").value="";autofillSurvey()
+  document.getElementById("surveyEditId").value="";
+  document.getElementById("surveySaveBtn").textContent="Save Survey Visit";
+  document.getElementById("surveyCancelEdit").classList.add("hidden");
+  document.getElementById("surveyVisitDate").value="";
+  document.getElementById("surveyVisitTime").value="";
+  document.getElementById("surveyRemarks").value="";
+  autofillSurvey()
 }
 document.getElementById("surveyCancelEdit").addEventListener("click",resetSurveyForm);
 document.getElementById("surveyForm").addEventListener("submit",e=>{
-  e.preventDefault();const key=document.getElementById("surveyUnit").value,u=getUnit(key);if(!u)return;const id=Number(document.getElementById("surveyEditId").value)||Date.now();
-  const entry={id,createdAt:new Date().toISOString(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:document.getElementById("surveyOwner").value.trim(),contact:document.getElementById("surveyContact").value.trim(),response:normalizeStatus(document.getElementById("surveyResponse").value),followUpDate:document.getElementById("surveyFollowup").value,remarks:document.getElementById("surveyRemarks").value.trim()};
-  const idx=state.surveys.findIndex(s=>s.id===id);if(idx>=0)state.surveys[idx]=entry;else state.surveys.push(entry);resetSurveyForm();save(idx>=0?"Survey entry updated":"Survey saved · Unit Register updated");
+  e.preventDefault();
+  const key=document.getElementById("surveyUnit").value,u=getUnit(key);if(!u)return;
+  const id=Number(document.getElementById("surveyEditId").value)||Date.now();
+  const visitDate=document.getElementById("surveyVisitDate").value;
+  const visitTime=document.getElementById("surveyVisitTime").value;
+  if(!visitDate){toast("Select Survey Visit Date");return}
+  if(!visitTime){toast("Select Survey Visit Time");return}
+  const entry={
+    id,
+    createdAt:new Date().toISOString(),
+    unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),
+    ownerName:document.getElementById("surveyOwner").value.trim(),
+    contact:document.getElementById("surveyContact").value.trim(),
+    visitDate,visitTime,
+    remarks:document.getElementById("surveyRemarks").value.trim()
+  };
+  const idx=state.surveys.findIndex(s=>s.id===id);
+  if(idx>=0)state.surveys[idx]=entry;else state.surveys.push(entry);
+  resetSurveyForm();
+  save(idx>=0?"Survey visit updated":"Survey visit saved")
 });
 function editSurvey(id){
-  const s=state.surveys.find(x=>x.id===id);if(!s)return;setView("survey");document.getElementById("surveyZone").value=String(s.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(s.block);syncSurveyUnits();document.getElementById("surveyUnit").value=s.unitKey;document.getElementById("surveyOwner").value=s.ownerName||"";document.getElementById("surveyContact").value=s.contact||"";document.getElementById("surveyResponse").value=normalizeStatus(s.response);document.getElementById("surveyFollowup").value=s.followUpDate||"";document.getElementById("surveyRemarks").value=s.remarks||"";document.getElementById("surveyEditId").value=String(s.id);document.getElementById("surveySaveBtn").textContent="Update Survey Entry";document.getElementById("surveyCancelEdit").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})
+  const s=state.surveys.find(x=>x.id===id);if(!s)return;
+  setView("survey");
+  document.getElementById("surveyZone").value=String(s.zone);syncSurveyBlocks();
+  document.getElementById("surveyBlock").value=String(s.block);syncSurveyUnits();
+  document.getElementById("surveyUnit").value=s.unitKey;
+  document.getElementById("surveyOwner").value=s.ownerName||"";
+  document.getElementById("surveyContact").value=s.contact||"";
+  document.getElementById("surveyVisitDate").value=s.visitDate||s.followUpDate||"";
+  document.getElementById("surveyVisitTime").value=s.visitTime||"";
+  document.getElementById("surveyRemarks").value=s.remarks||"";
+  document.getElementById("surveyEditId").value=String(s.id);
+  document.getElementById("surveySaveBtn").textContent="Update Survey Visit";
+  document.getElementById("surveyCancelEdit").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"})
 }
-function deleteSurvey(id){if(!confirm("Delete this survey entry?"))return;state.surveys=state.surveys.filter(x=>x.id!==id);save("Survey entry deleted")}
+function deleteSurvey(id){
+  if(!confirm("Delete this survey visit?"))return;
+  state.surveys=state.surveys.filter(x=>x.id!==id);
+  save("Survey visit deleted")
+}
 function renderSurveyTable(){
-  const r=[...state.surveys].sort((a,b)=>b.id-a.id);document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Status</th><th>Follow-up</th><th>Note</th><th>Action</th></tr></thead><tbody>${r.map(s=>`<tr><td>${safeDate((s.createdAt||"").slice(0,10))}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${statusPill(s.response)}</td><td>${safeDate(s.followUpDate)||"—"}</td><td>${esc(s.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No survey entries yet.</div>`
+  const today=isoTodaySG(),all=[...state.surveys];
+  const upcoming=all.filter(s=>(s.visitDate||s.followUpDate||"")>=today).sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.block)-Number(b.block));
+  const past=all.filter(s=>(s.visitDate||s.followUpDate||"")<today).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
+  const r=[...upcoming,...past];
+  document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">No survey visits yet.</div>`
 }
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
@@ -375,10 +426,13 @@ function startAppointmentFromSurvey(id){
   document.getElementById("appointmentUnit").value=s.unitKey;autofillPair("appointment");
   if(s.ownerName)document.getElementById("appointmentOwner").value=s.ownerName;
   if(s.contact)document.getElementById("appointmentContact").value=s.contact;
-  if(s.remarks&&!document.getElementById("appointmentRemarks").value)document.getElementById("appointmentRemarks").value=s.remarks;
   window.scrollTo({top:0,behavior:"smooth"})
 }
-document.getElementById("surveyTable").addEventListener("click",e=>{let b=e.target.closest("[data-survey-book]");if(b)return startAppointmentFromSurvey(Number(b.dataset.surveyBook));b=e.target.closest("[data-survey-edit]");if(b)return editSurvey(Number(b.dataset.surveyEdit));b=e.target.closest("[data-survey-delete]");if(b)deleteSurvey(Number(b.dataset.surveyDelete))});
+document.getElementById("surveyTable").addEventListener("click",e=>{
+  let b=e.target.closest("[data-survey-book]");if(b)return startAppointmentFromSurvey(Number(b.dataset.surveyBook));
+  b=e.target.closest("[data-survey-edit]");if(b)return editSurvey(Number(b.dataset.surveyEdit));
+  b=e.target.closest("[data-survey-delete]");if(b)deleteSurvey(Number(b.dataset.surveyDelete))
+});
 
 function resetAppointmentForm(){
   document.getElementById("appointmentEditId").value="";
