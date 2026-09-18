@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.25 Secure
+# ELU Upgrading — Premium V7.26 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -249,3 +249,13 @@ The security password is intentionally NOT written into this ZIP or README. Keep
 - Dataset remains encrypted with AES-256-GCM.
 - PBKDF2-SHA256 iterations: 600,000.
 - This is the recommended deployment build instead of V7.23 / V7.24.
+
+
+## V7.26 Manager Report Downloads
+- Reports page now has **Download PDF**, **Download PPT**, **Progress CSV** and **Unit Register CSV** in one place.
+- Manager PDF / PPT are generated fully inside the browser; no report data is sent to an external service.
+- Manager exports include: executive summary, zone progress, block completion chart and weekly meeting progress table.
+- Manager PDF / PPT deliberately exclude resident names, contact numbers and remarks.
+- Full Unit Register remains a separate CSV export with the existing privacy warning.
+- Report Zone / Block filters are respected by PDF / PPT / CSV.
+- Secure login, AES encrypted data, V7.25 password and secure local-storage key are unchanged, so existing encrypted browser data remains compatible.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.25">
+  <link rel="stylesheet" href="styles.css?v=7.26">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -362,7 +362,12 @@
       <section class="view" id="reports">
         <div class="report-hero">
           <div><span class="section-label">WEEKLY PROGRESS MEETING</span><h2>Progress Summary</h2><p>Calculated from the read-only Unit Register. A + C = Opt-In Agree; completed work is counted separately.</p></div>
-          <div class="report-actions"><button class="primary-btn" id="exportProgressBtn">Export Progress CSV</button><button class="ghost-btn" id="exportUnitsBtn">Export Unit Register</button></div>
+          <div class="report-actions report-download-actions">
+            <button class="primary-btn" id="exportManagerPdfBtn">Download PDF</button>
+            <button class="primary-btn secondary" id="exportManagerPptBtn">Download PPT</button>
+            <button class="ghost-btn" id="exportProgressBtn">Progress CSV</button>
+            <button class="ghost-btn" id="exportUnitsBtn">Unit Register CSV</button>
+          </div>
         </div>
         <article class="panel">
           <div class="panel-head register-head">
@@ -372,7 +377,12 @@
               <label class="mini-filter">Block<select id="reportBlockFilter"></select></label>
             </div>
           </div>
+          <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes progress summary, zone progress, block completion chart and weekly meeting table. Resident names and contact numbers are excluded.</span></div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>
+          <div class="report-chart-panel">
+            <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Completion by Block</h3></div><span class="panel-badge">NO PERSONAL DATA</span></div>
+            <div id="reportBlockChart" class="report-block-chart"></div>
+          </div>
           <div id="reportTable" class="table-shell"></div>
         </article>
       </section>
@@ -406,7 +416,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.25"></script>
-  <script src="app.js?v=7.25"></script>
+  <script src="data.js?v=7.26"></script>
+  <script src="app.js?v=7.26"></script>
 </body>
 </html>

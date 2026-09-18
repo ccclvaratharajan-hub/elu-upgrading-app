@@ -1108,3 +1108,15 @@ body.secure-locked .toast{visibility:hidden}
   color:#718795;font-size:12px;line-height:1.55
 }
 .secure-logout-btn{min-width:68px}
+
+
+/* V7.26 Manager report downloads — V7.25 secure design retained */
+.report-download-actions{flex-wrap:wrap;justify-content:flex-end}
+.report-download-actions .primary-btn.secondary{background:linear-gradient(180deg,#315f8b,#234e76);border-color:#234e76}
+.manager-export-note{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border:1px solid #d9e9f4;border-radius:14px;background:#f7fbfe;color:#60798a;font-size:11px;line-height:1.5}
+.manager-export-note strong{color:#315f8b;white-space:nowrap}
+.report-chart-panel{border:1px solid #e3edf5;border-radius:18px;background:#fbfdff;padding:15px;margin:0 0 18px}
+.report-chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.report-chart-head h3{margin:2px 0 0;font-size:16px;color:#315b84}
+.report-block-chart{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;max-height:330px;overflow:auto;padding-right:4px}
+.report-block-bar{display:grid;grid-template-columns:58px 1fr 55px;align-items:center;gap:8px;font-size:9px;color:#60798a}.report-block-bar>span{font-weight:800;color:#315b84}.report-block-bar>b{text-align:right;font-variant-numeric:tabular-nums;color:#315b84}.report-block-track{height:9px;border-radius:999px;background:#e8f0f6;overflow:hidden}.report-block-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#3f9bd1,#1474ad)}
+@media(max-width:900px){.report-block-chart{grid-template-columns:1fr}.report-download-actions{justify-content:flex-start}.manager-export-note{align-items:flex-start;flex-direction:column}}
