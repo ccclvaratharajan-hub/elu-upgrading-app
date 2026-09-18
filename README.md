@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.16
+# ELU Upgrading — Premium V7.17
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -175,10 +175,9 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - V7.14 Zone/Block filters, Block 537 corrected layout, blank imported Remarks, Owner/Contact data, reschedule history and locked status colours are retained.
 
 
-## V7.16 Theme 1 visual trial
-- Kept all V7.15 data, Planner, Zone/Block, reschedule, Block 537 and register logic unchanged.
-- Reworked only the visual layer toward the selected Clean Light / water-glass reference.
-- Removed transformer artwork and the oversized background effect.
-- Tightened the top spacing and hero height.
-- Added eight glass quick-launch dashboard icon tiles linked to the existing modules.
-- Kept Manoharan Varatharajan as the only profile name and gave it a restrained electric highlight.
+## V7.17 screenshot-style theme
+- Uses the clean executive blue theme shown in the supplied reference screenshot.
+- Restores the pale blue page, white sidebar, blue gradient hero, white KPI cards and clean executive panels.
+- Removes transformer artwork, spark animation and the photo-style theme experiment.
+- Keeps all V7.15 functional/data logic: Zone/Block split, Planner, custom-time integration, Block 537 correction, Unit Register, history/reschedule logic and Block Board summary percentages.
+- Manoharan Varatharajan remains as the only profile name, shown in a clean white chip.
