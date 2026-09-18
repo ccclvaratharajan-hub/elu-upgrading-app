@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.4
+# ELU Upgrading — Premium V7.7
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -58,3 +58,37 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Status colours are slightly transparent / softer while staying easy to identify.
 - Locked colour mapping unchanged: A = Green, C = Pink, D = Yellow, NR = Red.
 - No workflow, data, dashboard, planner, appointment, report, or register logic changed.
+
+## V7.5 Block/Floor Board fix
+- Forced fresh CSS load with cache-busting so the new colours actually appear.
+- Removed the long blue floor-strip feel.
+- Unit cards are compact and medium square-ish.
+- No status dot inside unit cards.
+- A = Green, C = Pink, D = Yellow, NR = Red.
+- No workflow, data, appointment, dashboard, planner, report, or register logic changed.
+
+
+## V7.6 minor corrections
+- Master Data / all table status colours aligned clearly:
+  - A = Green
+  - C = Pink
+  - D / Opt-Out = Yellow
+  - NR / No Response = Red
+- Block/Floor Board keeps the same mapping with stronger difference between D and NR.
+- Sidebar logo / nav icon styling refreshed without changing layout or workflow.
+- Appointment page now shows Planner sync clearly.
+- When a unit is selected in Appointment Schedule, the latest existing planner/schedule date, slot and team auto-fill automatically.
+- No change to project structure, master-register logic, survey logic, reports, planner flow, or uploaded data.
+
+
+## V7.7 minor workflow correction
+- Appointment Planner is now the single place to set appointment Date + Time/Slot + Team.
+- The four standard slots remain unchanged.
+- Added **Custom Time** in Planner for exceptional timings such as 6pm–8pm.
+- Appointment Schedule no longer asks for Date, Slot or Team again.
+- Appointment Schedule is now only for Owner Name, Contact and appointment note.
+- Planner schedule automatically sits in the read-only Master Unit Register.
+- Owner Name / Contact saved in Appointment Schedule also update Master Data automatically.
+- Special-time appointments are shown separately in Planner and on today's Dashboard team schedule.
+- Existing C → A automatic completion logic also works with custom time because the custom end time is read from the slot label.
+- No change to Survey, Complaint, Weekly Report, status colours or block/unit mapping.

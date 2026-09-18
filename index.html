@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=7.7">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -183,30 +183,32 @@
       <section class="view" id="appointments">
         <div class="form-layout">
           <article class="panel form-card">
-            <div class="panel-head"><div><span class="section-label">BOOKING</span><h3>Confirm Appointment</h3><p>Owner and contact are read from the Unit Register.</p></div></div>
+            <div class="panel-head"><div><span class="section-label">APPOINTMENT DETAILS</span><h3>Resident Details</h3><p>Schedule comes from the Planner. Enter only resident details here.</p></div></div>
             <form id="appointmentForm" class="premium-form">
               <input type="hidden" id="appointmentEditId">
               <div class="form-row two">
                 <label>Block<select id="appointmentBlock"></select></label>
                 <label>Unit<select id="appointmentUnit"></select></label>
               </div>
-              <div class="form-row two">
-                <label>Owner Name<input id="appointmentOwner" readonly></label>
-                <label>Contact<input id="appointmentContact" readonly></label>
+
+              <div class="planned-schedule-card" id="appointmentPlanCard">
+                <div><span>Planned Date</span><strong id="appointmentPlanDate">—</strong></div>
+                <div><span>Time / Slot</span><strong id="appointmentPlanSlot">—</strong></div>
+                <div><span>Team</span><strong id="appointmentPlanTeam">—</strong></div>
               </div>
+
               <div class="form-row two">
-                <label>Appointment Date<input type="date" id="appointmentDate" required></label>
-                <label>Time Slot<select id="appointmentSlot" required>
-                  <option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option>
-                </select></label>
+                <label>Owner Name<input id="appointmentOwner" placeholder="Owner / resident name"></label>
+                <label>Contact<input id="appointmentContact" inputmode="tel" placeholder="Contact number"></label>
               </div>
-              <label>Team<select id="appointmentTeam"><option value="">Unassigned</option><option>Team 1</option><option>Team 2</option></select></label>
-              <label>Appointment Note<textarea id="appointmentRemarks" rows="3"></textarea></label>
+
+              <label>Appointment Note<textarea id="appointmentRemarks" rows="3" placeholder="Resident / access note"></textarea></label>
+              <div class="inline-sync-note" id="appointmentSyncNote">Date, time and team come from Appointment Planner automatically.</div>
               <div class="form-actions">
-                <button class="primary-btn" id="appointmentSaveBtn" type="submit">Confirm Appointment → Set C</button>
+                <button class="primary-btn" id="appointmentSaveBtn" type="submit">Save Resident Details</button>
                 <button class="ghost-btn hidden" id="appointmentCancelEdit" type="button">Cancel Edit</button>
               </div>
-              <div class="form-hint">After the appointment slot ends, C automatically changes to A and work is counted as completed.</div>
+              <div class="form-hint">No double entry: set Date + Slot + Team once in Appointment Planner. This page is only for Owner Name, Contact and appointment note. Master Data updates automatically.</div>
             </form>
           </article>
 
@@ -268,8 +270,8 @@
         <div class="planner-hero">
           <div>
             <span class="section-label">DAILY APPOINTMENT PLANNER</span>
-            <h2>Two teams · four fixed slots</h2>
-            <p>Fill appointments days in advance here. The same appointment data updates the Unit Register, C status and Dashboard — no double entry.</p>
+            <h2>Two teams · four fixed slots + special time</h2>
+            <p>Fill appointments days in advance here. Use the four normal slots, or Custom Time for an exceptional booking such as 6pm–8pm. The same schedule updates Master Data, C status and Dashboard.</p>
           </div>
           <div class="planner-date-nav">
             <button class="icon-date-btn" id="plannerPrevDay" type="button">‹</button>
@@ -285,7 +287,11 @@
             <label>Block<select id="plannerBlock"></select></label>
             <label>Unit<select id="plannerUnit"></select></label>
             <label>Team<select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select></label>
-            <label>Slot<select id="plannerSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option></select></label>
+            <label>Slot<select id="plannerSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option><option value="CUSTOM">Custom Time</option></select></label>
+            <div class="planner-custom-time hidden" id="plannerCustomTimeRow">
+              <label>Start<input type="time" id="plannerCustomStart"></label>
+              <label>End<input type="time" id="plannerCustomEnd"></label>
+            </div>
             <label class="planner-remarks">Remarks<input id="plannerRemarks" placeholder="Access note / resident note"></label>
             <button class="primary-btn" type="submit">Add to Planner</button>
           </form>
@@ -294,6 +300,7 @@
         <article class="panel planner-sheet-panel">
           <div class="planner-sheet-title"><div><span class="section-label">DAILY SHEET</span><h3 id="plannerDateTitle">Daily appointment sheet</h3></div><div class="planner-sheet-actions"><span class="panel-badge">LIVE</span></div></div>
           <div id="plannerTable" class="planner-table-wrap"></div>
+          <div id="plannerSpecialTimes" class="planner-special-times"></div>
         </article>
 
         <article class="panel unassigned-panel">
