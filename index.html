@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.26">
+  <link rel="stylesheet" href="styles.css?v=7.28">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -363,10 +363,17 @@
         <div class="report-hero">
           <div><span class="section-label">WEEKLY PROGRESS MEETING</span><h2>Progress Summary</h2><p>Calculated from the read-only Unit Register. A + C = Opt-In Agree; completed work is counted separately.</p></div>
           <div class="report-actions report-download-actions">
-            <button class="primary-btn" id="exportManagerPdfBtn">Download PDF</button>
-            <button class="primary-btn secondary" id="exportManagerPptBtn">Download PPT</button>
-            <button class="ghost-btn" id="exportProgressBtn">Progress CSV</button>
-            <button class="ghost-btn" id="exportUnitsBtn">Unit Register CSV</button>
+            <div class="report-primary-downloads">
+              <button class="primary-btn" id="exportManagerPdfBtn">Manager PDF</button>
+              <button class="primary-btn secondary" id="exportManagerPptBtn">Manager PPT</button>
+              <button class="ghost-btn" id="exportUnitSummaryPdfBtn">Unit Summary PDF</button>
+              <button class="ghost-btn" id="exportBlockChartPdfBtn">Block Chart PDF</button>
+            </div>
+            <div class="report-data-downloads" aria-label="Data exports">
+              <span class="report-data-label">DATA EXPORT</span>
+              <button class="ghost-btn" id="exportProgressBtn">Progress CSV</button>
+              <button class="ghost-btn" id="exportUnitsBtn">Unit Summary CSV</button>
+            </div>
           </div>
         </div>
         <article class="panel">
@@ -377,8 +384,13 @@
               <label class="mini-filter">Block<select id="reportBlockFilter"></select></label>
             </div>
           </div>
-          <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes progress summary, zone progress, block completion chart and weekly meeting table. Resident names and contact numbers are excluded.</span></div>
+          <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes a score-style progress bar, zone progress, block completion chart and weekly meeting table. Unit Summary exports exclude Owner Name, Contact and free-text Remarks.</span></div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>
+          <div class="report-score-panel">
+            <div class="report-score-head"><div><span class="section-label">OVERALL SCORE</span><h3>Work Completion Progress</h3></div><strong id="reportScoreValue">0%</strong></div>
+            <div class="report-score-rail" id="reportScoreRail"><i></i><b></b></div>
+            <div class="report-score-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          </div>
           <div class="report-chart-panel">
             <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Completion by Block</h3></div><span class="panel-badge">NO PERSONAL DATA</span></div>
             <div id="reportBlockChart" class="report-block-chart"></div>
@@ -416,7 +428,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.26"></script>
-  <script src="app.js?v=7.26"></script>
+  <script src="data.js?v=7.28"></script>
+  <script src="pptxgen.min.js?v=7.27"></script>
+  <script src="app.js?v=7.28"></script>
 </body>
 </html>

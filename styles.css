@@ -1120,3 +1120,46 @@ body.secure-locked .toast{visibility:hidden}
 .report-block-chart{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;max-height:330px;overflow:auto;padding-right:4px}
 .report-block-bar{display:grid;grid-template-columns:58px 1fr 55px;align-items:center;gap:8px;font-size:9px;color:#60798a}.report-block-bar>span{font-weight:800;color:#315b84}.report-block-bar>b{text-align:right;font-variant-numeric:tabular-nums;color:#315b84}.report-block-track{height:9px;border-radius:999px;background:#e8f0f6;overflow:hidden}.report-block-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#3f9bd1,#1474ad)}
 @media(max-width:900px){.report-block-chart{grid-template-columns:1fr}.report-download-actions{justify-content:flex-start}.manager-export-note{align-items:flex-start;flex-direction:column}}
+
+
+/* V7.27 report scorebar + safe export controls */
+.report-score-panel{border:1px solid #dfeaf3;border-radius:18px;background:linear-gradient(180deg,#fbfdff,#f5faff);padding:16px 17px 13px;margin:0 0 14px}
+.report-score-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px}.report-score-head h3{margin:2px 0 0;font-size:16px;color:#315b84}.report-score-head>strong{font-size:24px;color:#1474ad;font-variant-numeric:tabular-nums}
+.report-score-rail{position:relative;height:20px;border-radius:999px;background:#e8f0f6;overflow:visible;box-shadow:inset 0 0 0 1px #d9e5ee}.report-score-rail:before{content:"";position:absolute;inset:-3px 25% -3px auto;width:1px;background:#b9c9d5;box-shadow:-25vw 0 0 #b9c9d5,25vw 0 0 #b9c9d5}.report-score-rail i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#54a8d7,#1474ad);transition:width .25s ease}.report-score-rail b{position:absolute;top:-6px;width:4px;height:32px;border-radius:4px;background:#0d4d73;transform:translateX(-2px);box-shadow:0 1px 4px rgba(23,56,78,.25)}
+.report-score-ticks{display:flex;justify-content:space-between;color:#8397a6;font-size:8px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+@media(max-width:720px){.report-score-head{align-items:flex-start}.report-score-head>strong{font-size:20px}.report-download-actions{gap:7px}.report-download-actions button{font-size:10px;padding:9px 10px}}
+
+
+/* V7.28 — visually separate CSV data exports from manager report downloads */
+.report-download-actions{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.report-primary-downloads{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.report-data-downloads{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+  margin-left:auto;
+  padding:7px 9px;
+  border:1px solid #dfeaf2;
+  border-radius:12px;
+  background:#f8fbfd;
+}
+.report-data-label{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.12em;
+  color:#6e8798;
+  margin-right:2px;
+}
+@media (max-width:900px){
+  .report-data-downloads{margin-left:0;width:100%}
+}

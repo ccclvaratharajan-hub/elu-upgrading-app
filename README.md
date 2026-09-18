@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.26 Secure
+# ELU Upgrading — Premium V7.28 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -259,3 +259,19 @@ The security password is intentionally NOT written into this ZIP or README. Keep
 - Full Unit Register remains a separate CSV export with the existing privacy warning.
 - Report Zone / Block filters are respected by PDF / PPT / CSV.
 - Secure login, AES encrypted data, V7.25 password and secure local-storage key are unchanged, so existing encrypted browser data remains compatible.
+
+
+## V7.27 Report export improvements
+- Manager PPT export now uses a bundled local PptxGenJS engine instead of the previous hand-built PPTX package.
+- Manager PDF now shows a large score-style horizontal completion bar with 0 / 25 / 50 / 75 / 100 milestones.
+- Added separate Block Chart PDF download.
+- Added Unit Summary PDF and Unit Summary CSV downloads.
+- Unit Summary excludes Owner Name, Contact and free-text Remarks.
+- Unit Summary includes Zone, Block, Unit, Status, Work Status, Appointment Date, Slot and Team.
+- Existing secure login/encryption data and storage key are unchanged.
+
+
+## V7.28 Reports layout
+- Main report buttons remain together: Manager PDF, Manager PPT, Unit Summary PDF and Block Chart PDF.
+- Progress CSV and Unit Summary CSV remain available in a separate **Data Export** group on the side.
+- No report generation logic, login, encryption, resident data, or storage behavior changed from V7.27.
