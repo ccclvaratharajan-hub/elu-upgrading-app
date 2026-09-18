@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.13">
+  <link rel="stylesheet" href="styles.css?v=7.14">
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -186,7 +186,8 @@
             <div class="panel-head"><div><span class="section-label">APPOINTMENT DETAILS</span><h3>Resident Details</h3><p>Schedule comes from the Planner. Enter only resident details here.</p></div></div>
             <form id="appointmentForm" class="premium-form">
               <input type="hidden" id="appointmentEditId">
-              <div class="form-row two">
+              <div class="form-row three">
+                <label>Zone<select id="appointmentZone"></select></label>
                 <label>Block<select id="appointmentBlock"></select></label>
                 <label>Unit<select id="appointmentUnit"></select></label>
               </div>
@@ -213,7 +214,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> appointment records loaded from your uploaded PR3 Appointment schedule. Planner is prefilled from this schedule.</p></div><div class="register-tools"><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">History / Rescheduled</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> appointment records loaded from your uploaded PR3 Appointment schedule. Planner is prefilled from this schedule.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="appointmentZoneFilter"></select></label><label class="mini-filter">Block<select id="appointmentBlockFilter"></select></label><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">History / Rescheduled</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
             <div id="appointmentTable" class="table-shell"></div>
           </article>
         </div>
@@ -226,6 +227,7 @@
             <div class="register-tools">
               <div class="search-box small"><svg><use href="#i-search"/></svg><input id="unitSearch" placeholder="Search block / unit / owner / contact"></div>
               <select id="unitZoneFilter"></select>
+              <select id="unitBlockFilter"></select>
             </div>
           </div>
           <div id="unitTable" class="table-shell"></div>
@@ -238,7 +240,8 @@
             <div class="panel-head"><div><span class="section-label">SEPARATE RECORD</span><h3>New Complaint</h3><p>Select the unit; owner and contact are looked up. No complaint is created automatically.</p></div></div>
             <form id="complaintForm" class="premium-form">
               <input type="hidden" id="complaintEditId">
-              <div class="form-row two">
+              <div class="form-row three">
+                <label>Zone<select id="complaintZone"></select></label>
                 <label>Block<select id="complaintBlock"></select></label>
                 <label>Unit<select id="complaintUnit"></select></label>
               </div>
@@ -260,7 +263,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label></div></div>
             <div id="complaintTable" class="table-shell"></div>
           </article>
         </div>
@@ -273,7 +276,9 @@
             <h2>Two teams · four fixed slots + special time</h2>
             <p>Fill appointments days in advance here. Use the four normal slots, or Custom Time for an exceptional booking such as 6pm–8pm. The same schedule updates Master Data, C status and Dashboard.</p>
           </div>
-          <div class="planner-date-nav">
+          <div class="planner-date-nav planner-nav-wide">
+            <label>View Zone<select id="plannerViewZone"></select></label>
+            <label>View Block<select id="plannerViewBlock"></select></label>
             <button class="icon-date-btn" id="plannerPrevDay" type="button">‹</button>
             <label>Planning Date<input type="date" id="teamDate"></label>
             <button class="icon-date-btn" id="plannerNextDay" type="button">›</button>
@@ -286,6 +291,7 @@
           <div class="planner-rule-note"><strong>One active appointment per unit.</strong> If you reschedule it in Planner, the old booking moves to Rescheduled history automatically.</div>
           <form id="plannerForm" class="planner-form">
             <input type="hidden" id="plannerEditId">
+            <label>Zone<select id="plannerZone"></select></label>
             <label>Block<select id="plannerBlock"></select></label>
             <label>Unit<select id="plannerUnit"></select></label>
             <label>Team<select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select></label>
@@ -324,6 +330,7 @@
             <div><h3>Weekly Progress Summary</h3><p>Aligned to the Progress Summary structure from your source workbooks.</p></div>
             <div class="register-tools">
               <label class="mini-filter">Zone<select id="reportZoneFilter"></select></label>
+              <label class="mini-filter">Block<select id="reportBlockFilter"></select></label>
             </div>
           </div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>

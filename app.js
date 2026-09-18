@@ -1,5 +1,5 @@
-const STORAGE_KEY="elu_premium_v9";
-const PREV_STORAGE_KEY="elu_premium_v8";
+const STORAGE_KEY="elu_premium_v10";
+const PREV_STORAGE_KEY="elu_premium_v9";
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -26,7 +26,7 @@ function slotToCustomTimes(slot){return {start:minutesTo24(slotStartMinutes(slot
 
 function importedAppointmentId(block,floor,unit){return 600000000+Number(block)*100000+Number(floor)*1000+Number(unit)}
 function seedAppointments(){
-  return (SOURCE_APPOINTMENTS||[]).map(a=>({...a,scheduleState:a.scheduleState||"Active"}))
+  return (SOURCE_APPOINTMENTS||[]).map(a=>({...a,remarks:"",scheduleState:a.scheduleState||"Active"}))
 }
 function unitKey(block,floor,unit){return `${block}-${floor}-${unit}`}
 function unitDisplay(floor,unit){return `#${String(floor).padStart(2,"0")}-${unit}`}
@@ -42,7 +42,7 @@ function baseUnit(block,floor,unit){
   const d=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];const seed=(d?.seed||{})[`${floor}-${unit}`]||{};
   return {
     key:unitKey(block,floor,unit),zone:Number(d?.zone||0),block:Number(block),floor:Number(floor),unit:Number(unit),
-    response:normalizeStatus(seed.response),ownerName:seed.ownerName||"",contact:seed.contact||"",remarks:seed.remarks||"",
+    response:normalizeStatus(seed.response),ownerName:seed.ownerName||"",contact:seed.contact||"",remarks:"",
     followUpDate:"",lastFollowUp:"",appointmentDate:"",appointmentSlot:"",team:"",
     workStatus:seed.completed?"Completed":"Pending",
     legacySchedule:seed.legacySchedule||"",legacyRemark:seed.legacyRemark||""
@@ -71,7 +71,9 @@ function mergeSavedIntoFresh(saved){
         ...seed,
         ownerName:clean.ownerName||seed.ownerName||"",
         contact:clean.contact||seed.contact||"",
-        remarks:clean.remarks||seed.remarks||"",
+        remarks:(clean.userRemarks||isUserAppointment(clean))?(clean.remarks||""):"",
+        userRemarks:Boolean(clean.userRemarks||isUserAppointment(clean)),
+        source:isUserAppointment(clean)?clean.source:seed.source,
         team:clean.team||seed.team||"",
         scheduleState:clean.scheduleState||seed.scheduleState||"Active",
         workStatus:clean.workStatus||seed.workStatus||"Pending"
@@ -195,16 +197,18 @@ document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]")
 
 function zoneOptions(includeAll=false){return(includeAll?`<option value="all">All Zones</option>`:"")+Object.keys(ZONE_BLOCKS).map(z=>`<option value="${z}">Zone ${z}</option>`).join("")}
 function blockOptions(zone){return(ZONE_BLOCKS[zone]||[]).map(b=>`<option value="${b}">Blk ${b}</option>`).join("")}
+function allBlockOptions(includeAll=true){const h=includeAll?`<option value="all">All Blocks</option>`:"";return h+Object.values(ZONE_BLOCKS).flat().map(b=>`<option value="${b}">Blk ${b}</option>`).join("")}
+function filterBlockOptions(zone,includeAll=true){if(zone==="all")return allBlockOptions(includeAll);const h=includeAll?`<option value="all">All Blocks</option>`:"";return h+blockOptions(zone)}
+function zoneOfBlock(block){return Number(Object.keys(ZONE_BLOCKS).find(z=>(ZONE_BLOCKS[z]||[]).includes(Number(block)))||0)}
+function zoneGroupHeader(zone,count,label){return `<div class="zone-group-head"><div><span>ZONE ${zone}</span><strong>Blocks ${(ZONE_BLOCKS[zone]||[]).join(", ")}</strong></div><em>${count} ${label}</em></div>`}
 function unitOptionsForBlock(block){return getBlockUnits(block).map(u=>`<option value="${u.key}">${unitDisplay(u.floor,u.unit)}</option>`).join("")}
 function initSelectors(){
-  ["boardZone","surveyZone"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions());
-  document.getElementById("unitZoneFilter").innerHTML=zoneOptions(true);
-  document.getElementById("reportZoneFilter").innerHTML=zoneOptions(true);
-  document.getElementById("unitZoneFilter").value="1";document.getElementById("reportZoneFilter").value="1";
-  document.getElementById("boardZone").value="1";syncBoardBlocks();
-  document.getElementById("surveyZone").value="1";syncSurveyBlocks();
-  ["appointmentBlock","complaintBlock","plannerBlock"].forEach(id=>document.getElementById(id).innerHTML=Object.values(ZONE_BLOCKS).flat().map(b=>`<option value="${b}">Blk ${b}</option>`).join(""));
-  syncPairUnits("appointment");syncPairUnits("complaint");syncPlannerUnits();
+  ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions());
+  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions(true));
+  ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).value="1");
+  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter"].forEach(id=>document.getElementById(id).value="all");
+  ["unitBlockFilter","appointmentBlockFilter","complaintBlockFilter","plannerViewBlock","reportBlockFilter"].forEach(id=>document.getElementById(id).innerHTML=allBlockOptions(true));
+  syncBoardBlocks();syncSurveyBlocks();syncAppointmentBlocks();syncComplaintBlocks();syncPlannerBlocks();
 }
 function syncBoardBlocks(){const z=document.getElementById("boardZone").value;document.getElementById("boardBlock").innerHTML=blockOptions(z);renderBoardFloorOptions();renderBlockBoard()}
 function renderBoardFloorOptions(){
@@ -213,6 +217,9 @@ function renderBoardFloorOptions(){
 }
 function syncSurveyBlocks(){document.getElementById("surveyBlock").innerHTML=blockOptions(document.getElementById("surveyZone").value);syncSurveyUnits()}
 function syncSurveyUnits(){document.getElementById("surveyUnit").innerHTML=unitOptionsForBlock(document.getElementById("surveyBlock").value);autofillSurvey()}
+function syncAppointmentBlocks(){document.getElementById("appointmentBlock").innerHTML=blockOptions(document.getElementById("appointmentZone").value);syncPairUnits("appointment")}
+function syncComplaintBlocks(){document.getElementById("complaintBlock").innerHTML=blockOptions(document.getElementById("complaintZone").value);syncPairUnits("complaint")}
+function syncPlannerBlocks(){document.getElementById("plannerBlock").innerHTML=blockOptions(document.getElementById("plannerZone").value);syncPlannerUnits()}
 function syncPairUnits(prefix){document.getElementById(prefix+"Unit").innerHTML=unitOptionsForBlock(document.getElementById(prefix+"Block").value);autofillPair(prefix)}
 function syncPlannerUnits(){document.getElementById("plannerUnit").innerHTML=unitOptionsForBlock(document.getElementById("plannerBlock").value)}
 function autofillSurvey(){const u=getUnit(document.getElementById("surveyUnit").value);if(!u)return;document.getElementById("surveyOwner").value=u.ownerName||"";document.getElementById("surveyContact").value=u.contact||"";document.getElementById("surveyResponse").value=u.response==="C"?"A":normalizeStatus(u.response)}
@@ -249,8 +256,9 @@ function autofillPair(prefix){
 }
 document.getElementById("boardZone").addEventListener("change",syncBoardBlocks);document.getElementById("boardBlock").addEventListener("change",()=>{renderBoardFloorOptions();renderBlockBoard()});document.getElementById("boardFloor").addEventListener("change",renderBlockBoard);document.getElementById("boardSearch").addEventListener("input",renderBlockBoard);
 document.getElementById("surveyZone").addEventListener("change",syncSurveyBlocks);document.getElementById("surveyBlock").addEventListener("change",syncSurveyUnits);document.getElementById("surveyUnit").addEventListener("change",autofillSurvey);
-["appointment","complaint"].forEach(p=>{document.getElementById(p+"Block").addEventListener("change",()=>syncPairUnits(p));document.getElementById(p+"Unit").addEventListener("change",()=>autofillPair(p))});
-document.getElementById("plannerBlock").addEventListener("change",syncPlannerUnits);
+document.getElementById("appointmentZone").addEventListener("change",syncAppointmentBlocks);document.getElementById("appointmentBlock").addEventListener("change",()=>syncPairUnits("appointment"));document.getElementById("appointmentUnit").addEventListener("change",()=>autofillPair("appointment"));
+document.getElementById("complaintZone").addEventListener("change",syncComplaintBlocks);document.getElementById("complaintBlock").addEventListener("change",()=>syncPairUnits("complaint"));document.getElementById("complaintUnit").addEventListener("change",()=>autofillPair("complaint"));
+document.getElementById("plannerZone").addEventListener("change",syncPlannerBlocks);document.getElementById("plannerBlock").addEventListener("change",syncPlannerUnits);
 document.getElementById("plannerSlot").addEventListener("change",togglePlannerCustomTime);
 
 function renderDashboard(){
@@ -322,6 +330,7 @@ document.getElementById("appointmentForm").addEventListener("submit",e=>{
   a.ownerName=document.getElementById("appointmentOwner").value.trim();
   a.contact=document.getElementById("appointmentContact").value.trim();
   a.remarks=document.getElementById("appointmentRemarks").value.trim();
+  a.userRemarks=true;
   if(!a.source)a.source="Planner";if(!a.scheduleState)a.scheduleState="Active";
   document.getElementById("appointmentEditId").value="";
   save("Resident details saved · Master Data updated")
@@ -330,6 +339,8 @@ function editAppointment(id){
   const a=state.appointments.find(x=>x.id===id);if(!a)return;
   setView("appointments");
   document.getElementById("appointmentEditId").value=String(a.id);
+  document.getElementById("appointmentZone").value=String(a.zone||zoneOfBlock(a.block));
+  syncAppointmentBlocks();
   document.getElementById("appointmentBlock").value=String(a.block);
   syncPairUnits("appointment");
   document.getElementById("appointmentUnit").value=a.unitKey;
@@ -343,21 +354,31 @@ function editAppointment(id){
 }
 function deleteAppointment(id){if(!confirm("Delete this appointment? The Unit Register will recalculate automatically."))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
 document.getElementById("appointmentFilterDate").addEventListener("change",renderAppointmentTable);document.getElementById("appointmentMode").addEventListener("change",renderAppointmentTable);
+document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{const z=document.getElementById("appointmentZoneFilter").value;document.getElementById("appointmentBlockFilter").innerHTML=filterBlockOptions(z,true);renderAppointmentTable()});
+document.getElementById("appointmentBlockFilter").addEventListener("change",renderAppointmentTable);
 function renderAppointmentTable(){
-  const f=document.getElementById("appointmentFilterDate").value,mode=document.getElementById("appointmentMode").value;let r=[...state.appointments];
+  const f=document.getElementById("appointmentFilterDate").value,mode=document.getElementById("appointmentMode").value,zf=document.getElementById("appointmentZoneFilter").value,bf=document.getElementById("appointmentBlockFilter").value;let r=[...state.appointments];
   const imported=r.filter(a=>String(a.source||"").includes("Excel")).length;const ic=document.getElementById("importedScheduleCount");if(ic)ic.textContent=imported.toLocaleString();
-  if(f)r=r.filter(a=>a.date===f);
-  else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());
-  else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
+  if(zf!=="all")r=r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===Number(zf));if(bf!=="all")r=r.filter(a=>Number(a.block)===Number(bf));
+  if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
   r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  document.getElementById("appointmentTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${r.slice(0,900).map(a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed";return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set"><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>${r.length>900?`<div class="empty-state">Showing first 900 records. Use View or Date filter to narrow the schedule.</div>`:""}`:`<div class="empty-state">No appointments found for this view.</div>`;
+  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed";return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(u?.response)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set"><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button></div></td></tr>`};
+  const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
+  if(!r.length){document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No appointments found.</div>`;return}
+  document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"appointments")}${table(x)}</section>`).join("")}</div>`:table(r)
 }
 document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
 
-document.getElementById("unitSearch").addEventListener("input",renderUnitTable);document.getElementById("unitZoneFilter").addEventListener("change",renderUnitTable);
+document.getElementById("unitSearch").addEventListener("input",renderUnitTable);
+document.getElementById("unitZoneFilter").addEventListener("change",()=>{const z=document.getElementById("unitZoneFilter").value;document.getElementById("unitBlockFilter").innerHTML=filterBlockOptions(z,true);renderUnitTable()});
+document.getElementById("unitBlockFilter").addEventListener("change",renderUnitTable);
 function renderUnitTable(){
-  const q=document.getElementById("unitSearch").value.trim().toLowerCase(),zf=document.getElementById("unitZoneFilter").value;let r=unitsArray();if(zf!=="all")r=r.filter(u=>u.zone===Number(zf));if(q)r=r.filter(u=>`blk ${u.block} ${unitDisplay(u.floor,u.unit)} ${u.ownerName} ${u.contact}`.toLowerCase().includes(q));
-  document.getElementById("unitTable").innerHTML=r.length?`<table><thead><tr><th>Block No</th><th>Unit No</th><th>Status</th><th>Owner Name</th><th>Contact</th><th>Appointment Date</th><th>Slot</th><th>Remarks</th></tr></thead><tbody>${r.map(u=>`<tr><td>Blk ${u.block}</td><td><strong>${unitDisplay(u.floor,u.unit)}</strong></td><td>${statusPill(u.response)}</td><td>${esc(u.ownerName||"—")}</td><td>${esc(u.contact||"—")}</td><td>${safeDate(u.appointmentDate)||"—"}</td><td>${esc(u.appointmentSlot||"—")}</td><td>${esc(u.remarks||"—")}</td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No matching unit records.</div>`
+  const q=document.getElementById("unitSearch").value.trim().toLowerCase(),zf=document.getElementById("unitZoneFilter").value,bf=document.getElementById("unitBlockFilter").value;let r=unitsArray();
+  if(zf!=="all")r=r.filter(u=>u.zone===Number(zf));if(bf!=="all")r=r.filter(u=>u.block===Number(bf));if(q)r=r.filter(u=>`blk ${u.block} ${unitDisplay(u.floor,u.unit)} ${u.ownerName} ${u.contact}`.toLowerCase().includes(q));
+  const row=u=>`<tr><td>Blk ${u.block}</td><td><strong>${unitDisplay(u.floor,u.unit)}</strong></td><td>${statusPill(u.response)}</td><td>${esc(u.ownerName||"—")}</td><td>${esc(u.contact||"—")}</td><td>${safeDate(u.appointmentDate)||"—"}</td><td>${esc(u.appointmentSlot||"—")}</td><td>${esc(u.remarks||"—")}</td></tr>`;
+  const table=x=>`<div class="table-shell unit-register-shell"><table class="unit-register-table"><colgroup><col style="width:8%"><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:14%"><col style="width:12%"><col style="width:11%"><col style="width:14%"></colgroup><thead><tr><th>Block</th><th>Unit</th><th>Status</th><th>Owner Name</th><th>Contact</th><th>Appointment Date</th><th>Slot</th><th>Remarks</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
+  if(!r.length){document.getElementById("unitTable").innerHTML=`<div class="empty-state">No matching unit records.</div>`;return}
+  document.getElementById("unitTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(u=>u.zone===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group unit-zone-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`:table(r)
 }
 
 function resetComplaintForm(){document.getElementById("complaintEditId").value="";document.getElementById("complaintSaveBtn").textContent="Save Complaint";document.getElementById("complaintCancelEdit").classList.add("hidden");document.getElementById("complaintText").value="";document.getElementById("complaintRemarks").value="";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("complaintStatus").value="Open";autofillPair("complaint")}
@@ -367,9 +388,17 @@ document.getElementById("complaintForm").addEventListener("submit",e=>{
   const entry={id,unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date:document.getElementById("complaintDate").value,status:document.getElementById("complaintStatus").value,complaint:document.getElementById("complaintText").value.trim(),remarks:document.getElementById("complaintRemarks").value.trim()};
   const idx=state.complaints.findIndex(c=>c.id===id);if(idx>=0)state.complaints[idx]=entry;else state.complaints.push(entry);resetComplaintForm();save(idx>=0?"Complaint updated":"Complaint saved separately");
 });
-function editComplaint(id){const c=state.complaints.find(x=>x.id===id);if(!c)return;setView("complaints");document.getElementById("complaintBlock").value=String(c.block);syncPairUnits("complaint");document.getElementById("complaintUnit").value=c.unitKey;autofillPair("complaint");document.getElementById("complaintDate").value=c.date;document.getElementById("complaintStatus").value=c.status;document.getElementById("complaintText").value=c.complaint;document.getElementById("complaintRemarks").value=c.remarks||"";document.getElementById("complaintEditId").value=String(c.id);document.getElementById("complaintSaveBtn").textContent="Update Complaint";document.getElementById("complaintCancelEdit").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
+function editComplaint(id){const c=state.complaints.find(x=>x.id===id);if(!c)return;setView("complaints");document.getElementById("complaintZone").value=String(c.zone||zoneOfBlock(c.block));syncComplaintBlocks();document.getElementById("complaintBlock").value=String(c.block);syncPairUnits("complaint");document.getElementById("complaintUnit").value=c.unitKey;autofillPair("complaint");document.getElementById("complaintDate").value=c.date;document.getElementById("complaintStatus").value=c.status;document.getElementById("complaintText").value=c.complaint;document.getElementById("complaintRemarks").value=c.remarks||"";document.getElementById("complaintEditId").value=String(c.id);document.getElementById("complaintSaveBtn").textContent="Update Complaint";document.getElementById("complaintCancelEdit").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
 function deleteComplaint(id){if(!confirm("Delete this complaint entry?"))return;state.complaints=state.complaints.filter(x=>x.id!==id);save("Complaint deleted")}
-function renderComplaintTable(){const r=[...state.complaints].sort((a,b)=>b.id-a.id);document.getElementById("complaintTable").innerHTML=r.length?`<table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Complaint</th><th>Complaint Status</th><th>Remarks</th><th>Action</th></tr></thead><tbody>${r.map(c=>`<tr><td>${safeDate(c.date)}</td><td>Blk ${c.block}<br><strong>${esc(c.unitDisplay)}</strong></td><td>${esc(c.ownerName||"—")}</td><td>${esc(c.contact||"—")}</td><td>${esc(c.complaint)}</td><td><span class="pill ${c.status==="Closed"?"completed":c.status==="Open"?"d":"pending"}">${esc(c.status)}</span></td><td>${esc(c.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-comp-edit="${c.id}">Edit</button><button class="table-action delete" data-comp-delete="${c.id}">Delete</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty-state">No complaints yet.</div>`}
+function renderComplaintTable(){
+  const zf=document.getElementById("complaintZoneFilter").value,bf=document.getElementById("complaintBlockFilter").value;let r=[...state.complaints].sort((a,b)=>b.id-a.id);if(zf!=="all")r=r.filter(c=>Number(c.zone||zoneOfBlock(c.block))===Number(zf));if(bf!=="all")r=r.filter(c=>Number(c.block)===Number(bf));
+  const row=c=>`<tr><td>${safeDate(c.date)}</td><td>Blk ${c.block}<br><strong>${esc(c.unitDisplay)}</strong></td><td>${esc(c.ownerName||"—")}</td><td>${esc(c.contact||"—")}</td><td>${esc(c.complaint)}</td><td><span class="pill ${c.status==="Closed"?"completed":c.status==="Open"?"d":"pending"}">${esc(c.status)}</span></td><td>${esc(c.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-comp-edit="${c.id}">Edit</button><button class="table-action delete" data-comp-delete="${c.id}">Delete</button></div></td></tr>`;
+  const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Complaint</th><th>Status</th><th>Remarks</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
+  if(!r.length){document.getElementById("complaintTable").innerHTML=`<div class="empty-state">No complaints yet.</div>`;return}
+  document.getElementById("complaintTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(c=>Number(c.zone||zoneOfBlock(c.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"complaints")}${table(x)}</section>`).join("")}</div>`:table(r)
+}
+document.getElementById("complaintZoneFilter").addEventListener("change",()=>{const z=document.getElementById("complaintZoneFilter").value;document.getElementById("complaintBlockFilter").innerHTML=filterBlockOptions(z,true);renderComplaintTable()});
+document.getElementById("complaintBlockFilter").addEventListener("change",renderComplaintTable);
 document.getElementById("complaintTable").addEventListener("click",e=>{let b=e.target.closest("[data-comp-edit]");if(b)return editComplaint(Number(b.dataset.compEdit));b=e.target.closest("[data-comp-delete]");if(b)deleteComplaint(Number(b.dataset.compDelete))});
 
 function addDaysISO(date,days){const d=new Date(date+"T12:00:00+08:00");d.setDate(d.getDate()+days);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
@@ -378,15 +407,14 @@ function plannerDateShort(date){const d=new Date(date+"T00:00:00+08:00");return 
 function appointmentForPlanner(a){const u=getUnit(a.unitKey);return {...a,ownerName:u?.ownerName||a.ownerName||"",contact:u?.contact||a.contact||""}}
 function plannerEntries(date,team,slot){return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
 function plannerRemarks(entries){return entries.map(a=>a.remarks||"").filter(Boolean).join(" · ")||"—"}
-function plannerTeamCell(entries,team,slot){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}">+ Add</button>`}
+function plannerTeamCell(entries,team,slot,zone){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`}
 function renderPlanner(){
-  const date=document.getElementById("teamDate").value||isoTodaySG();document.getElementById("plannerDateTitle").textContent=`${plannerDateLabel(date)} unit appointments`;
-  const rows=SLOTS.map((slot,i)=>{const t1=plannerEntries(date,"Team 1",slot),t2=plannerEntries(date,"Team 2",slot);return `<tr>${i===0?`<td class="date-cell" rowspan="4">${esc(plannerDateShort(date))}</td>`:""}<td class="slot-cell">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t1,"Team 1",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t1))}</td><td class="slot-cell team2-start">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t2,"Team 2",slot)}</td><td class="remarks-cell">${esc(plannerRemarks(t2))}</td></tr>`}).join("");
-  document.getElementById("plannerTable").innerHTML=`<table class="planner-table"><thead><tr><th>Date</th><th>Time</th><th>Team 1</th><th>Remarks</th><th class="team2-start">Time</th><th>Team 2</th><th>Remarks</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const special=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&!SLOTS.includes(a.slot)).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
-  document.getElementById("plannerSpecialTimes").innerHTML=special.length?`<div class="special-time-title"><h4>Special Time Appointments</h4><span>${special.length} booking${special.length===1?"":"s"}</span></div>${special.map(a=>`<div class="special-time-card"><span class="special-time-badge">${esc(a.slot)}</span><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.team||"Unassigned")}</span><span>${esc(a.remarks||"—")}</span><div class="planner-entry-actions"><button class="table-action" data-planner-edit="${a.id}">Edit</button><button class="table-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")}`:"";
-  const un=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&!a.team).sort((a,b)=>slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block);
-  document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}${a.source==="Excel"?" · Excel":""}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button><button class="remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this date.</div>`;
+  const date=document.getElementById("teamDate").value||isoTodaySG(),zv=document.getElementById("plannerViewZone").value,bv=document.getElementById("plannerViewBlock").value;document.getElementById("plannerDateTitle").textContent=`${plannerDateLabel(date)} unit appointments`;
+  const visible=a=>!isInactiveSchedule(a)&&a.date===date&&(zv==="all"||Number(a.zone||zoneOfBlock(a.block))===Number(zv))&&(bv==="all"||Number(a.block)===Number(bv));
+  const zones=zv==="all"?[1,2,3,4,5,6]:[Number(zv)];
+  document.getElementById("plannerTable").innerHTML=zones.map(z=>{const za=state.appointments.filter(a=>visible(a)&&Number(a.zone||zoneOfBlock(a.block))===z);const rows=SLOTS.map((slot,i)=>{const t1=za.filter(a=>a.team==="Team 1"&&a.slot===slot).map(appointmentForPlanner),t2=za.filter(a=>a.team==="Team 2"&&a.slot===slot).map(appointmentForPlanner);return `<tr>${i===0?`<td class="date-cell" rowspan="4"><strong>Zone ${z}</strong><br><small>${esc(plannerDateShort(date))}</small></td>`:""}<td class="slot-cell">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t1,"Team 1",slot,z)}</td><td class="remarks-cell">${esc(plannerRemarks(t1))}</td><td class="slot-cell team2-start">${esc(slot)}</td><td class="team-cell">${plannerTeamCell(t2,"Team 2",slot,z)}</td><td class="remarks-cell">${esc(plannerRemarks(t2))}</td></tr>`}).join("");return `<section class="planner-zone-section">${zoneGroupHeader(z,za.length,"appointments")}<div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Zone / Date</th><th>Time</th><th>Team 1</th><th>Remarks</th><th class="team2-start">Time</th><th>Team 2</th><th>Remarks</th></tr></thead><tbody>${rows}</tbody></table></div></section>`}).join("");
+  const special=state.appointments.filter(a=>visible(a)&&!SLOTS.includes(a.slot)).sort((a,b)=>Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));document.getElementById("plannerSpecialTimes").innerHTML=special.length?`<div class="special-time-title"><h4>Special Time Appointments</h4><span>${special.length} booking${special.length===1?"":"s"}</span></div>${special.map(a=>`<div class="special-time-card"><span class="special-time-badge">Z${a.zone||zoneOfBlock(a.block)} · ${esc(a.slot)}</span><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.team||"Unassigned")}</span><span>${esc(a.remarks||"—")}</span><div class="planner-entry-actions"><button class="table-action" data-planner-edit="${a.id}">Edit</button><button class="table-action remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join("")}`:"";
+  const un=state.appointments.filter(a=>visible(a)&&!a.team).sort((a,b)=>Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));document.getElementById("plannerUnassigned").innerHTML=un.length?un.map(a=>`<div class="unassigned-chip"><div><strong>Zone ${a.zone||zoneOfBlock(a.block)} · Blk ${a.block} · ${esc(a.unitDisplay)}</strong><span>${esc(a.slot)}</span></div><div class="unassigned-actions"><button data-assign-team="Team 1" data-appt-id="${a.id}">Team 1</button><button data-assign-team="Team 2" data-appt-id="${a.id}">Team 2</button><button data-planner-edit="${a.id}">Edit</button><button class="remove" data-planner-remove="${a.id}">Remove</button></div></div>`).join(""):`<div class="empty-state">No unassigned appointments for this selection.</div>`;
 }
 function renderTodayTeamBoard(){
   const date=isoTodaySG();document.getElementById("todayTeamBoard").innerHTML=["Team 1","Team 2"].map(team=>{
@@ -420,6 +448,8 @@ function resetPlannerForm(){
 function editPlannerAppointment(id){
   const a=state.appointments.find(x=>x.id===id);if(!a)return;
   document.getElementById("teamDate").value=a.date;
+  document.getElementById("plannerZone").value=String(a.zone||zoneOfBlock(a.block));
+  syncPlannerBlocks();
   document.getElementById("plannerBlock").value=String(a.block);
   syncPlannerUnits();
   document.getElementById("plannerUnit").value=a.unitKey;
@@ -487,29 +517,32 @@ function savePlannerAppointment(){
 }
 document.getElementById("plannerForm").addEventListener("submit",e=>{e.preventDefault();savePlannerAppointment()});
 document.getElementById("plannerCancelEdit").addEventListener("click",resetPlannerForm);
+document.getElementById("plannerViewZone").addEventListener("change",()=>{const z=document.getElementById("plannerViewZone").value;document.getElementById("plannerViewBlock").innerHTML=filterBlockOptions(z,true);renderPlanner()});
+document.getElementById("plannerViewBlock").addEventListener("change",renderPlanner);
 document.getElementById("teamDate").addEventListener("change",()=>{if(document.getElementById("plannerEditId").value)resetPlannerForm();renderPlanner()});
 document.getElementById("plannerPrevDay").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),-1);renderPlanner()});
 document.getElementById("plannerNextDay").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),1);renderPlanner()});
 document.getElementById("plannerToday").addEventListener("click",()=>{resetPlannerForm();document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
-document.getElementById("plannerTable").addEventListener("click",e=>{let b=e.target.closest("[data-planner-prefill]");if(b){resetPlannerForm();const [team,slot]=b.dataset.plannerPrefill.split("|");document.getElementById("plannerTeam").value=team;document.getElementById("plannerSlot").value=slot;togglePlannerCustomTime();document.getElementById("plannerBlock").focus();return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
+document.getElementById("plannerTable").addEventListener("click",e=>{let b=e.target.closest("[data-planner-prefill]");if(b){resetPlannerForm();const [team,slot,zone]=b.dataset.plannerPrefill.split("|");document.getElementById("plannerTeam").value=team;document.getElementById("plannerSlot").value=slot;if(zone){document.getElementById("plannerZone").value=zone;syncPlannerBlocks()}togglePlannerCustomTime();document.getElementById("plannerBlock").focus();return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
 document.getElementById("plannerSpecialTimes").addEventListener("click",e=>{let b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
 document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-remove]");if(b)return removePlannerAppointment(Number(b.dataset.plannerRemove))});
 
-function buildReportRows(zoneFilter="all"){
-  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
+function buildReportRows(zoneFilter="all",blockFilter="all"){
+  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
 }
 function reportTotals(rows){const t=rows.reduce((o,r)=>{o.total+=r.total;o.agree+=r.agree;o.done+=r.done;o.d+=r.d;o.nr+=r.nr;return o},{total:0,agree:0,done:0,d:0,nr:0});return{...t,agreePct:t.total?t.agree/t.total*100:0,donePct:t.total?t.done/t.total*100:0,dPct:t.total?t.d/t.total*100:0,nrPct:t.total?t.nr/t.total*100:0}}
 function pct(v){return`${v.toFixed(1)}%`}
 function renderReport(){
-  const z=document.getElementById("reportZoneFilter").value,rows=buildReportRows(z),t=reportTotals(rows);
+  const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
   document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
   document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><colgroup><col style="width:5%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2" class="weekly-head">S/N</th><th rowspan="2" class="weekly-head">BLK NO.</th><th rowspan="2" class="weekly-head">TOTAL UNITS</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Agree = A + C)</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Work Completed)</th><th colspan="2" class="weekly-head">UNITS OPT-OUT<br>(D)</th><th colspan="2" class="weekly-head">UNITS NO RESPONSE<br>(NR)</th></tr><tr><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
 }
-document.getElementById("reportZoneFilter").addEventListener("change",renderReport);
+document.getElementById("reportZoneFilter").addEventListener("change",()=>{const z=document.getElementById("reportZoneFilter").value;document.getElementById("reportBlockFilter").innerHTML=filterBlockOptions(z,true);renderReport()});
+document.getElementById("reportBlockFilter").addEventListener("change",renderReport);
 
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
-document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,r=buildReportRows(z),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
-document.getElementById("exportUnitsBtn").addEventListener("click",()=>download("ELU_Unit_Register.csv",toCSV([["Block No","Unit No","Status","Owner Name","Contact","Remarks","Appointment Date","Appointment Slot"],...unitsArray().map(u=>[u.block,unitDisplay(u.floor,u.unit),u.response,u.ownerName,u.contact,u.remarks,u.appointmentDate,u.appointmentSlot])])) );
+document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
+document.getElementById("exportUnitsBtn").addEventListener("click",()=>download("ELU_Unit_Register.csv",toCSV([["Zone","Block No","Unit No","Status","Owner Name","Contact","Appointment Date","Appointment Slot","Remarks"],...unitsArray().map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response,u.ownerName,u.contact,u.appointmentDate,u.appointmentSlot,u.remarks])])) );
 document.getElementById("exportBackupBtn").addEventListener("click",()=>download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json"));
 
 function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderReport()}

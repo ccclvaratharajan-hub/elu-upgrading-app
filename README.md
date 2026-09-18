@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.13
+# ELU Upgrading — Premium V7.14
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -149,3 +149,14 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Resident details saved against an existing appointment are preserved when the source schedule refreshes.
 - Unit Register keeps Remarks as the last column.
 - Rescheduling in Planner keeps only the current booking active; the old booking goes to Rescheduled history.
+
+
+## V7.14 Zone-first separation + Block 537 correction
+- Corrected Block 537 exact floor/unit layout from the supplied Pasir Ris Street 51 screenshot. Grey cells are treated as non-units; white cells are the actual units.
+- Planner now has View Zone + View Block and renders each Zone separately, with Team 1 / Team 2 kept inside that Zone section.
+- Planner Quick Entry, Appointment Details and Complaint entry use Zone → Block → Unit.
+- Appointment Register / History, Unit Register and Complaint Register have Zone + Block filters. All-Zones results are physically split into Zone sections.
+- Weekly Report also supports Zone + Block filtering.
+- Imported Excel Remarks are cleared. Remarks start blank and only user-entered working remarks can populate the master.
+- Unit Register layout is rebalanced and Remarks remains the final column.
+- Existing V7.13 Owner Name, Contact, appointment/reschedule logic, Block Board status mapping and V7.11 visual design are retained.
