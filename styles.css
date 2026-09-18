@@ -848,125 +848,53 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
 }
 \n/* V7.14 Zone-first separation; V7.11 visual language retained */\n.zone-record-stack{display:grid;gap:18px}.zone-record-group{border:1px solid #dde8f2;border-radius:18px;background:linear-gradient(145deg,#fff,#f8fbff);padding:12px;box-shadow:0 10px 24px rgba(55,94,132,.055)}\n.zone-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px;padding:5px 3px 8px;border-bottom:1px solid #e8eff6}.zone-group-head>div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.zone-group-head span{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:6px 9px;border-radius:999px;background:linear-gradient(145deg,#e7f3ff,#d8ecff);color:#3279bd;font-size:9px;font-weight:900;letter-spacing:.07em}.zone-group-head strong{font-size:11px;color:#56738f;font-weight:800}.zone-group-head em{font-style:normal;font-size:9px;color:#8ca0b5;font-weight:800}\n.unit-register-shell{border-radius:15px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.72)}.unit-register-table{min-width:980px!important;table-layout:fixed}.unit-register-table th{height:42px;vertical-align:middle;background:linear-gradient(180deg,#f5f9fd,#edf4fa)!important;color:#607b95!important;font-size:9px!important}.unit-register-table td{vertical-align:middle!important;padding-top:10px!important;padding-bottom:10px!important;line-height:1.35}.unit-register-table tbody tr:nth-child(even){background:rgba(247,250,253,.72)}.unit-register-table tbody tr:hover{background:#f2f8fd!important}.unit-zone-group{padding:14px}\n.planner-zone-section{border:1px solid #dce8f3;border-radius:17px;padding:11px;margin-bottom:14px;background:linear-gradient(145deg,#fff,#f8fbff);box-shadow:0 9px 20px rgba(54,92,129,.05)}.planner-zone-section:last-child{margin-bottom:0}.planner-nav-wide{flex-wrap:wrap}.planner-nav-wide label select{min-width:105px}.zone-table-shell{border-radius:14px!important}.register-tools{flex-wrap:wrap}@media(max-width:900px){.zone-group-head{align-items:flex-start}.planner-nav-wide{width:100%}}\n
 
-/* ==================== V7.17 SCREENSHOT THEME ====================
-   Visual reference: clean executive blue dashboard.
-   V7.15 data/workflow logic is preserved unchanged.
-*/
+/* V7.18 — functional layout support only; classic visual theme retained */
 
-/* No decorative photo/transformer layer. */
-.hero-power-scene{display:none!important}
-body:after{display:none!important}
-
-/* Keep the page compact and aligned like the supplied reference. */
-.main{padding-top:24px!important}
-.topbar{margin-bottom:18px!important}
-.command-hero{
-  min-height:228px!important;
-  padding:30px 34px!important;
-  margin-bottom:17px!important;
-  border-radius:28px!important;
-  background:linear-gradient(118deg,#347fd5 0%,#4b9cec 48%,#70c8f9 100%)!important;
-  box-shadow:0 22px 48px rgba(50,127,205,.20)!important;
-}
-.command-copy{max-width:760px!important}
-.command-kicker{color:#eaf7ff!important}
-.command-hero h2{color:#fff!important;text-shadow:none!important;font-size:32px!important}
-.command-hero p{color:rgba(255,255,255,.88)!important}
-.hero-motto{color:#f4fbff!important;font-size:11px!important;font-weight:750!important;font-style:normal!important}
-.hero-tags span{
-  background:rgba(255,255,255,.12)!important;
-  color:#f8fcff!important;
-  border-color:rgba(255,255,255,.24)!important;
-  box-shadow:none!important;
-}
-.hero-tags .sync-tag{
-  background:rgba(255,255,255,.12)!important;
-  color:#f8fcff!important;
-  border-color:rgba(255,255,255,.24)!important;
-}
-.hero-orbit-wrap{min-width:285px!important}
-.hero-orbit-caption strong,.hero-orbit-caption span{color:#fff!important}
-
-/* Profile chip exactly in the clean white executive style. */
-.user-name-chip{
-  position:static!important;
-  overflow:visible!important;
-  padding:10px 13px!important;
-  border:1px solid #d9e8f6!important;
-  background:linear-gradient(135deg,#ffffff,#f2f8ff)!important;
-  color:#365f87!important;
-  box-shadow:0 6px 16px rgba(65,109,153,.055)!important;
-  text-shadow:none!important;
-}
-.user-name-chip:before,.user-name-chip:after{display:none!important}
-
-/* V7.15 dashboard zone-first schedule styling in the same clean theme. */
+/* Dashboard: Zone first, Team 1 + Team 2 inside each Zone. */
 .today-team-board{
   display:grid!important;
   grid-template-columns:1fr!important;
-  gap:14px!important;
+  gap:14px;
 }
 .today-zone-card{
-  border:1px solid #dfeaf5;
+  border:1px solid #dbeaf5;
   border-radius:18px;
-  overflow:hidden;
-  background:#fbfdff;
+  background:linear-gradient(145deg,#fff,#f8fbff);
+  padding:12px;
+  box-shadow:0 9px 22px rgba(49,106,153,.05);
 }
 .today-zone-head{
   display:flex;
-  align-items:center;
   justify-content:space-between;
+  align-items:center;
   gap:12px;
-  padding:12px 14px;
-  background:linear-gradient(100deg,#edf6ff,#f8fbff);
-  border-bottom:1px solid #e2edf7;
+  padding:2px 3px 10px;
+  border-bottom:1px solid #e7f0f7;
+  margin-bottom:10px;
 }
 .today-zone-head>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .today-zone-head span{
-  padding:5px 8px;
-  border-radius:999px;
-  background:#e0f1ff;
-  color:#2878cf;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.07em;
+  font-size:9px;font-weight:900;letter-spacing:.08em;color:#2c83c9;
+  background:#e9f5ff;padding:5px 8px;border-radius:999px
 }
 .today-zone-head strong{font-size:10px;color:#6d8499}
 .today-zone-head em{font-style:normal;font-size:9px;color:#8aa0b3;font-weight:800}
-.today-zone-teams{display:grid;grid-template-columns:1fr 1fr;gap:0}
-.today-zone-teams .today-team-col{
-  border:0!important;
-  border-radius:0!important;
-}
-.today-zone-teams .today-team-col:first-child{
-  border-right:1px solid #e3edf6!important;
-}
-.today-custom-slot{background:#fbfdff}
+.today-zone-teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.today-zone-teams .today-team-col{background:#fff!important}
 
-/* Planner custom-time rows stay inside the normal Zone/Team sheet. */
+/* Custom appointment times stay inside the normal Planner sheet. */
 .integrated-special-times{display:none!important}
+.planner-zone-blocks{
+  font-size:9px;color:#8499ad;font-weight:750;margin:-5px 2px 9px
+}
 .custom-slot-row td{background:#fbfdff!important}
 .custom-slot-dot{
-  display:block;
-  width:max-content;
-  margin:0 auto 3px;
-  padding:2px 5px;
-  border-radius:999px;
-  background:#e8f3ff;
-  color:#3c84c4;
-  font-size:7px;
-  font-weight:900;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-}
-.planner-zone-blocks{
-  font-size:9px;
-  color:#8499ad;
-  font-weight:750;
-  margin:-5px 2px 9px;
+  display:block;width:max-content;margin:0 auto 3px;padding:2px 5px;
+  border-radius:999px;background:#e8f3ff;color:#3c84c4;
+  font-size:7px;font-weight:900;letter-spacing:.04em;text-transform:uppercase
 }
 
-/* New Block Board summary, styled to match the screenshot. */
+/* Block Board summary with count + percentage. */
 .block-headline{
   align-items:stretch!important;
   padding:16px 18px!important;
@@ -1034,30 +962,10 @@ body:after{display:none!important}
 .summary-tile.d{border-top:3px solid #e5c13e}
 .summary-tile.nr{border-top:3px solid #e35c63}
 
-/* Make all main record panels feel like the screenshot reference. */
-.panel,.today-zone-card,.planner-zone-section,.zone-record-group{
-  box-shadow:0 12px 28px rgba(54,101,147,.065)!important;
-}
-.unit-register-shell{
-  background:#fff!important;
-  border-radius:16px!important;
-}
-.unit-register-table th{
-  background:linear-gradient(180deg,#edf6ff,#e7f2fb)!important;
-  color:#55728d!important;
-}
-.unit-register-table tbody tr:nth-child(even){background:#fbfdff!important}
-
-@media(max-width:1050px){
-  .today-zone-teams{grid-template-columns:1fr}
-  .today-zone-teams .today-team-col:first-child{
-    border-right:0!important;
-    border-bottom:1px solid #e3edf6!important;
-  }
-}
 @media(max-width:900px){
+  .today-zone-teams{grid-template-columns:1fr}
   .block-headline{flex-direction:column!important}
-  .block-summary-grid{max-width:none;width:100%}
+  .block-summary-grid{max-width:none;width:100%;grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:620px){
   .block-summary-grid{grid-template-columns:repeat(2,1fr)}
