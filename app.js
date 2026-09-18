@@ -1,5 +1,7 @@
-const STORAGE_KEY="elu_premium_v13";
+const LEGACY_STORAGE_KEY="elu_premium_v13";
 const PREV_STORAGE_KEY="elu_premium_v12";
+const SECURE_STATE_KEY="elu_secure_state_v3";
+const AUTO_LOCK_MS=15*60*1000;
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
@@ -89,21 +91,150 @@ function mergeSavedIntoFresh(saved){
   });
   return fresh
 }
-function migratePrevious(){
-  try{
-    const old=JSON.parse(localStorage.getItem(PREV_STORAGE_KEY)||"null");
-    return mergeSavedIntoFresh(old)
-  }catch{return makeInitialState()}
+function loadLegacyPlainState(){
+  const keys=[LEGACY_STORAGE_KEY,PREV_STORAGE_KEY,"elu_premium_v11","elu_premium_v10"];
+  for(const k of keys){
+    try{
+      const raw=localStorage.getItem(k);
+      if(raw)return JSON.parse(raw)
+    }catch{}
+  }
+  return null
 }
-function loadState(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
-    if(saved)return mergeSavedIntoFresh(saved)
-  }catch{}
-  return migratePrevious()
+let state={units:{},surveys:[],appointments:[],complaints:[],createdAt:""};
+let secureSessionKey=null;
+let securePersistChain=Promise.resolve();
+let appStarted=false;
+let autoCompleteTimer=null;
+let idleLockTimer=null;
+let SECURE_PROFILE_NAME="Secure User";
+const SECURE_USERNAME="Manoharan";
+
+function bytesFromB64(v){const bin=atob(v),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
+function b64FromBytes(v){let s="";for(const b of new Uint8Array(v))s+=String.fromCharCode(b);return btoa(s)}
+async function deriveSecureKey(password){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2",salt:bytesFromB64(SECURE_SEED_PAYLOAD.salt),iterations:Number(SECURE_SEED_PAYLOAD.iterations),hash:"SHA-256"},
+    base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]
+  )
 }
-let state=loadState();
-normalizeManualOverrides();
+async function decryptPayload(payload,key){
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:bytesFromB64(payload.iv)},key,bytesFromB64(payload.cipher));
+  return JSON.parse(new TextDecoder().decode(plain))
+}
+async function encryptPayload(value,key){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const plain=new TextEncoder().encode(JSON.stringify(value));
+  const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,plain);
+  return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
+}
+function secureSnapshot(){
+  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,createdAt:state.createdAt}
+}
+async function securePersistNow(){
+  if(!secureSessionKey||!appStarted)return;
+  const payload=await encryptPayload(secureSnapshot(),secureSessionKey);
+  localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(payload))
+}
+function queueSecurePersist(){
+  if(!secureSessionKey||!appStarted)return;
+  securePersistChain=securePersistChain.then(()=>securePersistNow()).catch(err=>{
+    console.error("Secure save failed",err);
+    toast("Secure save failed — keep this page open and retry")
+  })
+}
+function removeLegacyPlaintext(){
+  const remove=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&/^elu_premium_v\d+$/.test(k))remove.push(k)
+  }
+  remove.forEach(k=>localStorage.removeItem(k))
+}
+async function loadEncryptedRuntimeState(key){
+  const raw=localStorage.getItem(SECURE_STATE_KEY);
+  if(!raw)return null;
+  const payload=JSON.parse(raw);
+  return decryptPayload(payload,key)
+}
+function showSecurityMessage(msg,isError=true){
+  const e=document.getElementById("securityMessage");
+  e.textContent=msg||"";
+  e.classList.toggle("error",Boolean(msg&&isError))
+}
+function resetIdleLock(){
+  if(!appStarted)return;
+  clearTimeout(idleLockTimer);
+  idleLockTimer=setTimeout(()=>secureLockAndReload(),AUTO_LOCK_MS)
+}
+async function secureLockAndReload(){
+  try{await securePersistChain;await securePersistNow()}catch{}
+  secureSessionKey=null;
+  location.reload()
+}
+function startIdleLockWatch(){
+  ["pointerdown","keydown","touchstart","mousemove"].forEach(evt=>document.addEventListener(evt,resetIdleLock,{passive:true}));
+  resetIdleLock()
+}
+async function unlockSecureApp(password){
+  if(!window.crypto?.subtle)throw new Error("This browser does not support secure encryption.");
+  const key=await deriveSecureKey(password);
+  const seed=await decryptPayload(SECURE_SEED_PAYLOAD,key);
+  PROJECT_LAYOUT=seed.PROJECT_LAYOUT||{};
+  SOURCE_APPOINTMENTS=seed.SOURCE_APPOINTMENTS||[];
+  SECURE_PROFILE_NAME=seed.profileName||"Secure User";
+
+  let saved=null;
+  if(localStorage.getItem(SECURE_STATE_KEY)){
+    saved=await loadEncryptedRuntimeState(key);
+  }else{
+    saved=loadLegacyPlainState();
+  }
+
+  secureSessionKey=key;
+  state=saved?mergeSavedIntoFresh(saved):makeInitialState();
+  normalizeManualOverrides();
+  startApp();
+  await securePersistNow();
+  removeLegacyPlaintext();
+
+  document.getElementById("userNameChip").textContent=SECURE_PROFILE_NAME;
+  document.getElementById("securityGate").classList.add("hidden");
+  document.body.classList.remove("secure-locked");
+  document.getElementById("securityUsername").value="";document.getElementById("securityPassword").value="";
+  startIdleLockWatch()
+}
+function initSecurityGate(){
+  const form=document.getElementById("securityLoginForm");
+  const userInput=document.getElementById("securityUsername");
+  const input=document.getElementById("securityPassword");
+  const btn=document.getElementById("securityUnlockBtn");
+  form.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const username=userInput.value.trim();
+    const password=input.value;
+    if(!username||!password)return;
+    if(username!==SECURE_USERNAME){
+      showSecurityMessage("Wrong username or password.");
+      input.value="";
+      userInput.select();
+      return
+    }
+    btn.disabled=true;btn.textContent="Logging in…";showSecurityMessage("",false);
+    try{
+      await unlockSecureApp(password)
+    }catch(err){
+      console.error(err);
+      showSecurityMessage("Wrong username or password.");
+      input.select()
+    }finally{
+      btn.disabled=false;btn.textContent="Login"
+    }
+  });
+  document.getElementById("securityLogoutBtn").addEventListener("click",secureLockAndReload);
+  setTimeout(()=>userInput.focus(),100)
+}
 
 function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
@@ -182,7 +313,7 @@ function rebuildUnitMaster(key){
   state.units[key]=base;
 }
 function rebuildAllMasters(){Object.keys(state.units).forEach(rebuildUnitMaster)}
-function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,createdAt:state.createdAt}))}
+function persist(){queueSecurePersist()}
 function save(msg){rebuildAllMasters();persist();renderAll();if(msg)toast(msg)}
 function autoCompleteAppointments(showToast=false){
   let changed=0;
@@ -191,8 +322,6 @@ function autoCompleteAppointments(showToast=false){
   });
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
-rebuildAllMasters();persist();
-
 function viewTitle(view){return {
 dashboard:["Executive Dashboard","One view of A, C, D, NR, appointments and completed work."],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
@@ -714,10 +843,25 @@ document.getElementById("reportBlockFilter").addEventListener("change",renderRep
 
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
-document.getElementById("exportUnitsBtn").addEventListener("click",()=>download("ELU_Unit_Register.csv",toCSV([["Zone","Block No","Unit No","Status","Owner Name","Contact","Appointment Date","Appointment Slot","Remarks"],...unitsArray().map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response,u.ownerName,u.contact,u.appointmentDate,u.appointmentSlot,u.remarks])])) );
-document.getElementById("exportBackupBtn").addEventListener("click",()=>download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json"));
+document.getElementById("exportUnitsBtn").addEventListener("click",()=>{if(!confirm("Unit Register export contains resident details. Save the file securely. Continue?"))return;download("ELU_Unit_Register.csv",toCSV([["Zone","Block No","Unit No","Status","Owner Name","Contact","Appointment Date","Appointment Slot","Remarks"],...unitsArray().map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response,u.ownerName,u.contact,u.appointmentDate,u.appointmentSlot,u.remarks])]))});
+document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json")});
 
 function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderReport()}
-document.getElementById("todayChip").textContent=fmtDate.format(new Date());document.getElementById("appointmentFilterDate").value="";document.getElementById("appointmentMode").value="upcoming";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("teamDate").value=isoTodaySG();
-initSelectors();togglePlannerCustomTime();toggleAppointmentCustomTime();resetAppointmentForm();renderAll();autoCompleteAppointments();
-setInterval(()=>autoCompleteAppointments(true),60000);
+function startApp(){
+  if(appStarted)return;
+  appStarted=true;
+  document.getElementById("todayChip").textContent=fmtDate.format(new Date());
+  document.getElementById("appointmentFilterDate").value="";
+  document.getElementById("appointmentMode").value="upcoming";
+  document.getElementById("complaintDate").value=isoTodaySG();
+  document.getElementById("teamDate").value=isoTodaySG();
+  initSelectors();
+  togglePlannerCustomTime();
+  toggleAppointmentCustomTime();
+  resetAppointmentForm();
+  rebuildAllMasters();
+  renderAll();
+  autoCompleteAppointments();
+  autoCompleteTimer=setInterval(()=>autoCompleteAppointments(true),60000)
+}
+initSecurityGate();

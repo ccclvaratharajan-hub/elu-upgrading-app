@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.22
+# ELU Upgrading — Premium V7.25 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -216,3 +216,36 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Existing older Survey Follow-up Dates are migrated to Survey Visit Dates. Existing exact times remain blank until entered.
 - Dashboard Follow-ups card is now Upcoming Survey Visits and shows exact visit time.
 - V7.21 appointment / reschedule / cancel logic and V7.20 status colours are retained.
+
+
+## V7.23 Secure Access
+- Password login is required before the ELU workspace opens.
+- Resident names, contact numbers, appointment data and the imported project dataset are encrypted with AES-256-GCM.
+- The password is processed with PBKDF2-SHA256 and is **not stored** in the app.
+- Existing V7.22 local data is migrated into encrypted local storage after the first successful unlock.
+- Old plain ELU localStorage keys are removed after secure migration.
+- Manual **Lock** button added to the top bar.
+- Automatic lock after 15 minutes of inactivity; reload also requires the password again.
+- Unit Register / Backup exports warn before creating a plaintext file containing resident data.
+- Classic V7.22 design and working workflow are retained.
+
+### Important
+The security password is intentionally NOT written into this ZIP or README. Keep the password supplied separately in the ChatGPT conversation in a safe place.
+
+
+## V7.24 Login simplification
+- Username field added.
+- Login is now short and clear:
+  - Username: Manoharan
+  - Password: supplied separately in this ChatGPT conversation.
+- Encryption remains AES-256-GCM.
+- PBKDF2-SHA256 iterations increased to 600,000 to strengthen the shorter password.
+- V7.23 encrypted seed was re-encrypted for the new password.
+
+
+## V7.25 Final secure login
+- Username: Manoharan
+- Permanent password is supplied separately in the ChatGPT conversation and is not stored in this package.
+- Dataset remains encrypted with AES-256-GCM.
+- PBKDF2-SHA256 iterations: 600,000.
+- This is the recommended deployment build instead of V7.23 / V7.24.

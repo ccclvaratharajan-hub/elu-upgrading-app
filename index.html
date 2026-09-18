@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.22">
+  <link rel="stylesheet" href="styles.css?v=7.25">
 </head>
-<body>
+<body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
     <symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z"/></symbol>
     <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M8 8h2m4 0h2M8 12h2m4 0h2M8 16h2m4 0h2M2 21h20"/></symbol>
@@ -22,6 +22,27 @@
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
   </svg>
+
+
+  <div class="security-gate" id="securityGate">
+    <div class="security-card">
+      <div class="security-lock-mark">ELU</div>
+      <div class="security-kicker">SECURE ACCESS</div>
+      <h1>ELU Upgrading</h1>
+      <p>Enter your username and password to unlock resident and appointment data.</p>
+      <form id="securityLoginForm" class="security-form">
+        <label>Username
+          <input type="text" id="securityUsername" autocomplete="username" spellcheck="false" required>
+        </label>
+        <label>Password
+          <input type="password" id="securityPassword" autocomplete="current-password" spellcheck="false" required>
+        </label>
+        <button class="primary-btn security-unlock-btn" id="securityUnlockBtn" type="submit">Login</button>
+      </form>
+      <div class="security-message" id="securityMessage" aria-live="polite"></div>
+      <div class="security-note">Password is not stored. Data is decrypted only after a successful unlock. The app locks again after 15 minutes of inactivity.</div>
+    </div>
+  </div>
 
   <div class="app-shell">
     <aside class="sidebar">
@@ -63,9 +84,9 @@
           <p id="pageSubtitle">One view of resident response, appointments and completed work.</p>
         </div>
         <div class="top-actions">
-          <div class="user-name-chip">Manoharan Varatharajan</div>
+          <div class="user-name-chip" id="userNameChip">Secure User</div>
           <div class="today-chip" id="todayChip"></div>
-          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button>
+          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
         </div>
       </header>
 
@@ -385,7 +406,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.22"></script>
-  <script src="app.js?v=7.22"></script>
+  <script src="data.js?v=7.25"></script>
+  <script src="app.js?v=7.25"></script>
 </body>
 </html>

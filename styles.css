@@ -1068,3 +1068,43 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
 #surveyVisitTime{
   font-variant-numeric:tabular-nums;
 }
+
+
+/* V7.23 Secure Access — classic theme retained */
+body.secure-locked{overflow:hidden}
+body.secure-locked .app-shell,
+body.secure-locked .drawer-backdrop,
+body.secure-locked .unit-drawer,
+body.secure-locked .toast{visibility:hidden}
+.security-gate{
+  position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(circle at 18% 12%,rgba(34,126,191,.12),transparent 34%),
+             linear-gradient(145deg,#eef7ff 0%,#f8fbfe 56%,#eaf4fb 100%)
+}
+.security-gate.hidden{display:none}
+.security-card{
+  width:min(430px,100%);background:#fff;border:1px solid #d7e6f2;border-radius:22px;
+  box-shadow:0 24px 70px rgba(20,72,108,.18);padding:34px
+}
+.security-lock-mark{
+  width:58px;height:58px;border-radius:16px;display:grid;place-items:center;
+  font-weight:900;letter-spacing:.06em;color:#fff;background:#1474ad;margin-bottom:18px;
+  box-shadow:0 10px 24px rgba(20,116,173,.22)
+}
+.security-kicker{font-size:12px;font-weight:800;letter-spacing:.14em;color:#1474ad;margin-bottom:7px}
+.security-card h1{margin:0 0 8px;font-size:28px;color:#17384e}
+.security-card>p{margin:0 0 24px;color:#60798a;line-height:1.55}
+.security-form label{display:grid;gap:8px;font-weight:700;color:#294b61}
+.security-form input{
+  width:100%;box-sizing:border-box;border:1px solid #c7dbe9;border-radius:12px;
+  padding:13px 14px;font:inherit;background:#fbfdff;color:#17384e
+}
+.security-form input:focus{outline:3px solid rgba(20,116,173,.12);border-color:#4c9ac8}
+.security-unlock-btn{width:100%;margin-top:14px;justify-content:center}
+.security-message{min-height:22px;margin-top:12px;font-size:13px;font-weight:700;color:#3d6e89}
+.security-message.error{color:#b33b48}
+.security-note{
+  margin-top:16px;padding-top:16px;border-top:1px solid #e5eef4;
+  color:#718795;font-size:12px;line-height:1.55
+}
+.secure-logout-btn{min-width:68px}

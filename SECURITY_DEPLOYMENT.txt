@@ -1,0 +1,24 @@
+ELU V7.23 SECURITY DEPLOYMENT
+
+1. This version encrypts the resident/project dataset and requires a password before the app opens.
+2. The password is NOT stored inside this ZIP. Use the password supplied separately in your ChatGPT conversation.
+3. For real privacy, do not rely on merely adding this as another commit on top of an old public GitHub repository.
+   Older Git commits may still contain the previous plaintext data.js with resident details.
+4. Safer deployment:
+   - use a fresh clean repository for V7.23 Secure, OR
+   - remove/rewrite the old repository history before publishing this version.
+5. Keep older V7.22 (and earlier) ZIP files private because they contain the earlier plaintext dataset.
+6. Backup JSON / Unit Register CSV exports are plaintext files. Store them securely.
+7. If the password is lost, the encrypted resident dataset cannot be recovered from this secure package.
+
+
+V7.24 LOGIN
+Username: Manoharan
+Password: supplied separately in the ChatGPT conversation only.
+Do not write the password into this ZIP or a public repository.
+
+
+V7.25 FINAL DEPLOYMENT
+Username: Manoharan
+Password: supplied separately in the ChatGPT conversation only.
+Recommended: deploy V7.25 Secure, not V7.23 or V7.24.
