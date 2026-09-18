@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.10
+# ELU Upgrading — Premium V7.11
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -118,3 +118,11 @@ No workflow, data, planner, dashboard, appointment, report, or master-register l
 - Existing accidental duplicates for the same unit/date are cleaned when the booking is updated.
 - Direct **Edit** and **Remove** from V7.9 remain available.
 - No changes to Survey, Complaint, Meeting Report, Block Board, status colours, or master-data structure.
+
+
+## V7.11 minor Block Board date display
+- A / Opt-In units with an appointment now show a tiny **Done · DD/MM/YY** line.
+- C / Confirmation units show a tiny **Appt · DD/MM/YY** line.
+- D / Opt-Out and NR / No Response show no date line.
+- Existing automatic C → A conversion remains unchanged.
+- No workflow, Planner, Master Data, Report, Complaint, Survey or colour logic changed.

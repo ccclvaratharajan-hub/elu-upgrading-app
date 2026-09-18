@@ -790,3 +790,46 @@ body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),rad
   line-height:1.45;
 }
 .planner-rule-note strong{color:#3f6f9f}
+
+
+/* V7.11 Block Board: appointment date only for A and C */
+#blockboard .unit-card .u-date{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-top:7px;
+  padding:3px 6px;
+  border-radius:999px;
+  font-size:8.2px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.01em;
+  width:max-content;
+  max-width:100%;
+  position:relative;
+  z-index:1;
+  white-space:nowrap;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.62);
+}
+#blockboard .unit-card .u-date span{
+  font-size:7.6px;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+  opacity:.78;
+}
+
+/* A = completed appointment */
+#blockboard .unit-card.status-a .u-date.done-date{
+  background:rgba(255,255,255,.56);
+  border:1px solid rgba(46,182,120,.24);
+  color:#177454;
+}
+
+/* C = upcoming / confirmed appointment */
+#blockboard .unit-card.status-c .u-date.appt-date{
+  background:rgba(255,255,255,.60);
+  border:1px solid rgba(229,109,157,.25);
+  color:#ac416f;
+}
+
+/* D and NR intentionally have no date line */
