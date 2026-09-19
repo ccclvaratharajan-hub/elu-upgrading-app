@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.38">
+  <link rel="stylesheet" href="styles.css?v=7.39">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -427,6 +427,35 @@
         <div><span>Team</span><strong id="drawerTeamText">—</strong></div>
       </div>
       <div class="legacy-box" id="drawerLegacy"></div>
+      <section class="correction-box">
+        <div class="correction-head"><div><span class="section-label">LOCKED CORRECTION</span><h3>Manual status correction</h3><p>Once saved, Excel refresh and automatic recalculation cannot overwrite this unit until you explicitly change or clear the correction.</p></div></div>
+        <div class="correction-grid">
+          <label>Status
+            <select id="drawerCorrectionStatus">
+              <option value="">Select status</option>
+              <option value="P">P · Pending Confirmation</option>
+              <option value="NR">NR · No Response</option>
+              <option value="C">C · Confirmation</option>
+              <option value="A">A · Opt-In</option>
+              <option value="D">D · Opt-Out</option>
+            </select>
+          </label>
+          <label>Work Status
+            <select id="drawerCorrectionWork">
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </label>
+          <label>Completion Date<input type="date" id="drawerCompletionDate"></label>
+          <label class="wide">Correction Note<textarea id="drawerCorrectionNote" rows="2" placeholder="e.g. Waiting for confirmation"></textarea></label>
+        </div>
+        <div class="correction-actions">
+          <button type="button" class="primary-btn" id="drawerCorrectionSave">Save & Lock Correction</button>
+          <button type="button" class="ghost-btn" id="drawerCorrectionClear">Clear Correction</button>
+        </div>
+        <div class="correction-rule">Completed cannot be saved without a Completion Date.</div>
+        <div class="correction-audit" id="drawerAudit"></div>
+      </section>
       <div class="drawer-shortcuts">
         <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey Visit</button>
         <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>
@@ -435,7 +464,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.38"></script>
-<script src="app.js?v=7.38"></script>
+  <script src="data.js?v=7.39"></script>
+<script src="app.js?v=7.39"></script>
 </body>
 </html>

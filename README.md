@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.38 Secure
+# ELU Upgrading — Premium V7.39 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -410,3 +410,19 @@ P is blue with a waiting symbol and is kept separate from both NR and Opt-In A+C
 This status is synced across Dashboard, Block Board, A4 print, Appointment Register, Unit Register, Reports, Manager PDF, Manager PPT, Block Chart PDF and CSV exports.
 
 Login, encryption, encrypted project data, secure storage key, search, Reschedule and Cancel controls are unchanged.
+
+## V7.39 — persistent correction lock + completion-date safety
+Field corrections are now durable and cannot silently revert after refresh or source-data rebuild.
+
+- Added a **Correct** action in Appointment Register and a **Locked Correction** panel in Unit Details.
+- A saved manual correction is stored in the encrypted runtime state and takes priority over Excel-source data and automatic recalculation until a user explicitly changes the appointment or clears the correction.
+- Added an encrypted audit history for manual corrections.
+- **Completed** cannot be manually saved without a **Completion Date**.
+- Auto-completed appointment records carry their appointment date as the completion date, so no appointment-driven Completed record is left date-less.
+- Seed/source `Completed` is accepted only when a source completion/schedule date can be resolved; otherwise work remains Pending.
+- Unit Register now shows **Work Status** and **Completion Date**.
+- Unit Summary CSV now includes Completion Date.
+- One-time correction migration: **Zone 3 · Block 531 · #01-302** is locked to **P · Pending Confirmation / Pending work**, with no completion date, so it will not revert to Completed after refresh.
+- Saving/rescheduling/cancelling a new appointment is treated as an explicit user change and releases the older manual correction for that unit.
+
+Login, encryption, secure storage key, project layout, reports, Block Board colours and existing resident data remain unchanged.
