@@ -1332,3 +1332,166 @@ body{font-size:15px}
   .premium-form label{font-size:13px}
   .premium-form input,.premium-form select,.premium-form textarea{font-size:16px}
 }
+
+/* ==================== V7.41 BALANCED READABILITY ====================
+   Keep the same full-page overview feel as the screenshot while making
+   text clearer. Compared with V7.40, this tunes the UI back to a denser
+   layout, reduces oversized spacing, and keeps operational tables easy
+   to read at normal browser zoom.
+===================================================================== */
+html{-webkit-text-size-adjust:100%}
+body{
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+
+/* Keep the wide overview layout */
+.sidebar{width:210px;padding:20px 14px}
+.main{margin-left:210px;padding:22px 24px 40px}
+.brand{padding:0 4px 18px;gap:10px}
+.brand-mark{width:44px;height:44px;border-radius:15px}
+.brand-name{font-size:16px;font-weight:850}
+.brand-sub{font-size:10px}
+.project-badge{padding:11px 12px;margin-bottom:16px}
+.project-badge strong{font-size:12px}
+.project-badge small{font-size:10px}
+.nav{gap:4px}
+.nav-item{font-size:12px;padding:10px 11px;gap:10px}
+.nav-item svg{width:17px;height:17px}
+.sidebar-note{padding:14px 6px 2px}
+.sidebar-note strong{font-size:10px}.sidebar-note span{font-size:9px}
+
+.topbar{gap:18px;margin-bottom:16px}
+.eyebrow,.section-label,.hero-kicker{font-size:10px;letter-spacing:.12em}
+.topbar h1{font-size:24px;margin:4px 0 5px}
+.topbar p{font-size:12px}
+.top-actions{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.today-chip,.user-name-chip{font-size:11px;padding:9px 12px}
+.ghost-btn,.primary-btn{font-size:11px;padding:9px 12px}
+.text-btn{font-size:11px}
+
+.hero{padding:22px 24px;border-radius:24px;margin-bottom:16px}
+.hero h2{font-size:22px}
+.hero p{font-size:12px;line-height:1.5}
+.hero-stat{min-width:165px;padding-left:20px}
+.hero-stat span,.hero-stat small{font-size:10px}
+.hero-stat strong{font-size:32px}
+
+.kpi-grid{gap:10px;margin-bottom:16px}
+.kpi-card{padding:13px 12px;border-radius:16px}
+.kpi-icon{width:34px;height:34px;flex-basis:34px}
+.kpi-card span{font-size:10px}
+.kpi-card strong{font-size:20px}
+.kpi-card small{font-size:10px}
+
+.panel{padding:16px;border-radius:20px}
+.panel-head{margin-bottom:12px}
+.panel-head h3{font-size:15px}
+.panel-head p{font-size:10px;line-height:1.45}
+.section-toolbar{margin-bottom:12px;gap:12px}
+.toolbar-title{font-size:18px}
+.section-toolbar label,.register-tools select,.mini-filter{font-size:10px}
+.section-toolbar select,.section-toolbar input,.register-tools select,.mini-filter input{font-size:11px;padding:8px 10px}
+.search-box{height:36px;min-width:220px;padding:0 9px}
+.search-box.small{min-width:220px}
+.search-box input{font-size:11px}
+
+.form-layout{grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:16px}
+.form-card{top:12px}
+.premium-form{gap:11px}
+.premium-form label{font-size:10px;gap:5px}
+.premium-form input,.premium-form select,.premium-form textarea{font-size:12px;padding:9px 10px;border-radius:11px}
+.form-row{gap:8px}
+.form-hint{font-size:10px}
+.master-lock{font-size:10px}
+.readonly-grid span{font-size:10px}.readonly-grid strong{font-size:12px}
+
+/* Clearer tables without huge zoom */
+.table-shell{border-radius:14px}
+.table-shell table{min-width:1040px}
+.table-shell th{
+  font-size:9.5px!important;
+  padding:10px 11px!important;
+  line-height:1.25;
+  color:#5d7892;
+}
+.table-shell td{
+  font-size:12px!important;
+  padding:9px 11px!important;
+  line-height:1.35;
+  color:#35526d;
+  font-weight:500;
+}
+.pill{font-size:9.5px;padding:4px 7px;font-weight:850}
+.table-action{font-size:9.5px;padding:5px 8px}
+.action-set{gap:5px}
+
+/* Appointment Schedule page: match the requested screenshot feel */
+#appointments .form-layout{grid-template-columns:minmax(315px,360px) minmax(0,1fr);gap:16px}
+#appointments .panel{padding:14px}
+#appointments .panel-head h3{font-size:14px}
+#appointments .panel-head p{font-size:9.5px}
+#appointments .premium-form label{font-size:9.5px;font-weight:820}
+#appointments .premium-form input,
+#appointments .premium-form select,
+#appointments .premium-form textarea{font-size:12px;padding:9px 10px}
+#appointments .planned-schedule-card strong{font-size:12px}
+#appointments .inline-sync-note,
+#appointments .form-hint{font-size:9.5px;line-height:1.4}
+#appointments .table-shell table{min-width:1180px}
+#appointments .table-shell th{font-size:9px!important;padding:9px 10px!important}
+#appointments .table-shell td{font-size:11px!important;padding:8px 10px!important;line-height:1.3}
+#appointments .pill{font-size:8.8px;padding:4px 7px}
+#appointments .table-action{font-size:8.8px;padding:5px 8px;border-radius:8px}
+#appointments .search-box.small{min-width:190px}
+#appointments .register-tools{gap:8px;align-items:flex-end}
+#appointments .register-tools select{min-width:95px}
+
+/* Unit register and other large operational tables */
+.unit-register-table{min-width:1180px!important}
+.unit-register-table th{font-size:9.5px!important;height:40px}
+.unit-register-table td{font-size:12px!important;padding-top:9px!important;padding-bottom:9px!important}
+.zone-group-head span{font-size:9px}.zone-group-head strong{font-size:11px}.zone-group-head em{font-size:9px}
+.register-done-note{font-size:10px}
+
+/* Planner and reports keep density but remain readable */
+.planner-hero{padding:16px 18px;border-radius:20px}
+.planner-hero h2{font-size:20px}.planner-hero p{font-size:10.5px}
+.planner-date-nav label{font-size:9px}.planner-date-nav input{padding:8px 10px;font-size:11px}
+.icon-date-btn{width:34px;height:34px;font-size:20px}
+.planner-form{gap:8px}.planner-form label{font-size:9px}.planner-form select,.planner-form input{font-size:11px;padding:8px 9px}
+.planner-table{min-width:980px}
+.planner-table th{font-size:9px;padding:8px 7px}
+.planner-table td{padding:6px 7px}
+.planner-table .date-cell{font-size:10px}.planner-table .slot-cell{font-size:9px}.planner-table .remarks-cell{font-size:9px}
+.planner-team-entry strong{font-size:9px}.planner-team-entry small{font-size:8px}.planner-mini-action{font-size:8px}
+.today-zone-head strong{font-size:10px}.today-zone-head em{font-size:9px}
+.today-slot-time{font-size:9px}.today-appt-chip{font-size:9px}
+
+.report-hero p,.report-chart-head p{font-size:10.5px}
+.report-mini-card span,.report-block-bar,.board-print-note,.legacy-box,.toast{font-size:10px}
+
+.correction-head h3{font-size:14px}.correction-head p{font-size:10px}
+.correction-grid label{font-size:9.5px}.correction-grid input,.correction-grid select,.correction-grid textarea{font-size:11px;padding:9px 10px}
+.correction-rule,.correction-audit strong,.correction-audit span,.empty-audit{font-size:9.5px}
+
+@media(max-width:1100px){
+  .sidebar{width:200px}
+  .main{margin-left:200px;padding:20px}
+  .form-layout,#appointments .form-layout{grid-template-columns:1fr}
+  .form-card{position:static}
+}
+@media(max-width:760px){
+  body{font-size:15px}
+  .sidebar{width:100%;position:static}
+  .main{margin-left:0;padding:18px}
+  .topbar h1{font-size:22px}
+  .table-shell th{font-size:10px!important}
+  .table-shell td{font-size:12px!important}
+  #appointments .table-shell th{font-size:9.5px!important}
+  #appointments .table-shell td{font-size:11.5px!important}
+  .premium-form label{font-size:11px}
+  .premium-form input,.premium-form select,.premium-form textarea{font-size:13px}
+}
