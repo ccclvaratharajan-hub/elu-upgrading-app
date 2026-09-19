@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.32">
+  <link rel="stylesheet" href="styles.css?v=7.35">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -256,7 +256,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">SCHEDULE</span><h3>Appointment Register</h3><p><span id="importedScheduleCount">0</span> appointment records loaded from your uploaded PR3 Appointment schedule. Planner is prefilled from this schedule.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="appointmentZoneFilter"></select></label><label class="mini-filter">Block<select id="appointmentBlockFilter"></select></label><label class="mini-filter">View<select id="appointmentMode"><option value="upcoming">Upcoming</option><option value="all">All</option><option value="completed">History / Rescheduled</option></select></label><label class="mini-filter">Date<input type="date" id="appointmentFilterDate"></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">UNIT APPOINTMENT STATUS</span><h3>Appointment Register</h3><p><span id="appointmentUnitCount">0</span> units shown. No appointment = NR · Active appointment = C · Appointment completed = A.</p></div><div class="register-tools"><div class="search-box small"><svg><use href="#i-search"/></svg><input id="appointmentUnitSearch" placeholder="Search unit e.g. 01-302"></div><label class="mini-filter">Zone<select id="appointmentZoneFilter"></select></label><label class="mini-filter">Block<select id="appointmentBlockFilter"></select></label></div></div>
             <div id="appointmentTable" class="table-shell"></div>
           </article>
         </div>
@@ -432,7 +432,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.32"></script>
-<script src="app.js?v=7.32"></script>
+  <script src="data.js?v=7.35"></script>
+<script src="app.js?v=7.35"></script>
 </body>
 </html>

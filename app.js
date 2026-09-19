@@ -273,43 +273,58 @@ function normalizeManualOverrides(){
 function rebuildUnitMaster(key){
   const current=state.units[key];if(!current)return;
   const base=baseUnit(current.block,current.floor,current.unit);
+
   const surveys=state.surveys.filter(s=>s.unitKey===key),latestSurvey=latestById(surveys);
-  if(latestSurvey&&latestSurvey.contact&&!base.contact){
-    base.contact=latestSurvey.contact;
-  }
-  const latestIdentityAppt=latestById(state.appointments.filter(a=>a.unitKey===key&&(a.ownerName||a.contact)));
+  if(latestSurvey&&latestSurvey.contact&&!base.contact)base.contact=latestSurvey.contact;
+
+  const allUnitAppointments=state.appointments.filter(a=>a.unitKey===key);
+  const latestIdentityAppt=latestById(allUnitAppointments.filter(a=>a.ownerName||a.contact));
   if(latestIdentityAppt){
     if(latestIdentityAppt.ownerName)base.ownerName=latestIdentityAppt.ownerName;
     if(latestIdentityAppt.contact)base.contact=latestIdentityAppt.contact;
   }
+
   const latestAppt=preferredMasterAppointment(key);
-  if(latestAppt){
-    const userAppt=isUserAppointment(latestAppt);
-    const importedExcel=String(latestAppt.source||"").includes("Excel");
-    const showImportedSchedule=!["D","NR",""] .includes(base.response);
-    if(userAppt||showImportedSchedule){
-      base.appointmentDate=latestAppt.date||"";
-      base.appointmentSlot=latestAppt.slot||"";
-      base.team=latestAppt.team||"";
-    }
+  if(latestAppt&&latestAppt.date){
+    /* Main appointment status concept:
+       date exists and is still active -> C
+       date/slot has passed or work is completed -> A
+    */
+    base.appointmentDate=latestAppt.date||"";
+    base.appointmentSlot=latestAppt.slot||"";
+    base.team=latestAppt.team||"";
+
     if(latestAppt.ownerName)base.ownerName=latestAppt.ownerName;
     if(latestAppt.contact)base.contact=latestAppt.contact;
-    if(latestAppt.remarks&&(userAppt||latestAppt.userRemarks)){
+    if(latestAppt.remarks&&(isUserAppointment(latestAppt)||latestAppt.userRemarks)){
       const parts=[base.remarks,latestAppt.remarks].map(v=>String(v||"").trim()).filter(Boolean);
       base.remarks=[...new Set(parts)].join(" · ");
     }
-    if(userAppt){
-      if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
-        latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
-      }else{
-        base.response="C";
-      }
-    }else if(!importedExcel){
-      if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
-        latestAppt.workStatus="Completed";base.workStatus="Completed";base.response="A";
-      }else{base.response="C"}
+
+    if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
+      latestAppt.workStatus="Completed";
+      base.workStatus="Completed";
+      base.response="A";
+    }else{
+      base.workStatus="Pending";
+      base.response="C";
     }
+  }else{
+    /* No active appointment date.
+       A cancelled booking returns the unit to NR.
+       A genuinely blank response also displays as NR.
+       Explicit legacy D / A / NR data is otherwise preserved.
+    */
+    const latestCancelled=latestById(allUnitAppointments.filter(a=>a.scheduleState==="Cancelled"));
+    if(latestCancelled||!base.response){
+      base.response="NR";
+      base.workStatus="Pending";
+    }
+    base.appointmentDate="";
+    base.appointmentSlot="";
+    base.team="";
   }
+
   state.units[key]=base;
 }
 function rebuildAllMasters(){Object.keys(state.units).forEach(rebuildUnitMaster)}
@@ -640,24 +655,97 @@ function cancelAppointment(id){
   a.scheduleState="Cancelled";a.cancelledAt=new Date().toISOString();
   if(Number(document.getElementById("appointmentEditId").value)===id)resetAppointmentForm();
   if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
-  save("Appointment cancelled · active slot cleared · history retained")
+  save("Appointment cancelled · active slot cleared · Unit Status changed to NR")
 }
 function deleteAppointment(id){if(!confirm("Delete this appointment record permanently?"))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
-document.getElementById("appointmentFilterDate").addEventListener("change",renderAppointmentTable);document.getElementById("appointmentMode").addEventListener("change",renderAppointmentTable);
+
 document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{const z=document.getElementById("appointmentZoneFilter").value;document.getElementById("appointmentBlockFilter").innerHTML=filterBlockOptions(z,true);renderAppointmentTable()});
 document.getElementById("appointmentBlockFilter").addEventListener("change",renderAppointmentTable);
-function renderAppointmentTable(){
-  const f=document.getElementById("appointmentFilterDate").value,mode=document.getElementById("appointmentMode").value,zf=document.getElementById("appointmentZoneFilter").value,bf=document.getElementById("appointmentBlockFilter").value;let r=[...state.appointments];
-  const imported=r.filter(a=>String(a.source||"").includes("Excel")).length;const ic=document.getElementById("importedScheduleCount");if(ic)ic.textContent=imported.toLocaleString();
-  if(zf!=="all")r=r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===Number(zf));if(bf!=="all")r=r.filter(a=>Number(a.block)===Number(bf));
-  if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
-  r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a),displayStatus=active?"C":((a.workStatus==="Completed"||appointmentHasEnded(a))?"A":(u?.response||""));const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(displayStatus)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
-  const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
-  if(!r.length){document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No appointments found.</div>`;return}
-  document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"appointments")}${table(x)}</section>`).join("")}</div>`:table(r)
+document.getElementById("appointmentUnitSearch").addEventListener("input",renderAppointmentTable);
+function appointmentDisplayForUnit(u){
+  const a=preferredMasterAppointment(u.key);
+  if(!a||!a.date){
+    return {appointment:null,status:"NR",schedule:"No Appointment",scheduleClass:"pending",active:false,completed:false}
+  }
+  const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
+  if(completed){
+    return {appointment:a,status:"A",schedule:"Completed",scheduleClass:"completed",active:false,completed:true}
+  }
+  return {appointment:a,status:"C",schedule:"Active",scheduleClass:"confirmed",active:true,completed:false}
 }
-document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
+
+function startAppointmentForUnit(key){
+  const u=getUnit(key);if(!u)return;
+  setView("appointments");
+  resetAppointmentForm();
+  document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();
+  document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");
+  document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderAppointmentTable(){
+  const zf=document.getElementById("appointmentZoneFilter").value,
+        bf=document.getElementById("appointmentBlockFilter").value,
+        q=String(document.getElementById("appointmentUnitSearch")?.value||"").trim().toLowerCase().replace(/^#/,"");
+  let units=unitsArray();
+
+  if(zf!=="all")units=units.filter(u=>u.zone===Number(zf));
+  if(bf!=="all")units=units.filter(u=>u.block===Number(bf));
+  if(q){
+    units=units.filter(u=>{
+      const display=unitDisplay(u.floor,u.unit).replace(/^#/,"").toLowerCase();
+      const compact=display.replace(/[^0-9]/g,"");
+      const queryCompact=q.replace(/[^0-9]/g,"");
+      return display.includes(q)||String(u.unit).includes(q)||String(u.floor).includes(q)||(queryCompact&&compact.includes(queryCompact));
+    });
+  }
+
+  units.sort((a,b)=>a.zone-b.zone||a.block-b.block||a.floor-b.floor||a.unit-b.unit);
+
+  const count=document.getElementById("appointmentUnitCount");
+  if(count)count.textContent=units.length.toLocaleString();
+
+  const row=u=>{
+    const d=appointmentDisplayForUnit(u),a=d.appointment;
+    const owner=a?.ownerName||u.ownerName||"—";
+    const contact=a?.contact||u.contact||"—";
+    const actions=d.active
+      ? `<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
+      : d.completed
+        ? `<span class="register-done-note">Completed</span>`
+        : `<button class="table-action" data-appt-book="${u.key}">Appointment</button>`;
+
+    return `<tr>
+      <td>Blk ${u.block}</td>
+      <td><strong>${esc(unitDisplay(u.floor,u.unit))}</strong></td>
+      <td>${statusPill(d.status)}</td>
+      <td>${a?.date?safeDate(a.date):"—"}</td>
+      <td>${esc(a?.slot||"—")}</td>
+      <td>${esc(owner)}</td>
+      <td>${esc(contact)}</td>
+      <td>${esc(a?.team||"—")}</td>
+      <td><span class="pill ${d.scheduleClass}">${esc(d.schedule)}</span></td>
+      <td>${a?`<span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span>`:"—"}</td>
+      <td><div class="action-set">${actions}</div></td>
+    </tr>`
+  };
+
+  const table=x=>`<div class="table-shell zone-table-shell"><table>
+    <thead><tr><th>Block</th><th>Unit</th><th>Status</th><th>Date</th><th>Slot</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Source</th><th>Action</th></tr></thead>
+    <tbody>${x.map(row).join("")}</tbody>
+  </table></div>`;
+
+  if(!units.length){
+    document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No units found for this filter.</div>`;
+    return
+  }
+
+  document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")
+    ? `<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,units.filter(u=>u.zone===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`
+    : table(units)
+}
+document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-book]");if(b)return startAppointmentForUnit(b.dataset.apptBook);b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
 
 document.getElementById("unitSearch").addEventListener("input",renderUnitTable);
 document.getElementById("unitZoneFilter").addEventListener("change",()=>{const z=document.getElementById("unitZoneFilter").value;document.getElementById("unitBlockFilter").innerHTML=filterBlockOptions(z,true);renderUnitTable()});
@@ -1132,8 +1220,6 @@ function startApp(){
   if(appStarted)return;
   appStarted=true;
   document.getElementById("todayChip").textContent=fmtDate.format(new Date());
-  document.getElementById("appointmentFilterDate").value="";
-  document.getElementById("appointmentMode").value="upcoming";
   document.getElementById("complaintDate").value=isoTodaySG();
   document.getElementById("teamDate").value=isoTodaySG();
   initSelectors();

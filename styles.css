@@ -1209,3 +1209,10 @@ body.secure-locked .toast{visibility:hidden}
 
 /* V7.31 — Block Board A4 export */
 #downloadBlockBoardBtn{white-space:nowrap}
+
+
+/* V7.34 — simple full-unit Appointment Register */
+.register-done-note{
+  display:inline-flex;align-items:center;padding:5px 8px;border-radius:8px;
+  background:#eef8f3;color:#25805a;font-size:9px;font-weight:800;white-space:nowrap
+}

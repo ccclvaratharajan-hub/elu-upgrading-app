@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.32 Secure
+# ELU Upgrading — Premium V7.35 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -332,3 +332,39 @@ The security password is intentionally NOT written into this ZIP or README. Keep
 - Added explicit print-safe fills so A/C/D/NR cards and legend retain green / pink / yellow / red on the A4 one-page print.
 - A4 Landscape one-page fit is retained.
 - Login, encryption, secure local storage and encrypted project seed data are unchanged.
+
+
+## V7.33 — appointment status logic
+The working appointment rule is now simplified:
+- **No active appointment date** → **NR · No Response** for a cancelled booking or an otherwise blank unit.
+- **Active appointment date exists and has not ended** → **C · Confirmation**.
+- **Appointment date / slot has passed** (or work is marked completed) → **A · Opt-In** automatically.
+- **Cancel appointment** → active date/slot is cleared, history is retained, and the unit becomes **NR**.
+- If a new appointment is later created for that unit, it automatically becomes **C**, then changes to **A** after the appointment ends.
+- Existing explicit legacy D / A / NR seed data is preserved unless an active appointment or cancelled booking changes the appointment-driven status.
+- Login, encryption, secure local storage and encrypted project data remain unchanged.
+
+
+## V7.34 — simple full-unit Appointment Register
+- Appointment Register now lists **every project unit** under its Zone / Block, even when no appointment exists.
+- Register logic is intentionally simple:
+  - **No appointment date** → **NR · No Response**
+  - **Active appointment date** → **C · Confirmation**
+  - **Appointment finished / completed** → **A · Opt-In**
+- NR rows have an **Appointment** button that opens the existing appointment form with Zone / Block / Unit preselected.
+- Active C rows keep the existing **Edit / Reschedule / Cancel / Delete** controls.
+- Cancel returns the unit's appointment-register status to **NR**.
+- Reschedule continues to reuse the same workflow and automatically updates the new date / slot.
+- Old View / Date filters were removed from Appointment Register to keep the workflow simple; Zone and Block filters remain.
+- Appointment history is still retained in the underlying records.
+- Login, encryption, secure local storage, Block Board A4 print and encrypted project data are unchanged.
+
+
+## V7.35 — Appointment Register unit search
+- Added a dedicated **Unit Search** field to Appointment Register.
+- Type only the unit number, for example **01-302**, **#01-302**, or even **302**.
+- The full Appointment Register filters instantly so you do not need to scroll through all units.
+- Zone and Block filters can still be used together with the search.
+- Existing Appointment / Edit / Reschedule / Cancel / Delete workflow is unchanged.
+- Current NR / C / A status logic is unchanged.
+- Login, encryption, secure local storage, reports and Block Board print are unchanged.
