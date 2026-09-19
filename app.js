@@ -652,7 +652,7 @@ function renderAppointmentTable(){
   if(zf!=="all")r=r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===Number(zf));if(bf!=="all")r=r.filter(a=>Number(a.block)===Number(bf));
   if(f)r=r.filter(a=>a.date===f);else if(mode==="upcoming")r=r.filter(a=>!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a)&&a.date>=isoTodaySG());else if(mode==="completed")r=r.filter(a=>isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a));
   r.sort((a,b)=>mode==="completed"?b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot):a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot));
-  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a),displayStatus=(active&&isUserAppointment(a))?"C":(u?.response||"");const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(displayStatus)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
+  const row=a=>{const u=getUnit(a.unitKey),st=a.scheduleState||"Active",sc=st==="Cancelled"?"cancelled":st==="Rescheduled"?"rescheduled":st==="History"?"history":a.workStatus==="Completed"?"completed":"confirmed",active=!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&!appointmentHasEnded(a),displayStatus=active?"C":((a.workStatus==="Completed"||appointmentHasEnded(a))?"A":(u?.response||""));const actions=active?`<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`:`<button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`;return`<tr><td>${safeDate(a.date)}</td><td>${esc(a.slot)}</td><td>Blk ${a.block}<br><strong>${esc(a.unitDisplay)}</strong></td><td>${esc(u?.ownerName||a.ownerName||"—")}</td><td>${esc(u?.contact||a.contact||"—")}</td><td>${esc(a.team||"Unassigned")}</td><td><span class="pill ${sc}">${esc(st==="Active"?(a.workStatus==="Completed"?"Completed":"Active"):st)}</span></td><td>${statusPill(displayStatus)}</td><td><span class="pill ${String(a.source||"").includes("Excel")?"confirmed":"pending"}">${esc(a.source||"Manual")}</span></td><td><div class="action-set">${actions}</div></td></tr>`};
   const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Slot</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Team</th><th>Schedule</th><th>Unit Status</th><th>Source</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
   if(!r.length){document.getElementById("appointmentTable").innerHTML=`<div class="empty-state">No appointments found.</div>`;return}
   document.getElementById("appointmentTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"appointments")}${table(x)}</section>`).join("")}</div>`:table(r)
@@ -1021,7 +1021,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.31">
+<link rel="stylesheet" href="styles.css?v=7.32">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -1046,6 +1046,27 @@ function exportBlockBoardPrint(){
   .u-date{font-size:6px!important;margin-top:2px!important;gap:2px!important}
   .u-date span{font-size:5.7px!important}
   button.unit-card{appearance:none;-webkit-appearance:none}
+  /* Explicit print-safe status fills. These mirror the live Block Board palette. */
+  #blockboard .unit-card.status-a{
+    background:#d5f4e5!important;border-color:#53c58e!important;box-shadow:inset 5px 0 0 #239d68!important
+  }
+  #blockboard .unit-card.status-c{
+    background:#f8bfdc!important;border-color:#e260a1!important;box-shadow:inset 5px 0 0 #d91b83!important
+  }
+  #blockboard .unit-card.status-out{
+    background:#f7e99b!important;border-color:#d3af21!important;box-shadow:inset 5px 0 0 #c99f10!important
+  }
+  #blockboard .unit-card.status-nr{
+    background:#f5b8bd!important;border-color:#df4d5d!important;box-shadow:inset 5px 0 0 #c91f31!important
+  }
+  #blockboard .unit-card.status-a .u-no,#blockboard .unit-card.status-a .u-status{color:#126b4b!important}
+  #blockboard .unit-card.status-c .u-no,#blockboard .unit-card.status-c .u-status{color:#8f0d56!important}
+  #blockboard .unit-card.status-out .u-no,#blockboard .unit-card.status-out .u-status{color:#735a05!important}
+  #blockboard .unit-card.status-nr .u-no,#blockboard .unit-card.status-nr .u-status{color:#8f1724!important}
+  #blockboard .legend .dot.optin{background:#239d68!important}
+  #blockboard .legend .dot.confirm{background:#d91b83!important}
+  #blockboard .legend .dot.optout{background:#c99f10!important}
+  #blockboard .legend .dot.nr{background:#c91f31!important}
   @media print{
     .a4-page{width:287mm;height:198mm}
     body{overflow:hidden}
@@ -1054,7 +1075,7 @@ function exportBlockBoardPrint(){
 </head>
 <body class="board-print-page">
   <div class="a4-page" id="printPage">
-    <div class="a4-fit" id="printFit">
+    <div class="a4-fit" id="printFit"><div id="blockboard">
       <div class="board-print-head">
         <div>
           <h1>ELU Block Board · Block ${block}</h1>
@@ -1064,6 +1085,7 @@ function exportBlockBoardPrint(){
       </div>
       ${legend}
       ${boardHtml}
+      </div>
     </div>
   </div>
   <script>

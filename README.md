@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.31 Secure
+# ELU Upgrading — Premium V7.32 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -323,3 +323,12 @@ The security password is intentionally NOT written into this ZIP or README. Keep
   - appointment / done date line
 - The board auto-scales to fit the selected Block / Floor on one A4 landscape sheet.
 - Login, encryption, secure local storage and project data are unchanged from V7.30.
+
+
+## V7.32 correction
+- Appointment Register: every **Active** appointment row now displays **C · Confirmation** in Unit Status, including active imported schedule rows. Completed rows display **A · Opt-In**.
+- This is a register display correction only; the protected master-data import rules remain unchanged.
+- A4 Block Board print now loads the same `#blockboard` colour theme used on screen.
+- Added explicit print-safe fills so A/C/D/NR cards and legend retain green / pink / yellow / red on the A4 one-page print.
+- A4 Landscape one-page fit is retained.
+- Login, encryption, secure local storage and encrypted project seed data are unchanged.
