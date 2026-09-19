@@ -257,6 +257,19 @@ function preferredMasterAppointment(key){
   }
   return [...arr].sort((a,b)=>b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot)||Number(b.id)-Number(a.id))[0]
 }
+
+function currentUnitAppointmentState(key){
+  const a=preferredMasterAppointment(key);
+  if(!a||!a.date){
+    return {appointment:null,status:"NR",workStatus:"Pending",active:false,completed:false}
+  }
+  const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
+  if(completed){
+    return {appointment:a,status:"A",workStatus:"Completed",active:false,completed:true}
+  }
+  return {appointment:a,status:"C",workStatus:"Pending",active:true,completed:false}
+}
+
 function normalizeManualOverrides(){
   const by={};
   state.appointments.forEach(a=>{
@@ -284,42 +297,31 @@ function rebuildUnitMaster(key){
     if(latestIdentityAppt.contact)base.contact=latestIdentityAppt.contact;
   }
 
-  const latestAppt=preferredMasterAppointment(key);
-  if(latestAppt&&latestAppt.date){
-    /* Main appointment status concept:
-       date exists and is still active -> C
-       date/slot has passed or work is completed -> A
-    */
-    base.appointmentDate=latestAppt.date||"";
-    base.appointmentSlot=latestAppt.slot||"";
-    base.team=latestAppt.team||"";
+  /* ONE SOURCE OF TRUTH FOR EVERY SCREEN:
+     no active appointment date -> NR
+     active appointment date -> C
+     appointment ended/completed -> A
+  */
+  const live=currentUnitAppointmentState(key);
+  const a=live.appointment;
 
-    if(latestAppt.ownerName)base.ownerName=latestAppt.ownerName;
-    if(latestAppt.contact)base.contact=latestAppt.contact;
-    if(latestAppt.remarks&&(isUserAppointment(latestAppt)||latestAppt.userRemarks)){
-      const parts=[base.remarks,latestAppt.remarks].map(v=>String(v||"").trim()).filter(Boolean);
+  base.response=live.status;
+  base.workStatus=live.workStatus;
+
+  if(a){
+    base.appointmentDate=a.date||"";
+    base.appointmentSlot=a.slot||"";
+    base.team=a.team||"";
+
+    if(a.ownerName)base.ownerName=a.ownerName;
+    if(a.contact)base.contact=a.contact;
+    if(a.remarks&&(isUserAppointment(a)||a.userRemarks)){
+      const parts=[base.remarks,a.remarks].map(v=>String(v||"").trim()).filter(Boolean);
       base.remarks=[...new Set(parts)].join(" · ");
     }
 
-    if(latestAppt.workStatus==="Completed"||appointmentHasEnded(latestAppt)){
-      latestAppt.workStatus="Completed";
-      base.workStatus="Completed";
-      base.response="A";
-    }else{
-      base.workStatus="Pending";
-      base.response="C";
-    }
+    if(live.completed&&a.workStatus!=="Completed")a.workStatus="Completed";
   }else{
-    /* No active appointment date.
-       A cancelled booking returns the unit to NR.
-       A genuinely blank response also displays as NR.
-       Explicit legacy D / A / NR data is otherwise preserved.
-    */
-    const latestCancelled=latestById(allUnitAppointments.filter(a=>a.scheduleState==="Cancelled"));
-    if(latestCancelled||!base.response){
-      base.response="NR";
-      base.workStatus="Pending";
-    }
     base.appointmentDate="";
     base.appointmentSlot="";
     base.team="";
@@ -329,7 +331,7 @@ function rebuildUnitMaster(key){
 }
 function rebuildAllMasters(){Object.keys(state.units).forEach(rebuildUnitMaster)}
 function persist(){queueSecurePersist()}
-function save(msg){rebuildAllMasters();persist();renderAll();if(msg)toast(msg)}
+function save(msg){normalizeManualOverrides();rebuildAllMasters();persist();renderAll();if(msg)toast(msg)}
 function autoCompleteAppointments(showToast=false){
   let changed=0;
   state.appointments.forEach(a=>{
@@ -663,15 +665,15 @@ document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{
 document.getElementById("appointmentBlockFilter").addEventListener("change",renderAppointmentTable);
 document.getElementById("appointmentUnitSearch").addEventListener("input",renderAppointmentTable);
 function appointmentDisplayForUnit(u){
-  const a=preferredMasterAppointment(u.key);
-  if(!a||!a.date){
-    return {appointment:null,status:"NR",schedule:"No Appointment",scheduleClass:"pending",active:false,completed:false}
+  const live=currentUnitAppointmentState(u.key),a=live.appointment;
+  return {
+    appointment:a,
+    status:live.status,
+    schedule:live.active?"Active":live.completed?"Completed":"No Appointment",
+    scheduleClass:live.active?"confirmed":live.completed?"completed":"pending",
+    active:live.active,
+    completed:live.completed
   }
-  const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
-  if(completed){
-    return {appointment:a,status:"A",schedule:"Completed",scheduleClass:"completed",active:false,completed:true}
-  }
-  return {appointment:a,status:"C",schedule:"Active",scheduleClass:"confirmed",active:true,completed:false}
 }
 
 function startAppointmentForUnit(key){

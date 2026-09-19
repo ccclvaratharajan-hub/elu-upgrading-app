@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.35 Secure
+# ELU Upgrading — Premium V7.36 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -368,3 +368,16 @@ The working appointment rule is now simplified:
 - Existing Appointment / Edit / Reschedule / Cancel / Delete workflow is unchanged.
 - Current NR / C / A status logic is unchanged.
 - Login, encryption, secure local storage, reports and Block Board print are unchanged.
+
+
+## V7.36 — one-source live sync
+- Fixed the mismatch where Appointment Schedule could change but Block Board still showed an older status/date.
+- Appointment status now has **one central source of truth** used by Appointment Register, Block Board, Unit Register, Dashboard and Reports:
+  - no active appointment date → **NR**
+  - active appointment date → **C**
+  - appointment ended / completed → **A**
+- Appointment changes from either Appointment Register or Planner are normalized, then all master units and all screens are rebuilt immediately.
+- Reschedule updates the new date/slot everywhere.
+- Cancel clears the active appointment and returns the unit to NR everywhere.
+- Existing search, Reschedule, Cancel and A4 Block Board print remain unchanged.
+- Login, encryption, encrypted seed data and secure local-storage key are unchanged.
