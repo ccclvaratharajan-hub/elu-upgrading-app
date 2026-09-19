@@ -1259,3 +1259,76 @@ body.secure-locked .toast{visibility:hidden}
 /* V7.39 persistent manual corrections */
 .correction-box{border:1px solid #dce9f5;background:linear-gradient(180deg,#fbfdff,#f6faff);border-radius:16px;padding:14px;display:grid;gap:12px}.correction-head h3{margin:4px 0 3px;font-size:14px;color:#365673}.correction-head p{margin:0;color:#7c91a7;font-size:10px;line-height:1.45}.correction-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.correction-grid label{font-size:9px;font-weight:850;color:#6c8299;display:grid;gap:5px;text-transform:uppercase;letter-spacing:.04em}.correction-grid label.wide{grid-column:1/-1}.correction-grid input,.correction-grid select,.correction-grid textarea{width:100%;border:1px solid #dce8f4;border-radius:10px;background:#fff;padding:9px 10px;color:#35536f;font-size:11px;text-transform:none;letter-spacing:0;outline:none}.correction-grid textarea{resize:vertical}.correction-grid .required-completion{color:#a44f4f}.correction-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.correction-rule{font-size:9px;color:#8b5c5c;background:#fff4f4;border:1px solid #f1d8d8;padding:8px 9px;border-radius:10px}.correction-audit{display:grid;gap:7px;border-top:1px dashed #dbe7f2;padding-top:10px}.correction-audit>div{display:grid;gap:2px}.correction-audit strong{font-size:9px;color:#4f6d89}.correction-audit span,.empty-audit{font-size:9px;color:#8a9eb1;line-height:1.4}.unit-register-table{min-width:1120px}
 @media(max-width:520px){.correction-grid,.correction-actions{grid-template-columns:1fr}.correction-grid label.wide{grid-column:auto}}
+
+/* ==================== V7.40 READABILITY BOOST ====================
+   Larger default UI text so the app is comfortable at 100% browser zoom.
+   Functional behavior is unchanged. Wide data tables keep horizontal scroll
+   rather than squeezing text back down to tiny sizes.
+=================================================================== */
+body{font-size:15px}
+.brand-name{font-size:19px}.brand-sub{font-size:13px}
+.project-badge strong{font-size:14px}.project-badge small{font-size:12px}
+.nav-item{font-size:14px;padding:12px 13px}.sidebar-note strong{font-size:13px}.sidebar-note span{font-size:12px}
+.eyebrow,.section-label,.hero-kicker{font-size:12px}.topbar p{font-size:14px}.today-chip{font-size:13px}
+.ghost-btn,.primary-btn{font-size:13px}.text-btn{font-size:12px}
+.hero p{font-size:14px}.hero-stat span,.hero-stat small{font-size:12px}
+.kpi-card span{font-size:12px}.kpi-card small{font-size:11px}
+.panel-head h3{font-size:18px}.panel-head p{font-size:13px}
+.zone-name{font-size:14px}.zone-pct{font-size:13px}.zone-mini{font-size:11px}
+.compact-item strong{font-size:14px}.compact-item span,.compact-item small{font-size:12px}.empty-state{font-size:13px}
+.attention-card strong{font-size:14px}.attention-card span{font-size:12px}.attention-card b{font-size:11px}
+.section-toolbar label,.register-tools select,.mini-filter{font-size:12px}
+.section-toolbar select,.section-toolbar input,.register-tools select,.mini-filter input{font-size:13px;padding:10px 11px}
+.search-box input{font-size:13px}.search-box{height:42px}
+.block-headline p{font-size:13px}.mini-stat{font-size:12px}.legend{font-size:12px}
+.floor-label span{font-size:11px}.unit-card .u-no{font-size:13px}.unit-card .u-status{font-size:11px}.unit-card.work-completed:after{font-size:11px}
+.premium-form label{font-size:12px}.premium-form input,.premium-form select,.premium-form textarea{font-size:14px;padding:11px 12px}
+.form-hint{font-size:12px}.master-lock{font-size:11px}.readonly-grid span{font-size:11px}.readonly-grid strong{font-size:14px}
+.team-head h3{font-size:16px}.team-head small{font-size:12px}.team-badge{font-size:12px}.team-card strong{font-size:13px}.team-card span{font-size:11px}.team-card button{font-size:11px}
+.report-hero p{font-size:13px}.report-mini-card span{font-size:11px}
+.drawer-head p{font-size:13px}.legacy-box{font-size:12px}.toast{font-size:13px}
+
+/* Registers and operational tables */
+.table-shell table{min-width:900px}
+.table-shell th{font-size:11px!important;padding:12px 13px!important;line-height:1.35}
+.table-shell td{font-size:13px!important;padding:12px 13px!important;line-height:1.45}
+.pill{font-size:11px;padding:5px 8px}
+.table-action{font-size:11px;padding:6px 9px}
+.action-set{gap:6px}
+.zone-group-head span{font-size:11px}.zone-group-head strong{font-size:13px}.zone-group-head em{font-size:11px}
+.unit-register-table{min-width:1280px!important}
+.unit-register-table th{font-size:11px!important;height:46px}
+.unit-register-table td{font-size:13px!important;padding-top:12px!important;padding-bottom:12px!important}
+.register-done-note{font-size:11px}
+
+/* Appointment planner */
+.planner-table{min-width:1020px}
+.planner-table th{font-size:11px;padding:9px 8px}
+.planner-table .date-cell{font-size:12px}.planner-table .slot-cell{font-size:11px}.planner-table .remarks-cell{font-size:11px}
+.planner-team-entry strong{font-size:11px}.planner-team-entry small{font-size:10px}.planner-mini-action{font-size:10px}
+.today-zone-head strong{font-size:12px}.today-zone-head em{font-size:11px}
+.custom-slot-row td{font-size:12px!important}
+
+/* Reports */
+#reportTable thead tr:first-child th{font-size:11px!important}
+#reportTable .total-row td{font-size:13px!important}
+.report-block-bar{font-size:11px}.report-score-ticks{font-size:10px}
+.report-chart-legend{font-size:12px}.report-cluster-yaxis{font-size:10px}
+.report-cluster-group>strong{font-size:11px}.report-cluster-bar-wrap b{font-size:9px}
+.report-chart-head p{font-size:13px}.board-print-note{font-size:12px}
+
+/* Manual correction panel / audit history */
+.correction-head h3{font-size:16px}.correction-head p{font-size:12px}
+.correction-grid label{font-size:11px}.correction-grid input,.correction-grid select,.correction-grid textarea{font-size:13px;padding:10px 11px}
+.correction-rule{font-size:11px}.correction-audit strong{font-size:11px}.correction-audit span,.empty-audit{font-size:11px}
+
+@media(max-width:760px){
+  body{font-size:16px}
+  .nav-item{font-size:15px}
+  .topbar p,.hero p{font-size:15px}
+  .table-shell th{font-size:12px!important}
+  .table-shell td{font-size:14px!important}
+  .pill{font-size:12px}
+  .premium-form label{font-size:13px}
+  .premium-form input,.premium-form select,.premium-form textarea{font-size:16px}
+}

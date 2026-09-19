@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.39 Secure
+# ELU Upgrading — Premium V7.40 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -426,3 +426,10 @@ Field corrections are now durable and cannot silently revert after refresh or so
 - Saving/rescheduling/cancelling a new appointment is treated as an explicit user change and releases the older manual correction for that unit.
 
 Login, encryption, secure storage key, project layout, reports, Block Board colours and existing resident data remain unchanged.
+
+## V7.40 — readability / larger text
+- Increased main UI, register, table, pill, button, form, planner and report font sizes.
+- Unit Register rows now use larger 13px body text and 11px headers by default.
+- Wide tables keep horizontal scrolling instead of shrinking content to unreadable sizes.
+- Mobile form controls use 16px text for comfortable reading without browser zoom.
+- No workflow, security, correction-lock or data rules were changed from V7.39.
