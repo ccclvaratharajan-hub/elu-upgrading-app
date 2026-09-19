@@ -350,9 +350,19 @@ teams:["Appointment Planner","Zone-first Team 1 / Team 2 planning. Standard and 
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."]
 }[view]}
 function setView(view){
+  rebuildAllMasters();
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(view).classList.add("active");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-  const [t,s]=viewTitle(view);document.getElementById("pageTitle").textContent=t;document.getElementById("pageSubtitle").textContent=s;window.scrollTo({top:0,behavior:"smooth"});
+  const [t,s]=viewTitle(view);document.getElementById("pageTitle").textContent=t;document.getElementById("pageSubtitle").textContent=s;
+  if(view==="dashboard")renderDashboard();
+  else if(view==="blockboard")renderBlockBoard();
+  else if(view==="survey")renderSurveyTable();
+  else if(view==="appointments")renderAppointmentTable();
+  else if(view==="units")renderUnitTable();
+  else if(view==="complaints")renderComplaintTable();
+  else if(view==="teams")renderPlanner();
+  else if(view==="reports")renderReport();
+  window.scrollTo({top:0,behavior:"smooth"});
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
 document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)setView(b.dataset.go)});
@@ -482,11 +492,47 @@ function renderDashboard(){
   renderTodayTeamBoard();
 }
 function renderBlockBoard(){
-  const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),u=getBlockUnits(block);
-  const total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,pct=n=>total?Math.round(n/total*100):0;
-  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · floor-by-floor live status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
+  const block=Number(document.getElementById("boardBlock").value),
+        floorFilter=document.getElementById("boardFloor").value,
+        q=document.getElementById("boardSearch").value.trim().toLowerCase(),
+        raw=getBlockUnits(block);
+
+  /* Hard-sync Block Board directly from Appointment records.
+     This deliberately does NOT trust an older cached response/date. */
+  const u=raw.map(x=>{
+    const live=currentUnitAppointmentState(x.key),a=live.appointment;
+    return {
+      ...x,
+      response:live.status,
+      workStatus:live.workStatus,
+      appointmentDate:a?.date||"",
+      appointmentSlot:a?.slot||"",
+      team:a?.team||""
+    }
+  });
+
+  const total=u.length,
+        a=u.filter(x=>x.response==="A").length,
+        c=u.filter(x=>x.response==="C").length,
+        d=u.filter(x=>x.response==="D").length,
+        nr=u.filter(x=>x.response==="NR").length,
+        pct=n=>total?Math.round(n/total*100):0;
+
+  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
+
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
-  document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
+
+  document.getElementById("floorBoard").innerHTML=floors.map(f=>{
+    const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));
+    if(!fu.length)return"";
+    return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{
+      const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";
+      const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")
+        ?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`
+        :"";
+      return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${esc(statusLabel(x.response))}</div>${dateLine}</button>`
+    }).join("")}</div></div>`
+  }).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
 document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
 
@@ -1084,6 +1130,7 @@ function unitSummaryPdfPages(){
 function exportManagerPDFV727(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}downloadBlob(`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(managerPdfPagesV727(r)));toast("Manager PDF downloaded")}
 
 function exportBlockBoardPrint(){
+  rebuildAllMasters();
   renderBlockBoard();
   const board=document.getElementById("floorBoard");
   if(!board||!board.children.length||/No units match this filter/i.test(board.textContent||"")){
