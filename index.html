@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.37">
+  <link rel="stylesheet" href="styles.css?v=7.38">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -108,6 +108,7 @@
         <div class="kpi-grid premium-kpis">
           <article class="kpi-card accent-green"><div class="kpi-icon green"><svg><use href="#i-check"/></svg></div><div><span>Opt-In Agree</span><strong id="kpiOptIn">0</strong><small id="kpiOptInPct">A + C</small></div></article>
           <article class="kpi-card accent-pink"><div class="kpi-icon pink"><svg><use href="#i-calendar"/></svg></div><div><span>Confirmation · C</span><strong id="kpiAppointments">0</strong><small>Active confirmed appointments</small></div></article>
+          <article class="kpi-card accent-blue"><div class="kpi-icon blue">◷</div><div><span>Pending Confirmation · P</span><strong id="kpiPending">0</strong><small>Resident responded · date waiting</small></div></article>
           <article class="kpi-card accent-cyan"><div class="kpi-icon cyan"><svg><use href="#i-building"/></svg></div><div><span>Work Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
           <article class="kpi-card accent-amber"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Requires follow-up</small></div></article>
           <article class="kpi-card accent-rose"><div class="kpi-icon rose">D</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
@@ -155,6 +156,7 @@
         <div class="legend">
           <span><i class="dot optin"></i>A · Opt-In</span>
           <span><i class="dot confirm"></i>C · Confirmation</span>
+          <span><i class="dot pending-confirm"></i>◷ P · Pending Confirmation</span>
           <span><i class="dot optout"></i>D · Opt-Out</span>
           <span><i class="dot nr"></i>NR · No Response</span>
         </div>
@@ -390,10 +392,11 @@
           <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes a colour-coded block percentage chart, zone progress and weekly meeting table. Unit Summary exports exclude Owner Name, Contact and free-text Remarks.</span></div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>
           <div class="report-chart-panel">
-            <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Block Status % Comparison</h3><p>Side-by-side percentage columns for Opt-In, Completed, Opt-Out and NR.</p></div><span class="panel-badge">NO PERSONAL DATA</span></div>
+            <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Block Status % Comparison</h3><p>Side-by-side percentage columns for Opt-In, Completed, Pending Confirmation, Opt-Out and NR.</p></div><span class="panel-badge">NO PERSONAL DATA</span></div>
             <div class="report-chart-legend">
               <span><i class="legend-agree"></i>Opt-In A+C</span>
               <span><i class="legend-done"></i>Completed</span>
+              <span><i class="legend-p"></i>Pending P</span>
               <span><i class="legend-d"></i>Opt-Out D</span>
               <span><i class="legend-nr"></i>NR</span>
             </div>
@@ -432,7 +435,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.37"></script>
-<script src="app.js?v=7.37"></script>
+  <script src="data.js?v=7.38"></script>
+<script src="app.js?v=7.38"></script>
 </body>
 </html>

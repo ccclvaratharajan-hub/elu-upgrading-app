@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.37 Secure
+# ELU Upgrading — Premium V7.38 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -393,3 +393,20 @@ The working appointment rule is now simplified:
   - ended/completed appointment → A
 - Reschedule / Cancel changes therefore appear on Block Board as soon as the screen is opened, and the A4 print uses the same refreshed status.
 - Appointment Register, Unit Search, Planner controls, login, encryption and secure storage are otherwise unchanged.
+
+
+## V7.38 — P · Pending Confirmation
+Automatic single-source status logic:
+- NR = no active date and no resident response identity
+- P = resident name/contact exists in Appointment Register, but no confirmed active date
+- C = active confirmed appointment date
+- A = appointment ended / completed
+- D = explicit historical opt-out
+
+Cancelled / reschedule-waiting residents keep their name/contact and therefore show as P until a new date is confirmed.
+
+P is blue with a waiting symbol and is kept separate from both NR and Opt-In A+C.
+
+This status is synced across Dashboard, Block Board, A4 print, Appointment Register, Unit Register, Reports, Manager PDF, Manager PPT, Block Chart PDF and CSV exports.
+
+Login, encryption, encrypted project data, secure storage key, search, Reschedule and Cancel controls are unchanged.

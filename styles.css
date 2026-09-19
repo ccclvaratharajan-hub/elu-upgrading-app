@@ -1216,3 +1216,42 @@ body.secure-locked .toast{visibility:hidden}
   display:inline-flex;align-items:center;padding:5px 8px;border-radius:8px;
   background:#eef8f3;color:#25805a;font-size:9px;font-weight:800;white-space:nowrap
 }
+
+
+/* V7.38 — P · Pending Confirmation */
+.pill.p{
+  background:#e8f1ff !important;
+  color:#245fae !important;
+  border:1px solid #8db4ea !important;
+  gap:4px;
+}
+.pending-clock{font-style:normal;font-size:11px;line-height:1}
+.pending-inline-icon{font-size:10px;margin-right:3px;color:#2d6fbd}
+
+#blockboard .unit-card.status-p{
+  background:linear-gradient(145deg,#e8f2ff 0%,#cfe2ff 100%) !important;
+  border-color:#72a1e3 !important;
+  box-shadow:inset 5px 0 0 #3f7fd1,0 10px 18px rgba(63,127,209,.15) !important;
+}
+#blockboard .unit-card.status-p:before{
+  background:#3f7fd1 !important;
+  box-shadow:0 0 0 4px rgba(63,127,209,.12) !important;
+}
+#blockboard .unit-card.status-p .u-no{color:#24568f !important}
+#blockboard .unit-card.status-p .u-status{color:#2c68ad !important}
+#blockboard .legend .dot.pending-confirm{background:#3f7fd1 !important}
+
+.summary-tile.p{border-top:3px solid #3f7fd1}
+.premium-kpis .accent-blue:after{background:#3f7fd1}
+.kpi-grid{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.report-summary-cards{grid-template-columns:repeat(6,1fr)}
+.report-mini-card.pending-card strong{color:#3f7fd1}
+.report-chart-legend .legend-p{background:#3f7fd1}
+.report-cluster-bar.p{background:#3f7fd1}
+.report-cluster-bars{gap:2px}
+.report-cluster-bar-wrap{width:13px}
+@media(max-width:900px){.report-summary-cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.report-summary-cards{grid-template-columns:repeat(2,1fr)}}

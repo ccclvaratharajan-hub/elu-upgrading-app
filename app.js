@@ -36,9 +36,9 @@ function esc(v=""){return String(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt
 function safeDate(v){if(!v)return "";const d=new Date(v+"T00:00:00");return Number.isNaN(d.getTime())?v:fmtDate.format(d)}
 function shortBoardDate(v){if(!v)return "";const d=new Date(v+"T00:00:00");return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
 function toast(msg){const e=document.getElementById("toast");e.textContent=msg;e.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),1800)}
-function normalizeStatus(v){v=String(v||"").trim().toUpperCase();if(v==="OPT_OUT")return"D";if(v==="DL")return"NR";return["A","C","D","NR"].includes(v)?v:""}
-function statusLabel(v){v=normalizeStatus(v);return v==="A"?"A · Opt-In":v==="C"?"C · Confirmation":v==="D"?"D · Opt-Out":v==="NR"?"NR · No Response":""}
-function statusPill(v){v=normalizeStatus(v);const c=v==="A"?"a":v==="C"?"c":v==="D"?"d":v==="NR"?"nr":"pending";return `<span class="pill ${c}">${esc(statusLabel(v))}</span>`}
+function normalizeStatus(v){v=String(v||"").trim().toUpperCase();if(v==="OPT_OUT")return"D";if(v==="DL")return"NR";return["A","C","P","D","NR"].includes(v)?v:""}
+function statusLabel(v){v=normalizeStatus(v);return v==="A"?"A · Opt-In":v==="C"?"C · Confirmation":v==="P"?"P · Pending Confirmation":v==="D"?"D · Opt-Out":v==="NR"?"NR · No Response":""}
+function statusPill(v){v=normalizeStatus(v);const c=v==="A"?"a":v==="C"?"c":v==="P"?"p":v==="D"?"d":v==="NR"?"nr":"pending";return `<span class="pill ${c}">${v==="P"?'<i class="pending-clock">◷</i>':""}${esc(statusLabel(v))}</span>`}
 
 function baseUnit(block,floor,unit){
   const d=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];const seed=(d?.seed||{})[`${floor}-${unit}`]||{};
@@ -260,14 +260,37 @@ function preferredMasterAppointment(key){
 
 function currentUnitAppointmentState(key){
   const a=preferredMasterAppointment(key);
-  if(!a||!a.date){
-    return {appointment:null,status:"NR",workStatus:"Pending",active:false,completed:false}
+  if(a&&a.date){
+    const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
+    if(completed)return {appointment:a,status:"A",workStatus:"Completed",active:false,completed:true};
+    return {appointment:a,status:"C",workStatus:"Pending",active:true,completed:false}
   }
-  const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
-  if(completed){
-    return {appointment:a,status:"A",workStatus:"Completed",active:false,completed:true}
+
+  const u=state.units[key];
+  let seedStatus="",seedOwner="",seedContact="";
+  if(u){
+    const d=PROJECT_LAYOUT[String(u.block)]||PROJECT_LAYOUT[u.block];
+    const seed=(d?.seed||{})[`${u.floor}-${u.unit}`]||{};
+    seedStatus=normalizeStatus(seed.response);
+    seedOwner=String(seed.ownerName||"").trim();
+    seedContact=String(seed.contact||"").trim()
   }
-  return {appointment:a,status:"C",workStatus:"Pending",active:true,completed:false}
+
+  if(seedStatus==="D")return {appointment:null,status:"D",workStatus:"Pending",active:false,completed:false};
+  if(seedStatus==="A")return {appointment:null,status:"A",workStatus:"Completed",active:false,completed:true};
+
+  const identityAppt=latestById(state.appointments.filter(x=>x.unitKey===key&&(String(x.ownerName||"").trim()||String(x.contact||"").trim())));
+  const hasResidentResponse=Boolean(
+    String(identityAppt?.ownerName||"").trim()||
+    String(identityAppt?.contact||"").trim()||
+    String(u?.ownerName||"").trim()||
+    String(u?.contact||"").trim()||
+    seedOwner||seedContact||
+    seedStatus==="C"
+  );
+
+  if(hasResidentResponse)return {appointment:null,status:"P",workStatus:"Pending",active:false,completed:false};
+  return {appointment:null,status:"NR",workStatus:"Pending",active:false,completed:false}
 }
 
 function normalizeManualOverrides(){
@@ -297,11 +320,7 @@ function rebuildUnitMaster(key){
     if(latestIdentityAppt.contact)base.contact=latestIdentityAppt.contact;
   }
 
-  /* ONE SOURCE OF TRUTH FOR EVERY SCREEN:
-     no active appointment date -> NR
-     active appointment date -> C
-     appointment ended/completed -> A
-  */
+  state.units[key]={...current,ownerName:base.ownerName,contact:base.contact};
   const live=currentUnitAppointmentState(key);
   const a=live.appointment;
 
@@ -312,14 +331,12 @@ function rebuildUnitMaster(key){
     base.appointmentDate=a.date||"";
     base.appointmentSlot=a.slot||"";
     base.team=a.team||"";
-
     if(a.ownerName)base.ownerName=a.ownerName;
     if(a.contact)base.contact=a.contact;
     if(a.remarks&&(isUserAppointment(a)||a.userRemarks)){
       const parts=[base.remarks,a.remarks].map(v=>String(v||"").trim()).filter(Boolean);
       base.remarks=[...new Set(parts)].join(" · ");
     }
-
     if(live.completed&&a.workStatus!=="Completed")a.workStatus="Completed";
   }else{
     base.appointmentDate="";
@@ -477,14 +494,15 @@ document.getElementById("plannerSlot").addEventListener("change",togglePlannerCu
 document.getElementById("appointmentSlot").addEventListener("change",toggleAppointmentCustomTime);
 
 function renderDashboard(){
-  const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
+  const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
   const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
   document.getElementById("heroTotalUnits").textContent=total.toLocaleString();const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
-  document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${Math.round(agree/total*100)}% · A + C`;
+  document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${total?Math.round(agree/total*100):0}% · A + C`;
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
+  document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
   document.getElementById("kpiNR").textContent=nr.toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=openFollowups.toLocaleString();
-  document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,pct=Math.round(zc/zu.length*100);return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
+  document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,zp=zu.filter(x=>x.response==="P").length,pct=zu.length?Math.round(zc/zu.length*100):0;return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in · ${zp} pending</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
   const follow=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).sort((a,b)=>a.visitDate.localeCompare(b.visitDate)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))).slice(0,6);
@@ -492,47 +510,12 @@ function renderDashboard(){
   renderTodayTeamBoard();
 }
 function renderBlockBoard(){
-  const block=Number(document.getElementById("boardBlock").value),
-        floorFilter=document.getElementById("boardFloor").value,
-        q=document.getElementById("boardSearch").value.trim().toLowerCase(),
-        raw=getBlockUnits(block);
-
-  /* Hard-sync Block Board directly from Appointment records.
-     This deliberately does NOT trust an older cached response/date. */
-  const u=raw.map(x=>{
-    const live=currentUnitAppointmentState(x.key),a=live.appointment;
-    return {
-      ...x,
-      response:live.status,
-      workStatus:live.workStatus,
-      appointmentDate:a?.date||"",
-      appointmentSlot:a?.slot||"",
-      team:a?.team||""
-    }
-  });
-
-  const total=u.length,
-        a=u.filter(x=>x.response==="A").length,
-        c=u.filter(x=>x.response==="C").length,
-        d=u.filter(x=>x.response==="D").length,
-        nr=u.filter(x=>x.response==="NR").length,
-        pct=n=>total?Math.round(n/total*100):0;
-
-  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
-
+  const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),raw=getBlockUnits(block);
+  const u=raw.map(x=>{const live=currentUnitAppointmentState(x.key),a=live.appointment;return{...x,response:live.status,workStatus:live.workStatus,appointmentDate:a?.date||"",appointmentSlot:a?.slot||"",team:a?.team||""}});
+  const total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,pct=n=>total?Math.round(n/total*100):0;
+  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile p"><span>◷ P · Pending</span><strong>${p}</strong><small>${pct(p)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
-
-  document.getElementById("floorBoard").innerHTML=floors.map(f=>{
-    const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));
-    if(!fu.length)return"";
-    return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{
-      const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";
-      const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")
-        ?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`
-        :"";
-      return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${esc(statusLabel(x.response))}</div>${dateLine}</button>`
-    }).join("")}</div></div>`
-  }).join("")||`<div class="empty-state">No units match this filter.</div>`;
+  document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
 document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
 
@@ -703,7 +686,7 @@ function cancelAppointment(id){
   a.scheduleState="Cancelled";a.cancelledAt=new Date().toISOString();
   if(Number(document.getElementById("appointmentEditId").value)===id)resetAppointmentForm();
   if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
-  save("Appointment cancelled · active slot cleared · Unit Status changed to NR")
+  save("Appointment cancelled · active slot cleared · status recalculated automatically")
 }
 function deleteAppointment(id){if(!confirm("Delete this appointment record permanently?"))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
 
@@ -712,14 +695,7 @@ document.getElementById("appointmentBlockFilter").addEventListener("change",rend
 document.getElementById("appointmentUnitSearch").addEventListener("input",renderAppointmentTable);
 function appointmentDisplayForUnit(u){
   const live=currentUnitAppointmentState(u.key),a=live.appointment;
-  return {
-    appointment:a,
-    status:live.status,
-    schedule:live.active?"Active":live.completed?"Completed":"No Appointment",
-    scheduleClass:live.active?"confirmed":live.completed?"completed":"pending",
-    active:live.active,
-    completed:live.completed
-  }
+  return {appointment:a,status:live.status,schedule:live.active?"Active":live.completed?"Completed":live.status==="P"?"Pending Confirmation":"No Appointment",scheduleClass:live.active?"confirmed":live.completed?"completed":live.status==="P"?"p":"pending",active:live.active,completed:live.completed}
 }
 
 function startAppointmentForUnit(key){
@@ -966,15 +942,18 @@ document.getElementById("plannerSpecialTimes").addEventListener("click",e=>{let 
 document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
 
 function buildReportRows(zoneFilter="all",blockFilter="all"){
-  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
+  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,p,pPct:total?p/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
 }
-function reportTotals(rows){const t=rows.reduce((o,r)=>{o.total+=r.total;o.agree+=r.agree;o.done+=r.done;o.d+=r.d;o.nr+=r.nr;return o},{total:0,agree:0,done:0,d:0,nr:0});return{...t,agreePct:t.total?t.agree/t.total*100:0,donePct:t.total?t.done/t.total*100:0,dPct:t.total?t.d/t.total*100:0,nrPct:t.total?t.nr/t.total*100:0}}
+function reportTotals(rows){
+  const t=rows.reduce((o,r)=>{o.total+=r.total;o.agree+=r.agree;o.done+=r.done;o.p+=r.p;o.d+=r.d;o.nr+=r.nr;return o},{total:0,agree:0,done:0,p:0,d:0,nr:0});
+  return{...t,agreePct:t.total?t.agree/t.total*100:0,donePct:t.total?t.done/t.total*100:0,pPct:t.total?t.p/t.total*100:0,dPct:t.total?t.d/t.total*100:0,nrPct:t.total?t.nr/t.total*100:0}
+}
 function pct(v){return`${v.toFixed(1)}%`}
 function renderReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
-  document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
-  document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
-  document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><colgroup><col style="width:5%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2" class="weekly-head">S/N</th><th rowspan="2" class="weekly-head">BLK NO.</th><th rowspan="2" class="weekly-head">TOTAL UNITS</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Agree = A + C)</th><th colspan="2" class="weekly-head">UNITS OPT-IN<br>(Work Completed)</th><th colspan="2" class="weekly-head">UNITS OPT-OUT<br>(D)</th><th colspan="2" class="weekly-head">UNITS NO RESPONSE<br>(NR)</th></tr><tr><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
+  document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card pending-card"><span>Pending P</span><strong>${t.p}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
+  document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["p",r.pPct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
+  document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><thead><tr><th>S/N</th><th>BLK</th><th>TOTAL</th><th>A+C</th><th>A+C %</th><th>DONE</th><th>DONE %</th><th>P</th><th>P %</th><th>D</th><th>D %</th><th>NR</th><th>NR %</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.p}</td><td>${pct(r.pPct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.p}</td><td>${pct(t.pPct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
 }
 document.getElementById("reportZoneFilter").addEventListener("change",()=>{const z=document.getElementById("reportZoneFilter").value;document.getElementById("reportBlockFilter").innerHTML=filterBlockOptions(z,true);renderReport()});
 document.getElementById("reportBlockFilter").addEventListener("change",renderReport);
@@ -984,8 +963,7 @@ function managerReportData(){
   const zone=document.getElementById("reportZoneFilter").value,block=document.getElementById("reportBlockFilter").value;
   const rows=buildReportRows(zone,block),totals=reportTotals(rows);
   const unitRows=unitsArray().filter(u=>(zone==="all"||String(u.zone)===String(zone))&&(block==="all"||String(u.block)===String(block)));
-  const status={a:unitRows.filter(u=>u.response==="A").length,c:unitRows.filter(u=>u.response==="C").length,d:unitRows.filter(u=>u.response==="D").length,nr:unitRows.filter(u=>u.response==="NR").length};
-  status.pending=Math.max(0,unitRows.length-status.a-status.c-status.d-status.nr);
+  const status={a:unitRows.filter(u=>u.response==="A").length,c:unitRows.filter(u=>u.response==="C").length,p:unitRows.filter(u=>u.response==="P").length,d:unitRows.filter(u=>u.response==="D").length,nr:unitRows.filter(u=>u.response==="NR").length};
   const zones=[...new Set(rows.map(r=>r.zone))].sort((a,b)=>a-b).map(z=>{const zr=rows.filter(r=>r.zone===z),t=reportTotals(zr);return{zone:z,...t,blocks:zr.length}});
   const scope=zone==="all"?"All Zones":`Zone ${zone}${block!=="all"?` · Block ${block}`:""}`;
   const stamp=new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
@@ -1039,22 +1017,15 @@ function pptSlideXml(shapes){return`<?xml version="1.0" encoding="UTF-8" standal
 function pptTitle(sh,idRef,title,sub){let id=idRef.value;sh.push(pptShape(id++,.45,.32,12.4,.52,title,{fontSize:24,bold:true,color:'17384E',fill:null,line:null}));sh.push(pptShape(id++,.47,.85,12.1,.34,sub,{fontSize:9,color:'718795',fill:null,line:null}));sh.push(pptShape(id++,.45,1.27,12.4,.03,'',{fill:'D7E6F2',line:null}));idRef.value=id}
 function pptFooter(sh,idRef,page){sh.push(pptShape(idRef.value++,.5,7.08,12.2,.22,`ELU Upgrading · Manager Report · ${page}`,{fontSize:7,color:'8AA0AE',fill:null,line:null,align:'r'}))}
 function managerPptSlides(r){
-  const slides=[],C={ink:'17384E',muted:'60798A',blue:'1474AD',green:'278F5E',yellow:'C79012',red:'C42131',soft:'F5FAFE',line:'DCE9F2',grid:'DDE7EE',white:'FFFFFF'};
-  const legend=(sh,id,y)=>{const items=[['A+C',C.green],['Completed',C.blue],['D',C.yellow],['NR',C.red]];let x=7.1;items.forEach(it=>{sh.push(pptShape(id.value++,x,y,.16,.16,'',{fill:it[1],line:null}));sh.push(pptShape(id.value++,x+.20,y-.03,.78,.22,it[0],{fontSize:7,bold:true,color:C.ink,fill:null,line:null}));x+=it[0]==='Completed'?1.35:.92})};
-  {const sh=[],id={value:2};sh.push(pptShape(id.value++,0,0,13.333,7.5,'',{fill:C.soft,line:null}));sh.push(pptShape(id.value++,.62,.75,1.05,1.05,'ELU',{fontSize:23,bold:true,color:C.white,fill:C.blue,line:null,radius:true,align:'ctr'}));sh.push(pptShape(id.value++,.64,2.05,11.9,.8,'ELU UPGRADING',{fontSize:34,bold:true,color:C.ink,fill:null,line:null}));sh.push(pptShape(id.value++,.64,2.83,11.9,.56,'Manager Progress Report',{fontSize:22,bold:true,color:C.blue,fill:null,line:null}));sh.push(pptShape(id.value++,.66,3.55,11.6,.38,`${r.scope} · Generated ${r.stamp}`,{fontSize:11,color:C.muted,fill:null,line:null}));sh.push(pptShape(id.value++,.66,4.35,6.8,.58,'Colour-coded block percentages · Zone progress · Weekly meeting table',{fontSize:12,color:'294B61',fill:C.white,line:'D7E6F2',radius:true}));sh.push(pptShape(id.value++,.66,5.18,5.8,.52,'Resident names and contact numbers are excluded',{fontSize:10,bold:true,color:C.blue,fill:'EAF5FC',line:'CFE4F2',radius:true}));pptFooter(sh,id,1);slides.push(pptSlideXml(sh.join('')))}
-  {const sh=[],id={value:2};pptTitle(sh,id,'Executive Summary',`${r.scope} · No personal data`);const cards=[['TOTAL UNITS',r.totals.total,C.blue],['OPT-IN A+C',r.totals.agree,C.green],['COMPLETED',r.totals.done,C.blue],['OPT-OUT D',r.totals.d,C.yellow],['NO RESPONSE NR',r.totals.nr,C.red]];cards.forEach((c,i)=>{const x=.5+i*2.5;sh.push(pptShape(id.value++,x,1.48,2.25,.92,'',{fill:C.white,line:C.line,radius:true}));sh.push(pptShape(id.value++,x+.15,1.62,1.95,.20,c[0],{fontSize:8,bold:true,color:'718795',fill:null,line:null}));sh.push(pptShape(id.value++,x+.15,1.90,1.95,.34,String(c[1]),{fontSize:22,bold:true,color:c[2],fill:null,line:null}))});
-    sh.push(pptShape(id.value++,.62,2.70,3.2,.28,'OVERALL STATUS %',{fontSize:11,bold:true,color:C.ink,fill:null,line:null}));legend(sh,id,2.72);
-    const top=3.18,bottom=6.35,h=bottom-top,x0=1.1,x1=12.1,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.55,y-.09,.45,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});
-    const vals=[['A+C',r.totals.agreePct,C.green],['Completed',r.totals.donePct,C.blue],['D',r.totals.dPct,C.yellow],['NR',r.totals.nrPct,C.red]];
-    vals.forEach((v,i)=>{const bw=.72,x=2.05+i*2.45,val=Math.max(0,Math.min(100,v[1])),bh=h*val/100;sh.push(pptShape(id.value++,x,bottom-bh,bw,bh,'',{fill:v[2],line:null}));sh.push(pptShape(id.value++,x-.02,Math.max(3.03,bottom-bh-.27),.78,.22,val.toFixed(1),{fontSize:8,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}));sh.push(pptShape(id.value++,x-.28,6.46,1.3,.25,v[0],{fontSize:8,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,2);slides.push(pptSlideXml(sh.join('')))}
-  {const sh=[],id={value:2};pptTitle(sh,id,'Zone Progress',`${r.scope} · work completed by zone`);const cols=[.55,2.05,3.2,4.5,5.8,7.2,8.55,9.9],heads=['ZONE','BLOCKS','UNITS','A+C','DONE','D','NR','DONE %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,cols[i],1.58,i===0?1.3:1.0,.35,h,{fontSize:7,bold:true,color:C.muted,fill:'EDF6FC',line:C.line,align:'ctr'})));r.zones.forEach((z,i)=>{const y=2.05+i*.68,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`];vals.forEach((v,j)=>sh.push(pptShape(id.value++,cols[j],y,j===0?1.3:1.0,.38,String(v),{fontSize:9,bold:j===0,color:C.ink,fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});pptFooter(sh,id,3);slides.push(pptSlideXml(sh.join('')))}
+  const slides=[],C={ink:'17384E',muted:'60798A',blue:'1474AD',pending:'3F7FD1',green:'278F5E',yellow:'C79012',red:'C42131',soft:'F5FAFE',line:'DCE9F2',grid:'DDE7EE',white:'FFFFFF'};
+  const legend=(sh,id,y)=>{const items=[['A+C',C.green],['Completed',C.blue],['P',C.pending],['D',C.yellow],['NR',C.red]];let x=6.65;items.forEach(it=>{sh.push(pptShape(id.value++,x,y,.16,.16,'',{fill:it[1],line:null}));sh.push(pptShape(id.value++,x+.20,y-.03,.82,.22,it[0],{fontSize:7,bold:true,color:C.ink,fill:null,line:null}));x+=it[0]==='Completed'?1.30:.80})};
+  {const sh=[],id={value:2};sh.push(pptShape(id.value++,0,0,13.333,7.5,'',{fill:C.soft,line:null}));sh.push(pptShape(id.value++,.62,.75,1.05,1.05,'ELU',{fontSize:23,bold:true,color:C.white,fill:C.blue,line:null,radius:true,align:'ctr'}));sh.push(pptShape(id.value++,.64,2.05,11.9,.8,'ELU UPGRADING',{fontSize:34,bold:true,color:C.ink,fill:null,line:null}));sh.push(pptShape(id.value++,.64,2.83,11.9,.56,'Manager Progress Report',{fontSize:22,bold:true,color:C.blue,fill:null,line:null}));sh.push(pptShape(id.value++,.66,3.55,11.6,.38,`${r.scope} · Generated ${r.stamp}`,{fontSize:11,color:C.muted,fill:null,line:null}));sh.push(pptShape(id.value++,.66,4.35,7.6,.58,'A / C / P / D / NR status · Zone progress · Weekly meeting table',{fontSize:12,color:'294B61',fill:C.white,line:'D7E6F2',radius:true}));sh.push(pptShape(id.value++,.66,5.18,5.8,.52,'Resident names and contact numbers are excluded',{fontSize:10,bold:true,color:C.blue,fill:'EAF5FC',line:'CFE4F2',radius:true}));pptFooter(sh,id,1);slides.push(pptSlideXml(sh.join('')))}
+  {const sh=[],id={value:2};pptTitle(sh,id,'Executive Summary',`${r.scope} · No personal data`);const cards=[['TOTAL',r.totals.total,C.blue],['OPT-IN A+C',r.totals.agree,C.green],['COMPLETED',r.totals.done,C.blue],['PENDING P',r.totals.p,C.pending],['OPT-OUT D',r.totals.d,C.yellow],['NO RESPONSE',r.totals.nr,C.red]];cards.forEach((c,i)=>{const x=.35+i*2.13;sh.push(pptShape(id.value++,x,1.48,1.95,.92,'',{fill:C.white,line:C.line,radius:true}));sh.push(pptShape(id.value++,x+.12,1.62,1.70,.20,c[0],{fontSize:7.2,bold:true,color:'718795',fill:null,line:null}));sh.push(pptShape(id.value++,x+.12,1.90,1.70,.34,String(c[1]),{fontSize:21,bold:true,color:c[2],fill:null,line:null}))});sh.push(pptShape(id.value++,.62,2.70,3.2,.28,'OVERALL STATUS %',{fontSize:11,bold:true,color:C.ink,fill:null,line:null}));legend(sh,id,2.72);const top=3.18,bottom=6.35,h=bottom-top,x0=1.1,x1=12.1,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.55,y-.09,.45,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});const vals=[['A+C',r.totals.agreePct,C.green],['Completed',r.totals.donePct,C.blue],['P',r.totals.pPct,C.pending],['D',r.totals.dPct,C.yellow],['NR',r.totals.nrPct,C.red]];vals.forEach((v,i)=>{const bw=.62,x=1.65+i*2.12,val=Math.max(0,Math.min(100,v[1])),bh=h*val/100;sh.push(pptShape(id.value++,x,bottom-bh,bw,bh,'',{fill:v[2],line:null}));sh.push(pptShape(id.value++,x-.04,Math.max(3.03,bottom-bh-.27),.72,.22,val.toFixed(1),{fontSize:7.5,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}));sh.push(pptShape(id.value++,x-.34,6.46,1.3,.25,v[0],{fontSize:7.5,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,2);slides.push(pptSlideXml(sh.join('')))}
+  {const sh=[],id={value:2};pptTitle(sh,id,'Zone Progress',`${r.scope} · work completed by zone`);const cols=[.35,1.65,2.75,3.85,4.95,6.05,7.15,8.25,9.35],heads=['ZONE','BLOCKS','UNITS','A+C','DONE','P','D','NR','DONE %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,cols[i],1.58,i===0?1.18:.96,.35,h,{fontSize:6.6,bold:true,color:C.muted,fill:'EDF6FC',line:C.line,align:'ctr'})));r.zones.forEach((z,i)=>{const y=2.05+i*.68,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`];vals.forEach((v,j)=>sh.push(pptShape(id.value++,cols[j],y,j===0?1.18:.96,.38,String(v),{fontSize:8.5,bold:j===0,color:C.ink,fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});pptFooter(sh,id,3);slides.push(pptSlideXml(sh.join('')))}
   const chunks=[];for(let i=0;i<r.rows.length;i+=7)chunks.push(r.rows.slice(i,i+7));
-  chunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Block Status % Comparison${chunks.length>1?` ${ci+1}/${chunks.length}`:''}`,`${r.scope} · Side-by-side percentage columns`);legend(sh,id,1.42);
-    const top=1.95,bottom=6.35,h=bottom-top,x0=.9,x1=12.75,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.40,y-.08,.42,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});
-    const groupW=w/chunk.length,barW=Math.min(.25,groupW*.13),gap=.045,series=[['agreePct',C.green],['donePct',C.blue],['dPct',C.yellow],['nrPct',C.red]];
-    chunk.forEach((x,gi)=>{const totalBars=barW*4+gap*3,start=x0+gi*groupW+(groupW-totalBars)/2;series.forEach((s,si)=>{const val=Math.max(0,Math.min(100,Number(x[s[0]])||0)),bh=h*val/100,bx=start+si*(barW+gap);if(bh>0)sh.push(pptShape(id.value++,bx,bottom-bh,barW,bh,'',{fill:s[1],line:null}));sh.push(pptShape(id.value++,bx-.04,Math.max(1.76,bottom-bh-.25),barW+.08,.20,val.toFixed(1),{fontSize:6.2,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});sh.push(pptShape(id.value++,x0+gi*groupW,6.45,groupW,.24,`Blk ${x.block}`,{fontSize:7.5,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,4+ci);slides.push(pptSlideXml(sh.join('')))});
+  chunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Block Status % Comparison${chunks.length>1?` ${ci+1}/${chunks.length}`:''}`,`${r.scope} · P = Pending Confirmation`);legend(sh,id,1.42);const top=1.95,bottom=6.35,h=bottom-top,x0=.9,x1=12.75,w=x1-x0;[0,25,50,75,100].forEach(v=>{const y=bottom-h*v/100;sh.push(pptShape(id.value++,x0,y,w,.012,'',{fill:C.grid,line:null}));sh.push(pptShape(id.value++,.40,y-.08,.42,.20,`${v}%`,{fontSize:6.5,color:C.muted,fill:null,line:null,align:'r'}))});const groupW=w/chunk.length,barW=Math.min(.21,groupW*.11),gap=.038,series=[['agreePct',C.green],['donePct',C.blue],['pPct',C.pending],['dPct',C.yellow],['nrPct',C.red]];chunk.forEach((x,gi)=>{const totalBars=barW*5+gap*4,start=x0+gi*groupW+(groupW-totalBars)/2;series.forEach((s,si)=>{const val=Math.max(0,Math.min(100,Number(x[s[0]])||0)),bh=h*val/100,bx=start+si*(barW+gap);if(bh>0)sh.push(pptShape(id.value++,bx,bottom-bh,barW,bh,'',{fill:s[1],line:null}));sh.push(pptShape(id.value++,bx-.04,Math.max(1.76,bottom-bh-.25),barW+.08,.20,val.toFixed(1),{fontSize:5.8,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});sh.push(pptShape(id.value++,x0+gi*groupW,6.45,groupW,.24,`Blk ${x.block}`,{fontSize:7.5,bold:true,color:C.ink,fill:null,line:null,align:'ctr'}))});pptFooter(sh,id,4+ci);slides.push(pptSlideXml(sh.join('')))});
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=12)tableChunks.push(r.rows.slice(i,i+12));
-  tableChunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Weekly Meeting Summary${tableChunks.length>1?` ${ci+1}/${tableChunks.length}`:''}`,`${r.scope} · A+C = Opt-In Agree`);const xs=[.42,1.08,1.85,2.65,3.7,4.72,5.62,6.6,7.48,8.5,9.45],ws=[.6,.72,.72,.98,.96,.84,.92,.82,.95,.86,1.0],heads=['S/N','BLK','TOTAL','A+C','A+C %','DONE','DONE %','D','D %','NR','NR %'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,xs[i],1.50,ws[i],.34,h,{fontSize:6.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'})));chunk.forEach((x,i)=>{const y=1.90+i*.39,vals=[ci*12+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>sh.push(pptShape(id.value++,xs[j],y,ws[j],.34,String(v),{fontSize:7.2,bold:j===1,color:'294B61',fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});if(ci===tableChunks.length-1){const y=1.90+chunk.length*.39+.12;sh.push(pptShape(id.value++,.42,y,1.38,.36,'TOTAL DU',{fontSize:7.5,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}));const vals=[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'];for(let j=0;j<vals.length;j++)sh.push(pptShape(id.value++,xs[j+2],y,ws[j+2],.36,String(vals[j]),{fontSize:7,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}))}pptFooter(sh,id,4+chunks.length+ci);slides.push(pptSlideXml(sh.join('')))});
+  tableChunks.forEach((chunk,ci)=>{const sh=[],id={value:2};pptTitle(sh,id,`Weekly Meeting Summary${tableChunks.length>1?` ${ci+1}/${tableChunks.length}`:''}`,`${r.scope} · P = Pending Confirmation`);const xs=[.25,.75,1.38,2.00,2.78,3.55,4.28,5.00,5.66,6.32,6.92,7.54,8.18],ws=[.45,.58,.58,.72,.72,.68,.68,.58,.58,.58,.58,.58,.70],heads=['S/N','BLK','TOTAL','A+C','A+C%','DONE','DONE%','P','P%','D','D%','NR','NR%'];heads.forEach((h,i)=>sh.push(pptShape(id.value++,xs[i],1.50,ws[i],.34,h,{fontSize:5.8,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'})));chunk.forEach((x,i)=>{const y=1.90+i*.39,vals=[ci*12+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>sh.push(pptShape(id.value++,xs[j],y,ws[j],.34,String(v),{fontSize:6.4,bold:j===1,color:'294B61',fill:i%2?'F8FBFD':C.white,line:'E5EEF4',align:'ctr'})))});if(ci===tableChunks.length-1){const y=1.90+chunk.length*.39+.12;sh.push(pptShape(id.value++,.25,y,1.08,.36,'TOTAL DU',{fontSize:6.8,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}));const vals=[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'];for(let j=0;j<vals.length;j++)sh.push(pptShape(id.value++,xs[j+2],y,ws[j+2],.36,String(vals[j]),{fontSize:6.2,bold:true,color:'315F8B',fill:'E7F3FC',line:'CFE2F3',align:'ctr'}))}pptFooter(sh,id,4+chunks.length+ci);slides.push(pptSlideXml(sh.join('')))});
   return slides
 }
 function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
@@ -1074,48 +1045,29 @@ function pdfScoreRail(top,label,value,total,color=[0.08,0.40,0.62]){
   const mx=x+w*p/100;s+=pdfRect(Math.max(x,Math.min(x+w-3,mx-2)),top-5,4,h+10,[0.05,0.26,0.43]);s+=pdfText(668,top-25,17,`${p.toFixed(1)}%`,true,color);s+=pdfText(668,top-4,8,`${value} / ${total}`,true,ink);return s
 }
 function managerPdfPagesV727(r){
-  const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
+  const pages=[],blue=[0.08,0.40,0.62],pending=[0.25,0.50,0.82],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
   let c="";
   c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(625,28,9,"NO RESIDENT PERSONAL DATA",true,blue);
-  const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
-  cards.forEach((x,i)=>{const xx=38+i*154;c+=pdfRect(xx,94,142,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+12,108,8,x[0],true,muted);c+=pdfText(xx+12,128,19,String(x[1]),true,x[2])});
+  const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Pending P',r.totals.p,pending],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
+  cards.forEach((x,i)=>{const xx=38+i*128;c+=pdfRect(xx,94,118,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+9,108,7.4,x[0],true,muted);c+=pdfText(xx+9,128,18,String(x[1]),true,x[2])});
   c+=pdfText(38,181,14,"Overall Status %",true,ink);
-  const overall=[["A+C",r.totals.agreePct,green],["Completed",r.totals.donePct,blue],["D",r.totals.dPct,yellow],["NR",r.totals.nrPct,red]];
+  const overall=[["A+C",r.totals.agreePct,green],["Completed",r.totals.donePct,blue],["P",r.totals.pPct,pending],["D",r.totals.dPct,yellow],["NR",r.totals.nrPct,red]];
   const obottom=350,otop=215,oh=obottom-otop;
-  [0,25,50,75,100].forEach(v=>{const yy=obottom-oh*v/100;c+=pdfLine(80,yy,545,yy,grid,.4);c+=pdfText(48,yy-4,7,`${v}%`,false,muted)});
-  overall.forEach((s,i)=>{const x=125+i*100,val=Math.max(0,Math.min(100,s[1])),bh=oh*val/100;c+=pdfRect(x,obottom-bh,42,bh,s[2]);c+=pdfText(x+5,Math.max(196,obottom-bh-13),7,val.toFixed(1),true,ink);c+=pdfText(x+1,365,7,s[0],true,ink)});
-  c+=pdfText(585,204,12,"Colour Code",true,ink);overall.forEach((s,i)=>{c+=pdfRect(588,230+i*29,12,12,s[2]);c+=pdfText(608,231+i*29,8,s[0],true,ink)});
-  c+=pdfText(38,405,13,"Zone Progress",true,ink);const cols=[38,112,207,309,415,526,636,747];['Zone','Blocks','Units','A+C','Completed','D','NR','Done %'].forEach((h,i)=>c+=pdfText(cols[i],430,8,h,true,muted));c+=pdfLine(38,447,804,447);
-  r.zones.slice(0,6).forEach((z,i)=>{const top=462+i*18;c+=pdfText(cols[0],top,7.5,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.5,String(v),false,ink))});
-  pages.push(c);
-  pages.push(...blockChartPdfPages(r,false));
+  [0,25,50,75,100].forEach(v=>{const yy=obottom-oh*v/100;c+=pdfLine(70,yy,580,yy,grid,.4);c+=pdfText(38,yy-4,7,`${v}%`,false,muted)});
+  overall.forEach((s,i)=>{const x=105+i*92,val=Math.max(0,Math.min(100,s[1])),bh=oh*val/100;c+=pdfRect(x,obottom-bh,38,bh,s[2]);c+=pdfText(x+3,Math.max(196,obottom-bh-13),7,val.toFixed(1),true,ink);c+=pdfText(x,365,7,s[0],true,ink)});
+  c+=pdfText(615,204,12,"Colour Code",true,ink);overall.forEach((s,i)=>{c+=pdfRect(618,230+i*25,11,11,s[2]);c+=pdfText(637,230+i*25,7.5,s[0],true,ink)});
+  c+=pdfText(38,405,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],430,7.3,h,true,muted));c+=pdfLine(38,447,804,447);
+  r.zones.slice(0,6).forEach((z,i)=>{const top=462+i*18;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
+  pages.push(c);pages.push(...blockChartPdfPages(r,false));
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=13)tableChunks.push(r.rows.slice(i,i+13));
-  tableChunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | A+C = Opt-In Agree`,false,muted);const xs=[38,84,145,220,296,374,456,530,606,680,758],heads=['S/N','Block','Total','A+C','A+C %','Done','Done %','D','D %','NR','NR %'];p+=pdfRect(34,72,774,30,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],84,7,h,true,ink));chunk.forEach((x,i)=>{const top=112+i*30;if(i%2===1)p+=pdfRect(34,top-7,774,25,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,7,String(v),j===1,ink));p+=pdfLine(34,top+12,808,top+12)});if(ci===tableChunks.length-1){const top=112+chunk.length*30+4;p+=pdfRect(34,top-8,774,27,[0.90,0.95,0.99]);p+=pdfText(84,top,8,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,7,String(v),true,ink))}pages.push(p)});
+  tableChunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);const xs=[34,72,118,172,226,284,338,396,448,500,552,604,664],heads=['S/N','Blk','Total','A+C','A+C%','Done','Done%','P','P%','D','D%','NR','NR%'];p+=pdfRect(30,72,780,30,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],84,6.2,h,true,ink));chunk.forEach((x,i)=>{const top=112+i*30;if(i%2===1)p+=pdfRect(30,top-7,780,25,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,6.3,String(v),j===1,ink));p+=pdfLine(30,top+12,810,top+12)});if(ci===tableChunks.length-1){const top=112+chunk.length*30+4;p+=pdfRect(30,top-8,780,27,[0.90,0.95,0.99]);p+=pdfText(72,top,7.4,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,6.3,String(v),true,ink))}pages.push(p)});
   return pages
 }
 function blockChartPdfPages(r,standalone=true){
-  const pages=[],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],green=[0.15,0.57,0.35],blue=[0.08,0.40,0.62],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
-  const series=[["A+C",green,"agreePct"],["Completed",blue,"donePct"],["D",yellow,"dPct"],["NR",red,"nrPct"]];
+  const pages=[],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],green=[0.15,0.57,0.35],blue=[0.08,0.40,0.62],pending=[0.25,0.50,0.82],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
+  const series=[["A+C",green,"agreePct"],["Completed",blue,"donePct"],["P",pending,"pPct"],["D",yellow,"dPct"],["NR",red,"nrPct"]];
   const chunks=[];for(let i=0;i<r.rows.length;i+=8)chunks.push(r.rows.slice(i,i+8));
-  chunks.forEach((chunk,ci)=>{
-    let p="";
-    p+=pdfText(38,28,18,`Block Status % Chart${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);
-    p+=pdfText(38,51,9,`${r.scope} | Side-by-side percentage comparison`,false,muted);
-    let lx=365;series.forEach(s=>{p+=pdfRect(lx,66,10,10,s[1]);p+=pdfText(lx+15,67,7,s[0],true,ink);lx+=s[0]==="Completed"?102:72});
-    const x0=68,x1=812,top=112,bottom=516,h=bottom-top,w=x1-x0;
-    [0,25,50,75,100].forEach(v=>{const yy=bottom-h*v/100;p+=pdfLine(x0,yy,x1,yy,grid,.45);p+=pdfText(35,yy-4,7,`${v}%`,false,muted)});
-    const groupW=w/chunk.length,barW=Math.min(13,groupW*.14),gap=Math.min(4,groupW*.035);
-    chunk.forEach((x,gi)=>{
-      const totalBars=barW*4+gap*3,start=x0+gi*groupW+(groupW-totalBars)/2;
-      series.forEach((s,si)=>{
-        const val=Math.max(0,Math.min(100,Number(x[s[2]])||0)),bh=h*val/100,bTop=bottom-bh,bx=start+si*(barW+gap);
-        if(bh>0)p+=pdfRect(bx,bTop,barW,bh,s[1]);
-        p+=pdfText(bx-1,Math.max(91,bTop-11),5.8,val.toFixed(1),true,ink)
-      });
-      p+=pdfText(x0+gi*groupW+groupW/2-18,536,7,`Blk ${x.block}`,true,ink)
-    });
-    pages.push(p)
-  });
+  chunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Block Status % Chart${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);let lx=330;series.forEach(s=>{p+=pdfRect(lx,66,10,10,s[1]);p+=pdfText(lx+15,67,7,s[0],true,ink);lx+=s[0]==="Completed"?98:64});const x0=68,x1=812,top=112,bottom=516,h=bottom-top,w=x1-x0;[0,25,50,75,100].forEach(v=>{const yy=bottom-h*v/100;p+=pdfLine(x0,yy,x1,yy,grid,.45);p+=pdfText(35,yy-4,7,`${v}%`,false,muted)});const groupW=w/chunk.length,barW=Math.min(11,groupW*.11),gap=Math.min(3,groupW*.025);chunk.forEach((x,gi)=>{const totalBars=barW*5+gap*4,start=x0+gi*groupW+(groupW-totalBars)/2;series.forEach((s,si)=>{const val=Math.max(0,Math.min(100,Number(x[s[2]])||0)),bh=h*val/100,bTop=bottom-bh,bx=start+si*(barW+gap);if(bh>0)p+=pdfRect(bx,bTop,barW,bh,s[1]);p+=pdfText(bx-1,Math.max(91,bTop-11),5.2,val.toFixed(1),true,ink)});p+=pdfText(x0+gi*groupW+groupW/2-18,536,7,`Blk ${x.block}`,true,ink)});pages.push(p)});
   return pages
 }
 function unitSummaryRowsForReport(){
@@ -1158,7 +1110,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.32">
+<link rel="stylesheet" href="styles.css?v=7.38">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -1190,6 +1142,9 @@ function exportBlockBoardPrint(){
   #blockboard .unit-card.status-c{
     background:#f8bfdc!important;border-color:#e260a1!important;box-shadow:inset 5px 0 0 #d91b83!important
   }
+  #blockboard .unit-card.status-p{
+    background:#dbe9ff!important;border-color:#6e9de2!important;box-shadow:inset 5px 0 0 #3f7fd1!important
+  }
   #blockboard .unit-card.status-out{
     background:#f7e99b!important;border-color:#d3af21!important;box-shadow:inset 5px 0 0 #c99f10!important
   }
@@ -1198,10 +1153,12 @@ function exportBlockBoardPrint(){
   }
   #blockboard .unit-card.status-a .u-no,#blockboard .unit-card.status-a .u-status{color:#126b4b!important}
   #blockboard .unit-card.status-c .u-no,#blockboard .unit-card.status-c .u-status{color:#8f0d56!important}
+  #blockboard .unit-card.status-p .u-no,#blockboard .unit-card.status-p .u-status{color:#23589c!important}
   #blockboard .unit-card.status-out .u-no,#blockboard .unit-card.status-out .u-status{color:#735a05!important}
   #blockboard .unit-card.status-nr .u-no,#blockboard .unit-card.status-nr .u-status{color:#8f1724!important}
   #blockboard .legend .dot.optin{background:#239d68!important}
   #blockboard .legend .dot.confirm{background:#d91b83!important}
+  #blockboard .legend .dot.pending-confirm{background:#3f7fd1!important}
   #blockboard .legend .dot.optout{background:#c99f10!important}
   #blockboard .legend .dot.nr{background:#c91f31!important}
   @media print{
@@ -1260,7 +1217,7 @@ document.getElementById("exportUnitSummaryPdfBtn").addEventListener("click",expo
 document.getElementById("exportBlockChartPdfBtn").addEventListener("click",exportBlockChartPDF);
 
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
-document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
+document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","PENDING P","P %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.p,pct(x.pPct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.p,pct(t.pPct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
 document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json")});
 
