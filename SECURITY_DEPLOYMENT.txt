@@ -28,12 +28,3 @@ V7.26 REPORT EXPORT
 Manager PDF/PPT exports contain aggregate progress only and exclude resident names/contact numbers.
 Unit Register CSV remains a separate plaintext export and should be stored securely.
 The V7.25 login/encryption configuration is unchanged.
-
-V7.39 CURRENT DEPLOYMENT
-Username remains unchanged.
-Password remains supplied separately and is not stored in this ZIP.
-Deploy V7.39 Secure for the persistent correction lock and completion-date safety fix.
-
-V7.40 CURRENT DEPLOYMENT
------------------------
-Deploy V7.40 Secure for the readability boost. It retains all V7.39 persistent-correction and completion-date safeguards while increasing default UI font sizes for comfortable 100% browser zoom.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.40">
+  <link rel="stylesheet" href="styles.css?v=7.39">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -251,6 +251,7 @@
               <div class="inline-sync-note" id="appointmentSyncNote">One booking record only. Direct entry here automatically appears in Planner; Planner updates appear here too.</div>
               <div class="form-actions">
                 <button class="primary-btn" id="appointmentSaveBtn" type="submit">Save Appointment</button>
+                <button class="optout-btn" id="appointmentOptOutBtn" type="button">Opt-Out · D</button>
                 <button class="ghost-btn hidden" id="appointmentCancelEdit" type="button">Cancel Edit</button>
               </div>
               <div class="form-hint">Two routes, one record: Survey follow-up can open this form, or you can create a direct appointment here. Existing bookings are rescheduled instead of duplicated.</div>
@@ -258,7 +259,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">UNIT APPOINTMENT STATUS</span><h3>Appointment Register</h3><p><span id="appointmentUnitCount">0</span> units shown. No appointment = NR · Active appointment = C · Appointment completed = A.</p></div><div class="register-tools"><div class="search-box small"><svg><use href="#i-search"/></svg><input id="appointmentUnitSearch" placeholder="Search unit e.g. 01-302"></div><label class="mini-filter">Zone<select id="appointmentZoneFilter"></select></label><label class="mini-filter">Block<select id="appointmentBlockFilter"></select></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">UNIT APPOINTMENT STATUS</span><h3>Appointment Register</h3><p><span id="appointmentUnitCount">0</span> units shown. NR = no response · P = waiting · C = confirmed · A = completed · D = opt-out.</p></div><div class="register-tools"><div class="search-box small"><svg><use href="#i-search"/></svg><input id="appointmentUnitSearch" placeholder="Search unit e.g. 01-302"></div><label class="mini-filter">Zone<select id="appointmentZoneFilter"></select></label><label class="mini-filter">Block<select id="appointmentBlockFilter"></select></label></div></div>
             <div id="appointmentTable" class="table-shell"></div>
           </article>
         </div>
@@ -427,35 +428,6 @@
         <div><span>Team</span><strong id="drawerTeamText">—</strong></div>
       </div>
       <div class="legacy-box" id="drawerLegacy"></div>
-      <section class="correction-box">
-        <div class="correction-head"><div><span class="section-label">LOCKED CORRECTION</span><h3>Manual status correction</h3><p>Once saved, Excel refresh and automatic recalculation cannot overwrite this unit until you explicitly change or clear the correction.</p></div></div>
-        <div class="correction-grid">
-          <label>Status
-            <select id="drawerCorrectionStatus">
-              <option value="">Select status</option>
-              <option value="P">P · Pending Confirmation</option>
-              <option value="NR">NR · No Response</option>
-              <option value="C">C · Confirmation</option>
-              <option value="A">A · Opt-In</option>
-              <option value="D">D · Opt-Out</option>
-            </select>
-          </label>
-          <label>Work Status
-            <select id="drawerCorrectionWork">
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </label>
-          <label>Completion Date<input type="date" id="drawerCompletionDate"></label>
-          <label class="wide">Correction Note<textarea id="drawerCorrectionNote" rows="2" placeholder="e.g. Waiting for confirmation"></textarea></label>
-        </div>
-        <div class="correction-actions">
-          <button type="button" class="primary-btn" id="drawerCorrectionSave">Save & Lock Correction</button>
-          <button type="button" class="ghost-btn" id="drawerCorrectionClear">Clear Correction</button>
-        </div>
-        <div class="correction-rule">Completed cannot be saved without a Completion Date.</div>
-        <div class="correction-audit" id="drawerAudit"></div>
-      </section>
       <div class="drawer-shortcuts">
         <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey Visit</button>
         <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>

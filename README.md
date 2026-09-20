@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.40 Secure
+# ELU Upgrading — Premium V7.39 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -411,25 +411,14 @@ This status is synced across Dashboard, Block Board, A4 print, Appointment Regis
 
 Login, encryption, encrypted project data, secure storage key, search, Reschedule and Cancel controls are unchanged.
 
-## V7.39 — persistent correction lock + completion-date safety
-Field corrections are now durable and cannot silently revert after refresh or source-data rebuild.
 
-- Added a **Correct** action in Appointment Register and a **Locked Correction** panel in Unit Details.
-- A saved manual correction is stored in the encrypted runtime state and takes priority over Excel-source data and automatic recalculation until a user explicitly changes the appointment or clears the correction.
-- Added an encrypted audit history for manual corrections.
-- **Completed** cannot be manually saved without a **Completion Date**.
-- Auto-completed appointment records carry their appointment date as the completion date, so no appointment-driven Completed record is left date-less.
-- Seed/source `Completed` is accepted only when a source completion/schedule date can be resolved; otherwise work remains Pending.
-- Unit Register now shows **Work Status** and **Completion Date**.
-- Unit Summary CSV now includes Completion Date.
-- One-time correction migration: **Zone 3 · Block 531 · #01-302** is locked to **P · Pending Confirmation / Pending work**, with no completion date, so it will not revert to Completed after refresh.
-- Saving/rescheduling/cancelling a new appointment is treated as an explicit user change and releases the older manual correction for that unit.
-
-Login, encryption, secure storage key, project layout, reports, Block Board colours and existing resident data remain unchanged.
-
-## V7.40 — readability / larger text
-- Increased main UI, register, table, pill, button, form, planner and report font sizes.
-- Unit Register rows now use larger 13px body text and 11px headers by default.
-- Wide tables keep horizontal scrolling instead of shrinking content to unreadable sizes.
-- Mobile form controls use 16px text for comfortable reading without browser zoom.
-- No workflow, security, correction-lock or data rules were changed from V7.39.
+## V7.39 — simple Opt-Out from Appointment Schedule
+- Added one **Opt-Out · D** button inside the Appointment entry form.
+- Resident can be marked Opt-Out at any time: before the appointment, after booking, during reschedule waiting, or when work is about to start.
+- Opt-Out does **not** require an appointment date.
+- Owner Name, Contact and Appointment Note entered in the form are retained.
+- An Opt-Out decision closes older appointment schedules logically while keeping their history.
+- Status becomes **D · Opt-Out** and syncs immediately to Appointment Register, Block Board, Unit Register, Dashboard and Reports.
+- If a genuinely newer appointment is created later, the newer appointment becomes the current status again.
+- Cancel remains separate: Cancel does not mean Opt-Out; with resident details retained it returns to **P · Pending Confirmation**.
+- Existing security, encryption, unit search, Reschedule, Block Board print and report exports are unchanged.
