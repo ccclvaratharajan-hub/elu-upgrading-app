@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.41">
+  <link rel="stylesheet" href="styles.css?v=7.43">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -405,6 +405,26 @@
           </div>
           <div id="reportTable" class="table-shell"></div>
         </article>
+
+        <article class="panel response-summary-panel">
+          <div class="panel-head register-head response-summary-toolbar">
+            <div>
+              <span class="section-label">SEPARATE LIVE SUMMARY</span>
+              <h3>Opt-In / Opt-Out / NR Summary</h3>
+              <p>Live block-wise summary from the current Unit Register. Pending Confirmation (P) is counted inside Respond Unit and shown separately for accountability.</p>
+            </div>
+            <div class="register-tools">
+              <label class="mini-filter">Zone<select id="responseSummaryZoneFilter"></select></label>
+              <button class="ghost-btn" id="responseSummaryPrintBtn" type="button">Print / PDF</button>
+              <button class="ghost-btn" id="responseSummaryCsvBtn" type="button">Summary CSV</button>
+            </div>
+          </div>
+
+          <div class="response-summary-sheet" id="responseSummarySheet">
+            <div class="response-summary-title">(Summary of Opt In, Opt Out &amp; NR Unit Details)</div>
+            <div id="responseSummaryTable" class="response-summary-table-wrap"></div>
+          </div>
+        </article>
       </section>
     </main>
   </div>
@@ -436,7 +456,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.41"></script>
-<script src="app.js?v=7.41"></script>
+  <script src="data.js?v=7.43"></script>
+<script src="app.js?v=7.43"></script>
 </body>
 </html>

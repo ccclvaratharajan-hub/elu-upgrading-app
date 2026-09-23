@@ -423,9 +423,9 @@ function zoneGroupHeader(zone,count,label){return `<div class="zone-group-head">
 function unitOptionsForBlock(block){return getBlockUnits(block).map(u=>`<option value="${u.key}">${unitDisplay(u.floor,u.unit)}</option>`).join("")}
 function initSelectors(){
   ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions());
-  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions(true));
+  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter","responseSummaryZoneFilter"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions(true));
   ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).value="1");
-  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter"].forEach(id=>document.getElementById(id).value="all");
+  ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter","responseSummaryZoneFilter"].forEach(id=>document.getElementById(id).value="all");
   ["unitBlockFilter","appointmentBlockFilter","complaintBlockFilter","plannerViewBlock","reportBlockFilter"].forEach(id=>document.getElementById(id).innerHTML=allBlockOptions(true));
   syncBoardBlocks();syncSurveyBlocks();syncAppointmentBlocks();syncComplaintBlocks();syncPlannerBlocks();
 }
@@ -1038,9 +1038,189 @@ function renderReport(){
   document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card pending-card"><span>Pending P</span><strong>${t.p}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
   document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["p",r.pPct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
   document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><thead><tr><th>S/N</th><th>BLK</th><th>TOTAL</th><th>A+C</th><th>A+C %</th><th>DONE</th><th>DONE %</th><th>P</th><th>P %</th><th>D</th><th>D %</th><th>NR</th><th>NR %</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.p}</td><td>${pct(r.pPct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.p}</td><td>${pct(t.pPct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
+  renderResponseSummary();
 }
 document.getElementById("reportZoneFilter").addEventListener("change",()=>{const z=document.getElementById("reportZoneFilter").value;document.getElementById("reportBlockFilter").innerHTML=filterBlockOptions(z,true);renderReport()});
 document.getElementById("reportBlockFilter").addEventListener("change",renderReport);
+
+function responseSummaryUnitList(units){
+  return [...units]
+    .sort((a,b)=>b.floor-a.floor||a.unit-b.unit)
+    .map(u=>unitDisplay(u.floor,u.unit))
+    .join(", ")
+}
+function responseSummaryPendingRemark(u){
+  const latest=latestById(state.appointments.filter(a=>a.unitKey===u.key));
+  const note=String(latest?.remarks||"").trim();
+  return `${unitDisplay(u.floor,u.unit)}: ${note||"Awaiting confirmation"}`
+}
+function buildResponseSummaryRows(zoneFilter="all"){
+  const rows=[];
+  Object.keys(ZONE_BLOCKS).map(Number).sort((a,b)=>a-b).forEach(zone=>{
+    if(zoneFilter!=="all"&&String(zoneFilter)!==String(zone))return;
+    (ZONE_BLOCKS[zone]||[]).forEach(block=>{
+      const units=getBlockUnits(block);
+      const total=units.length;
+      const nrUnits=units.filter(u=>u.response==="NR");
+      const dUnits=units.filter(u=>u.response==="D");
+      const pUnits=units.filter(u=>u.response==="P");
+      const optInUnits=units.filter(u=>u.response==="A"||u.response==="C");
+      const nr=nrUnits.length,d=dUnits.length,p=pUnits.length,optIn=optInUnits.length;
+      const respond=total-nr;
+      rows.push({
+        zone,block,total,respond,
+        respondPct:total?respond/total*100:0,
+        optIn,optInPct:total?optIn/total*100:0,
+        d,dPct:total?d/total*100:0,
+        dDetails:responseSummaryUnitList(dUnits),
+        nr,nrDetails:responseSummaryUnitList(nrUnits),
+        p,pDetails:responseSummaryUnitList(pUnits),
+        pRemarks:pUnits.map(responseSummaryPendingRemark).join(" · ")
+      })
+    })
+  });
+  return rows
+}
+function responseSummaryTotals(rows){
+  const t=rows.reduce((o,r)=>{
+    o.total+=r.total;o.respond+=r.respond;o.optIn+=r.optIn;o.d+=r.d;o.nr+=r.nr;o.p+=r.p;return o
+  },{total:0,respond:0,optIn:0,d:0,nr:0,p:0});
+  return {
+    ...t,
+    respondPct:t.total?t.respond/t.total*100:0,
+    optInPct:t.total?t.optIn/t.total*100:0,
+    dPct:t.total?t.d/t.total*100:0
+  }
+}
+function responseSummaryCountPct(count,pctValue){
+  return `${count} (${Math.round(pctValue)}%)`
+}
+function responseSummaryTableHtml(rows,includeTotal=true){
+  const t=responseSummaryTotals(rows);
+  const body=rows.map((r,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><strong>${r.block}</strong> <span class="response-zone-tag">(Zone ${r.zone})</span></td>
+      <td>${r.total}</td>
+      <td>${responseSummaryCountPct(r.respond,r.respondPct)}</td>
+      <td>${responseSummaryCountPct(r.optIn,r.optInPct)}</td>
+      <td>${responseSummaryCountPct(r.d,r.dPct)}</td>
+      <td class="response-detail-cell">${esc(r.dDetails||"")}</td>
+      <td class="response-pending-cell">${r.p?`<strong>${r.p}</strong>${r.pDetails?` · ${esc(r.pDetails)}`:""}`:"0"}</td>
+      <td>${r.nr}</td>
+      <td class="response-detail-cell">${esc(r.nrDetails||"")}</td>
+      <td class="response-remarks-cell">${esc(r.pRemarks||"")}</td>
+    </tr>`).join("");
+  const totalRow=includeTotal?`<tr class="response-summary-total">
+      <td></td><td>TOTAL</td><td>${t.total}</td>
+      <td>${responseSummaryCountPct(t.respond,t.respondPct)}</td>
+      <td>${responseSummaryCountPct(t.optIn,t.optInPct)}</td>
+      <td>${responseSummaryCountPct(t.d,t.dPct)}</td>
+      <td></td><td>${t.p}</td><td>${t.nr}</td><td></td><td></td>
+    </tr>`:"";
+  return `<table class="response-summary-table">
+    <colgroup>
+      <col class="rs-sn"><col class="rs-block"><col class="rs-total"><col class="rs-respond"><col class="rs-optin">
+      <col class="rs-optout"><col class="rs-optout-details"><col class="rs-pending"><col class="rs-nr"><col class="rs-nr-details"><col class="rs-remarks">
+    </colgroup>
+    <thead><tr>
+      <th>S/N</th>
+      <th>BLOCK (ZONE)</th>
+      <th>Total Unit</th>
+      <th>Respond Unit</th>
+      <th>Opt-In</th>
+      <th>Opt-Out</th>
+      <th>Opt-Out Unit Details</th>
+      <th>Pending Confirmation</th>
+      <th>Non-Respond Unit</th>
+      <th>NR Unit Details</th>
+      <th>Remarks</th>
+    </tr></thead>
+    <tbody>${body}${totalRow}</tbody>
+  </table>`
+}
+function renderResponseSummary(){
+  const select=document.getElementById("responseSummaryZoneFilter");
+  const table=document.getElementById("responseSummaryTable");
+  if(!select||!table)return;
+  const rows=buildResponseSummaryRows(select.value);
+  table.innerHTML=rows.length?responseSummaryTableHtml(rows):`<div class="empty-state">No summary data for this zone.</div>`
+}
+document.getElementById("responseSummaryZoneFilter").addEventListener("change",renderResponseSummary);
+
+function exportResponseSummaryCSV(){
+  const zone=document.getElementById("responseSummaryZoneFilter").value;
+  const rows=buildResponseSummaryRows(zone),t=responseSummaryTotals(rows);
+  if(!rows.length){toast("No response summary data");return}
+  const csv=[
+    ["S/N","BLOCK","ZONE","TOTAL UNIT","RESPOND UNIT","RESPOND %","OPT-IN","OPT-IN %","OPT-OUT","OPT-OUT %","OPT-OUT UNIT DETAILS","PENDING CONFIRMATION","PENDING UNIT DETAILS","NON-RESPOND UNIT","NR UNIT DETAILS","REMARKS"],
+    ...rows.map((r,i)=>[
+      i+1,r.block,`Zone ${r.zone}`,r.total,r.respond,`${Math.round(r.respondPct)}%`,
+      r.optIn,`${Math.round(r.optInPct)}%`,r.d,`${Math.round(r.dPct)}%`,r.dDetails,
+      r.p,r.pDetails,r.nr,r.nrDetails,r.pRemarks
+    ]),
+    ["","TOTAL","",t.total,t.respond,`${Math.round(t.respondPct)}%`,t.optIn,`${Math.round(t.optInPct)}%`,t.d,`${Math.round(t.dPct)}%`,"",t.p,"",t.nr,"",""]
+  ];
+  download(`ELU_Response_Summary_${zone==="all"?"All_Zones":"Zone_"+zone}_${isoTodaySG()}.csv`,toCSV(csv));
+  toast("Response Summary CSV downloaded")
+}
+function exportResponseSummaryPrint(){
+  rebuildAllMasters();
+  renderResponseSummary();
+  const zone=document.getElementById("responseSummaryZoneFilter").value;
+  const rows=buildResponseSummaryRows(zone);
+  if(!rows.length){toast("No response summary data to print");return}
+  const stamp=new Date().toLocaleString("en-SG",{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const zoneLabel=zone==="all"?"All Zones":`Zone ${zone}`;
+  const win=window.open("","_blank","width=1500,height=950");
+  if(!win){toast("Allow pop-ups to print or save the Summary");return}
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ELU Response Summary - ${zoneLabel}</title>
+<style>
+  @page{size:A4 landscape;margin:7mm}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body{margin:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
+  .print-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 7px}
+  .print-head h1{font-size:15px;margin:0 0 2px}
+  .print-head p{font-size:8px;margin:0;color:#333}
+  .stamp{text-align:right;font-size:7px;line-height:1.45;color:#444}
+  .summary-title{background:#fff600;border:1px solid #000;border-bottom:0;text-align:center;font-size:10px;font-weight:700;padding:5px;text-decoration:underline}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2px}
+  th,td{border:1px solid #000;padding:4px 3px;vertical-align:top;line-height:1.3;word-break:break-word}
+  th{background:#8eeff0;text-align:center;font-weight:700;vertical-align:middle}
+  td:nth-child(1),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(8),td:nth-child(9){text-align:center;vertical-align:middle}
+  .zone-tag{font-size:6.7px;font-weight:700;white-space:nowrap}
+  .total-row td{font-weight:700;background:#f3f3f3}
+  col.sn{width:3%} col.block{width:9%} col.total{width:6%} col.respond{width:8%} col.optin{width:7%}
+  col.optout{width:7%} col.odetails{width:15%} col.pending{width:14%} col.nr{width:7%} col.nrdetails{width:11%} col.remarks{width:13%}
+  col.rs-sn{width:3%} col.rs-block{width:9%} col.rs-total{width:6%} col.rs-respond{width:8%} col.rs-optin{width:7%}
+  col.rs-optout{width:7%} col.rs-optout-details{width:15%} col.rs-pending{width:14%} col.rs-nr{width:7%} col.rs-nr-details{width:11%} col.rs-remarks{width:13%}
+  thead{display:table-header-group}
+  tr{break-inside:avoid}
+  .note{font-size:7px;margin:5px 0 0;color:#333}
+</style>
+</head>
+<body>
+  <div class="print-head">
+    <div><h1>ELU Upgrading · ${zoneLabel}</h1><p>Live block-wise resident response summary</p></div>
+    <div class="stamp">Generated ${stamp}<br>A4 Landscape · Print / Save as PDF</div>
+  </div>
+  <div class="summary-title">(Summary of Opt In, Opt Out &amp; NR Unit Details)</div>
+  ${responseSummaryTableHtml(rows).replace(/response-zone-tag/g,"zone-tag").replace(/response-summary-total/g,"total-row")}
+  <div class="note">Respond Unit includes Opt-In (A+C), Opt-Out (D) and Pending Confirmation (P). NR is excluded. Pending reason uses the latest Appointment Note; when no note exists, it shows Awaiting confirmation.</div>
+  <script>
+    window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print()},250)});
+  <\/script>
+</body>
+</html>`);
+  win.document.close();
+  toast("Response Summary print / PDF opened")
+}
+document.getElementById("responseSummaryCsvBtn").addEventListener("click",exportResponseSummaryCSV);
+document.getElementById("responseSummaryPrintBtn").addEventListener("click",exportResponseSummaryPrint);
 
 
 function managerReportData(){
@@ -1194,7 +1374,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.41">
+<link rel="stylesheet" href="styles.css?v=7.43">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}

@@ -1282,3 +1282,90 @@ body.secure-locked .toast{visibility:hidden}
   font-weight:850;
   white-space:nowrap;
 }
+
+
+/* V7.42 — separate Opt-In / Opt-Out / NR response summary */
+.response-summary-panel{margin-top:18px}
+.response-summary-toolbar{align-items:flex-end}
+.response-summary-sheet{
+  border:1px solid #202020;
+  border-radius:2px;
+  overflow:hidden;
+  background:#fff;
+  margin-top:10px;
+}
+.response-summary-title{
+  background:#fff600;
+  color:#050505;
+  border-bottom:1px solid #202020;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:12px;
+  font-weight:800;
+  text-decoration:underline;
+  padding:7px 8px;
+}
+.response-summary-table-wrap{overflow:auto}
+.response-summary-table{
+  width:100%;
+  min-width:1240px;
+  border-collapse:collapse;
+  table-layout:fixed;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#111;
+  font-size:10px;
+}
+.response-summary-table th,
+.response-summary-table td{
+  border:1px solid #202020;
+  padding:6px 5px;
+  line-height:1.35;
+  vertical-align:top;
+  background:#fff;
+}
+.response-summary-table th{
+  background:#8eeff0;
+  color:#000;
+  font-weight:800;
+  text-align:center;
+  vertical-align:middle;
+}
+.response-summary-table td:nth-child(1),
+.response-summary-table td:nth-child(3),
+.response-summary-table td:nth-child(4),
+.response-summary-table td:nth-child(5),
+.response-summary-table td:nth-child(6),
+.response-summary-table td:nth-child(8),
+.response-summary-table td:nth-child(9){
+  text-align:center;
+  vertical-align:middle;
+}
+.response-summary-table td:nth-child(2){
+  text-align:left;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+.response-zone-tag{font-size:9px;font-weight:800;color:#46515a}
+.response-detail-cell,.response-remarks-cell{font-weight:650;word-break:break-word}
+.response-summary-total td{background:#f4f4f4!important;font-weight:850;vertical-align:middle}
+.response-summary-table col.rs-sn{width:3%}
+.response-summary-table col.rs-block{width:9%}
+.response-summary-table col.rs-total{width:6%}
+.response-summary-table col.rs-respond{width:8%}
+.response-summary-table col.rs-optin{width:7%}
+.response-summary-table col.rs-optout{width:7%}
+.response-summary-table col.rs-optout-details{width:15%}
+.response-summary-table col.rs-pending{width:14%}
+.response-summary-table col.rs-nr{width:7%}
+.response-summary-table col.rs-nr-details{width:11%}
+.response-summary-table col.rs-remarks{width:13%}
+@media(max-width:760px){
+  .response-summary-toolbar{align-items:stretch}
+  .response-summary-toolbar .register-tools{width:100%}
+}
+
+.response-pending-cell{
+  background:#eef5ff !important;
+  color:#245fae;
+  font-weight:750;
+}

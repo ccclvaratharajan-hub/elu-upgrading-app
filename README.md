@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.41 Secure
+# ELU Upgrading — Premium V7.43 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -443,3 +443,27 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - Login error handling now distinguishes an actual credential failure from an app startup or saved-state issue, so a runtime problem is no longer mislabeled as “Wrong username or password”.
 - V7.40 date-year protection and 13th-floor-to-lower-floor sorting are retained.
 - Encryption seed, secure storage key and project data are unchanged.
+
+
+## V7.42 — Separate live response summary
+- Added a separate report below the Meeting / Weekly Progress report.
+- Headline follows the supplied sample: **(Summary of Opt In, Opt Out & NR Unit Details)**.
+- Uses live Unit Register data for every block across all 6 zones; sample image data is not copied.
+- The block column is shown as **BLOCK (ZONE)**, for example `537 (Zone 5)`, so there is no unused / blank location column.
+- Columns: S/N, Block (Zone), Total Unit, Respond Unit, Opt-In, Opt-Out, Opt-Out Unit Details, Non-Respond Unit, NR Unit Details, Remarks.
+- Opt-Out and NR unit numbers are listed directly per block.
+- Pending Confirmation (P) remains separate from Opt-In and is shown in Remarks with its unit numbers, so Respond Unit reconciles correctly.
+- Opt-In is A + C. Respond Unit is Total Unit minus NR.
+- Added a Zone filter, **Print / PDF** output in A4 landscape, and **Summary CSV** export.
+- Existing Weekly Meeting Report, Manager PDF/PPT, Block Board, appointment logic, security and encrypted storage are unchanged.
+
+
+## V7.43 — Pending accountability in Response Summary
+- Pending Confirmation (P) remains a responded unit and is included inside **Respond Unit**.
+- Response accountability is therefore: **Respond = Opt-In (A+C) + Opt-Out (D) + Pending (P)**, equivalently **Total − NR**.
+- Added a dedicated **Pending Confirmation** column in the separate Response Summary.
+- The Pending column shows both the pending count and the pending unit numbers for each block.
+- **Remarks** now shows the latest Appointment Note for each pending unit. If no note exists, it automatically shows **Awaiting confirmation**.
+- This keeps status/count in the Pending column and the reason/follow-up text in Remarks.
+- CSV and Print/PDF outputs use the same logic.
+- Existing Meeting Report, appointment workflow, Block Board, security and encrypted storage are unchanged.
