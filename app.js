@@ -53,7 +53,7 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),complaints:[],createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],createdAt:new Date().toISOString()};
 }
 function isUserAppointment(a){
   return ["Planner","Manual","Planner History"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
@@ -61,6 +61,7 @@ function isUserAppointment(a){
 function mergeSavedIntoFresh(saved){
   const fresh=makeInitialState();
   if(!saved)return fresh;
+
   fresh.surveys=(saved.surveys||[]).map(s=>({
     ...s,
     visitDate:s.visitDate||s.followUpDate||"",
@@ -69,11 +70,43 @@ function mergeSavedIntoFresh(saved){
   }));
   fresh.complaints=saved.complaints||[];
 
-  (saved.appointments||[]).filter(a=>a.status!=="Cancelled").forEach(a=>{
-    const clean={...a,status:undefined,scheduleState:a.scheduleState||"Active",workStatus:a.workStatus||"Pending",source:a.source||"Manual"};
-    const idx=fresh.appointments.findIndex(x=>x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot);
+  const savedAppointments=saved.appointments||[];
+  const savedIds=new Set(savedAppointments.map(a=>String(a.id)));
+  const tombstones=new Set((saved.appointmentTombstones||[]).map(String));
+
+  // Migration for V7.46 and earlier:
+  // if a seeded/imported appointment existed in data.js but is absent from the
+  // user's saved appointment list, that absence represents a prior user Delete.
+  if(!Array.isArray(saved.appointmentTombstones)){
+    fresh.appointments.forEach(seed=>{
+      if(seed?.id!=null&&!savedIds.has(String(seed.id)))tombstones.add(String(seed.id))
+    })
+  }
+
+  fresh.appointmentTombstones=[...tombstones];
+  fresh.appointments=fresh.appointments.filter(a=>!tombstones.has(String(a.id)));
+
+  savedAppointments.forEach(a=>{
+    if(tombstones.has(String(a.id)))return;
+    const clean={
+      ...a,
+      status:undefined,
+      scheduleState:a.scheduleState||"Active",
+      workStatus:a.workStatus||"Pending",
+      source:a.source||"Manual"
+    };
+    const idx=fresh.appointments.findIndex(x=>
+      String(x.id)===String(clean.id)||
+      (x.unitKey===clean.unitKey&&x.date===clean.date&&x.slot===clean.slot)
+    );
+
     if(idx>=0){
       const seed=fresh.appointments[idx];
+      const explicitScheduleOverride=Boolean(
+        clean.userScheduleOverride||
+        clean.cancelledAt||
+        ["Cancelled","Rescheduled","History"].includes(clean.scheduleState)
+      );
       fresh.appointments[idx]={
         ...seed,
         ownerName:clean.ownerName||seed.ownerName||"",
@@ -82,13 +115,20 @@ function mergeSavedIntoFresh(saved){
         userRemarks:Boolean(clean.userRemarks||isUserAppointment(clean)),
         source:isUserAppointment(clean)?clean.source:seed.source,
         team:clean.team||seed.team||"",
-        scheduleState:isUserAppointment(clean)?(clean.scheduleState||seed.scheduleState||"Active"):(seed.scheduleState||"Active"),
-        workStatus:isUserAppointment(clean)?(clean.workStatus||seed.workStatus||"Pending"):(seed.workStatus||"Pending")
+        scheduleState:explicitScheduleOverride
+          ? clean.scheduleState
+          : isUserAppointment(clean)
+            ? (clean.scheduleState||seed.scheduleState||"Active")
+            : (seed.scheduleState||"Active"),
+        cancelledAt:clean.cancelledAt||seed.cancelledAt,
+        userScheduleOverride:Boolean(clean.userScheduleOverride||explicitScheduleOverride),
+        workStatus:isUserAppointment(clean)?(clean.workStatus||seed.workStatus||"Pending"):(clean.workStatus||seed.workStatus||"Pending")
       };
-    }else if(isUserAppointment(clean)){
+    }else if(isUserAppointment(clean)||clean.userScheduleOverride||clean.cancelledAt){
       fresh.appointments.push(clean);
     }
   });
+
   return fresh
 }
 function loadLegacyPlainState(){
@@ -757,12 +797,22 @@ function editAppointment(id,reschedule=false){
 function cancelAppointment(id){
   const a=state.appointments.find(x=>x.id===id);if(!a||isInactiveSchedule(a))return;
   if(!confirm(`Cancel appointment for Blk ${a.block} · ${a.unitDisplay} on ${safeDate(a.date)} · ${a.slot}?`))return;
-  a.scheduleState="Cancelled";a.cancelledAt=new Date().toISOString();
+  const cancelledAt=new Date().toISOString();
+  state.appointments
+    .filter(x=>x.unitKey===a.unitKey&&x.date===a.date&&!isInactiveSchedule(x))
+    .forEach(x=>{x.scheduleState="Cancelled";x.cancelledAt=cancelledAt;x.userScheduleOverride=true});
   if(Number(document.getElementById("appointmentEditId").value)===id)resetAppointmentForm();
   if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
-  save("Appointment cancelled · active slot cleared · status recalculated automatically")
+  save("Appointment cancelled · this unit/date removed from active schedule · status recalculated")
 }
-function deleteAppointment(id){if(!confirm("Delete this appointment record permanently?"))return;state.appointments=state.appointments.filter(x=>x.id!==id);save("Appointment deleted · Unit Register recalculated")}
+function deleteAppointment(id){
+  if(!confirm("Delete this appointment record permanently?"))return;
+  state.appointmentTombstones=Array.isArray(state.appointmentTombstones)?state.appointmentTombstones:[];
+  const sid=String(id);
+  if(!state.appointmentTombstones.map(String).includes(sid))state.appointmentTombstones.push(sid);
+  state.appointments=state.appointments.filter(x=>String(x.id)!==sid);
+  save("Appointment permanently deleted · it will not return after reload")
+}
 
 document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{const z=document.getElementById("appointmentZoneFilter").value;document.getElementById("appointmentBlockFilter").innerHTML=filterBlockOptions(z,true);renderAppointmentTable()});
 document.getElementById("appointmentBlockFilter").addEventListener("change",renderAppointmentTable);
@@ -1379,7 +1429,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.45">
+<link rel="stylesheet" href="styles.css?v=7.47">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -1533,11 +1583,23 @@ function initMasterSchedule(){
   document.getElementById("masterCycleDate").value=isoTodaySG();
   syncMasterBlocks();toggleMasterCustom()
 }
+function appointmentBlockedByLaterCancellation(a){
+  if(!a?.unitKey||!a?.date)return false;
+  const latestCancelMs=Math.max(0,...state.appointments
+    .filter(x=>x.unitKey===a.unitKey&&x.date===a.date&&x.scheduleState==="Cancelled")
+    .map(x=>Date.parse(x.cancelledAt||"")||Number(x.id)||0));
+  if(!latestCancelMs)return false;
+  return Number(a.id||0)<latestCancelMs
+}
+function liveScheduleRecord(a){
+  return !isInactiveSchedule(a)&&!appointmentBlockedByLaterCancellation(a)
+}
+
 function masterScheduleRows(){
   const c=cycleForDate(document.getElementById("masterCycleDate").value||isoTodaySG());
   const zf=document.getElementById("masterZoneFilter").value;
   return state.appointments.filter(a=>{
-    if(isInactiveSchedule(a)||!a.date||!inCycle(a.date,c))return false;
+    if(!liveScheduleRecord(a)||!a.date||!inCycle(a.date,c))return false;
     const z=Number(a.zone||zoneOfBlock(a.block));
     return zf==="all"||z===Number(zf)
   }).sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
@@ -1623,8 +1685,13 @@ async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
 function photoSchedule(date,zone){
-  return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&Number(a.zone||zoneOfBlock(a.block))===Number(zone))
-    .sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+  const rows=state.appointments.filter(a=>liveScheduleRecord(a)&&a.date===date&&Number(a.zone||zoneOfBlock(a.block))===Number(zone));
+  const byUnit=new Map();
+  rows.forEach(a=>{
+    const prev=byUnit.get(a.unitKey);
+    if(!prev||Number(a.id||0)>Number(prev.id||0))byUnit.set(a.unitKey,a)
+  });
+  return [...byUnit.values()].sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
       Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
 }
 function syncPhotoTargetUnits(){
@@ -1736,7 +1803,7 @@ async function monthlyPhotoGroups(zone,cycle){
   const map=new Map();
   for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
   const groups=[];
-  for(const [k,ps] of map){ps.sort((a,b)=>a.order-b.order);const [date,key]=k.split("|"),a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&!isInactiveSchedule(x));
+  for(const [k,ps] of map){ps.sort((a,b)=>a.order-b.order);const [date,key]=k.split("|"),a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&liveScheduleRecord(x));
     groups.push({date,unitKey:key,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:ps.slice(0,3)})}
   return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }

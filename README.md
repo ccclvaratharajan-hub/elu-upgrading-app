@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.45 Secure · Master Schedule + Integrated Photo Report
+# ELU Upgrading — Premium V7.47 Secure · Permanent Delete/Cancel
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -492,3 +492,23 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - Photo storage is separate from encrypted localStorage to avoid bloating the ELU data store.
 - Auto-cleanup runs on/after the **25th** for an ended cycle, but **only after a Word/PDF report for that Zone/cycle has been generated**.
 - Existing ELU status logic, reports, security key and encrypted project data are unchanged.
+
+
+## V7.46 — cancelled appointment synchronization
+- Fixed cancelled units still appearing in Photo Report / Master Schedule because an older duplicate appointment record could remain active.
+- **Cancel** now applies to the full booking for the same Unit + Date, including stale duplicate records.
+- Photo Report suppresses appointment records that are older than a later cancellation and keeps only one live schedule record per unit/date.
+- A genuinely new appointment created after the cancellation can appear again normally.
+- Cancel still means reschedule waiting / Pending Confirmation where resident identity is retained; it does not become Opt-Out.
+- Existing photo storage, 22→21 cycle, Word/PDF output, security key and project data are unchanged.
+
+
+## V7.47 — deleted/cancelled appointments no longer come back
+- Fixed the root cause of imported/seed appointments reappearing after Delete or Cancel.
+- The app always rebuilds from encrypted seed data at login; older versions could therefore re-create a deleted imported appointment, and could lose a Cancel flag on a seed appointment.
+- Added **appointment tombstones**: a permanent Delete records the appointment ID so the seed copy is suppressed on every future login/reload.
+- V7.47 automatically migrates older saved data: if a seeded appointment is already missing because you deleted it in V7.46 or earlier, V7.47 records that as a tombstone on first login.
+- Cancel now carries an explicit user schedule override, so a cancelled imported/seed booking remains Cancelled after reload.
+- Unit Register, Appointment Register, Planner, Master Schedule and Photo Report all read the same corrected appointment state.
+- A new appointment created later is still allowed and will appear normally.
+- Existing encrypted project data, security key, photo storage and reports are unchanged.
