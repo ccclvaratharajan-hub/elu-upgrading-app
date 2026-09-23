@@ -1013,6 +1013,40 @@ function savePlannerAppointment(){
   state.appointments.push({id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date,slot,team,remarks,source:"Planner",scheduleState:"Active",workStatus:"Pending"});
   resetPlannerForm();save(existing.length?"Appointment rescheduled · old booking moved to history":"Planner updated · Master Data synced")
 }
+
+function photoScheduleRowsForDate(date){
+  const teamRank=t=>t==="Team 1"?1:t==="Team 2"?2:9;
+  return state.appointments
+    .filter(a=>!isInactiveSchedule(a)&&a.date===date)
+    .sort((a,b)=>
+      String(a.date||"").localeCompare(String(b.date||""))||
+      teamRank(a.team)-teamRank(b.team)||
+      slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+      Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||
+      Number(a.block)-Number(b.block)||
+      Number(b.floor)-Number(a.floor)||
+      Number(a.unit)-Number(b.unit)
+    )
+}
+function exportPhotoScheduleCSV(){
+  const date=document.getElementById("teamDate").value||isoTodaySG();
+  const rows=photoScheduleRowsForDate(date);
+  if(!rows.length){toast("No appointments on the selected date");return}
+  const csv=[
+    ["Date","Team","Slot","Zone","Block","Floor","Unit","UnitDisplay","Owner","Contact","Remarks"],
+    ...rows.map(a=>[
+      a.date,a.team||"Unassigned",a.slot||"",a.zone||zoneOfBlock(a.block),a.block,a.floor,a.unit,
+      a.unitDisplay||unitDisplay(a.floor,a.unit),a.ownerName||"",a.contact||"",a.remarks||""
+    ])
+  ];
+  download(`ELU_Photo_Schedule_${date}.csv`,toCSV(csv));
+  toast(`Photo Schedule CSV downloaded · ${rows.length} unit${rows.length===1?"":"s"}`)
+}
+document.getElementById("photoScheduleCsvBtn").addEventListener("click",exportPhotoScheduleCSV);
+document.getElementById("openPhotoGeneratorBtn").addEventListener("click",()=>{
+  window.open("photo-report-generator/index.html","_blank")
+});
+
 document.getElementById("plannerForm").addEventListener("submit",e=>{e.preventDefault();savePlannerAppointment()});
 document.getElementById("plannerCancelEdit").addEventListener("click",resetPlannerForm);
 document.getElementById("plannerViewZone").addEventListener("change",()=>{const z=document.getElementById("plannerViewZone").value;document.getElementById("plannerViewBlock").innerHTML=filterBlockOptions(z,true);renderPlanner()});
@@ -1374,7 +1408,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.43">
+<link rel="stylesheet" href="styles.css?v=7.44">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}

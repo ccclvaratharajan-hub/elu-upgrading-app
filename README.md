@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.43 Secure
+# ELU Upgrading — Premium V7.44 Secure + Photo Report Generator
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -467,3 +467,16 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - This keeps status/count in the Pending column and the reason/follow-up text in Remarks.
 - CSV and Print/PDF outputs use the same logic.
 - Existing Meeting Report, appointment workflow, Block Board, security and encrypted storage are unchanged.
+
+
+## V7.44 — Daily 3-photo Word report workflow
+- Added **Photo Schedule CSV** to the Daily Appointment Planner.
+- Added **Photo Report Generator** button that opens the bundled browser generator.
+- The generator takes the schedule CSV plus a ZIP of downloaded WhatsApp photos.
+- It auto-assigns **3 photos per scheduled unit** in filename order and shows a visual preview.
+- Photos can be dragged between unit slots; unit rows can be moved up/down when WhatsApp arrival order differs from schedule order.
+- Extra photos are never silently discarded; they remain visible in an Unassigned pool.
+- Word output follows the supplied ELU sample structure: A4 portrait, project heading, 6 units per page, DATE + Block/Unit + 3 photo cells.
+- Photos are compressed before Word generation to keep the report manageable.
+- Generator runs locally in the browser; selected photos are processed on-device by the page.
+- Existing ELU statuses, reports, security and encrypted storage are unchanged.

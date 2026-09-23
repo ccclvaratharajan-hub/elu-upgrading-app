@@ -1369,3 +1369,13 @@ body.secure-locked .toast{visibility:hidden}
   color:#245fae;
   font-weight:750;
 }
+
+
+/* V7.44 — Photo Report workflow */
+.photo-schedule-btn{white-space:nowrap}
+.photo-generator-btn{
+  white-space:nowrap;
+  border-color:#9bc3ea !important;
+  background:#f0f7ff !important;
+  color:#2c6fae !important;
+}
