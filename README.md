@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.39 Secure
+# ELU Upgrading — Premium V7.40 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -422,3 +422,14 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - If a genuinely newer appointment is created later, the newer appointment becomes the current status again.
 - Cancel remains separate: Cancel does not mean Opt-Out; with resident details retained it returns to **P · Pending Confirmation**.
 - Existing security, encryption, unit search, Reschedule, Block Board print and report exports are unchanged.
+
+
+## V7.40 — Appointment date correction + top-floor ordering
+- Manual Appointment and Planner dates are constrained to the current operating year shown by the app (currently 2026).
+- A manual save with an accidental different year such as 2025 is blocked with a clear correction message.
+- Existing wrong-year records are not erased automatically; completed rows now expose **Edit** and **Delete** so a mistaken date can be corrected safely.
+- When a completed record is edited from a wrong old date to a valid future/current appointment date, the existing status engine recalculates it automatically (for example A → C when the corrected appointment is still upcoming).
+- Appointment Register is now ordered top floor to lower floor within each block (13 → 12 → ...).
+- Unit Register uses the same top-floor-to-lower-floor ordering.
+- Block Board ordering is unchanged because it was already top-down.
+- Existing Cancel / Reschedule / Opt-Out / P Pending logic, security and encrypted storage are unchanged.

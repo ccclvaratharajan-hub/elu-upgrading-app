@@ -623,10 +623,27 @@ document.getElementById("surveyTable").addEventListener("click",e=>{
   b=e.target.closest("[data-survey-delete]");if(b)deleteSurvey(Number(b.dataset.surveyDelete))
 });
 
+function currentAppointmentYear(){
+  return isoTodaySG().slice(0,4)
+}
+function configureAppointmentYearInputs(){
+  const y=currentAppointmentYear();
+  ["appointmentDate","teamDate"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.min=`${y}-01-01`;
+    el.max=`${y}-12-31`;
+  })
+}
+function appointmentYearIsValid(date){
+  return Boolean(date&&date.slice(0,4)===currentAppointmentYear())
+}
+
 function resetAppointmentForm(){
   document.getElementById("appointmentEditId").value="";
   document.getElementById("appointmentSaveBtn").textContent="Save Appointment";
   document.getElementById("appointmentCancelEdit").classList.add("hidden");
+  configureAppointmentYearInputs();
   document.getElementById("appointmentDate").value=isoTodaySG();
   document.getElementById("appointmentSlot").value=SLOTS[0];
   document.getElementById("appointmentTeam").value="Team 1";
@@ -664,6 +681,7 @@ function saveDirectAppointment(){
   const ownerName=document.getElementById("appointmentOwner").value.trim(),contact=document.getElementById("appointmentContact").value.trim(),remarks=document.getElementById("appointmentRemarks").value.trim();
   const editId=Number(document.getElementById("appointmentEditId").value||0);
   if(!date){toast("Select appointment date");return}
+  if(!appointmentYearIsValid(date)){toast(`Appointment year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
 
   if(editId){
@@ -767,7 +785,7 @@ function renderAppointmentTable(){
     });
   }
 
-  units.sort((a,b)=>a.zone-b.zone||a.block-b.block||a.floor-b.floor||a.unit-b.unit);
+  units.sort((a,b)=>a.zone-b.zone||a.block-b.block||b.floor-a.floor||a.unit-b.unit);
 
   const count=document.getElementById("appointmentUnitCount");
   if(count)count.textContent=units.length.toLocaleString();
@@ -779,7 +797,7 @@ function renderAppointmentTable(){
     const actions=d.active
       ? `<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
       : d.completed
-        ? `<span class="register-done-note">Completed</span>`
+        ? `<span class="register-done-note">Completed</span><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
         : d.status==="D"
           ? `<span class="register-optout-note">Opt-Out</span>`
           : `<button class="table-action" data-appt-book="${u.key}">Appointment</button>`;
@@ -821,6 +839,7 @@ document.getElementById("unitBlockFilter").addEventListener("change",renderUnitT
 function renderUnitTable(){
   const q=document.getElementById("unitSearch").value.trim().toLowerCase(),zf=document.getElementById("unitZoneFilter").value,bf=document.getElementById("unitBlockFilter").value;let r=unitsArray();
   if(zf!=="all")r=r.filter(u=>u.zone===Number(zf));if(bf!=="all")r=r.filter(u=>u.block===Number(bf));if(q)r=r.filter(u=>`blk ${u.block} ${unitDisplay(u.floor,u.unit)} ${u.ownerName} ${u.contact}`.toLowerCase().includes(q));
+  r.sort((a,b)=>a.zone-b.zone||a.block-b.block||b.floor-a.floor||a.unit-b.unit);
   const row=u=>`<tr><td>Blk ${u.block}</td><td><strong>${unitDisplay(u.floor,u.unit)}</strong></td><td>${statusPill(u.response)}</td><td>${esc(u.ownerName||"—")}</td><td>${esc(u.contact||"—")}</td><td>${safeDate(u.appointmentDate)||"—"}</td><td>${esc(u.appointmentSlot||"—")}</td><td>${esc(u.remarks||"—")}</td></tr>`;
   const table=x=>`<div class="table-shell unit-register-shell"><table class="unit-register-table"><colgroup><col style="width:8%"><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:14%"><col style="width:12%"><col style="width:11%"><col style="width:14%"></colgroup><thead><tr><th>Block</th><th>Unit</th><th>Status</th><th>Owner Name</th><th>Contact</th><th>Appointment Date</th><th>Slot</th><th>Remarks</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
   if(!r.length){document.getElementById("unitTable").innerHTML=`<div class="empty-state">No matching unit records.</div>`;return}
@@ -941,6 +960,8 @@ function removePlannerAppointment(id){cancelAppointment(id)}
 function savePlannerAppointment(){
   const date=document.getElementById("teamDate").value||isoTodaySG(),key=document.getElementById("plannerUnit").value,u=getUnit(key);if(!u)return;
   const team=document.getElementById("plannerTeam").value,slot=plannerSlotValue(),remarks=document.getElementById("plannerRemarks").value.trim(),editId=Number(document.getElementById("plannerEditId").value||0);
+  configureAppointmentYearInputs();
+  if(!appointmentYearIsValid(date)){toast(`Planning year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
 
   if(editId){
@@ -1154,7 +1175,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.38">
+<link rel="stylesheet" href="styles.css?v=7.40">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -1272,6 +1293,7 @@ function startApp(){
   document.getElementById("todayChip").textContent=fmtDate.format(new Date());
   document.getElementById("complaintDate").value=isoTodaySG();
   document.getElementById("teamDate").value=isoTodaySG();
+  configureAppointmentYearInputs();
   initSelectors();
   togglePlannerCustomTime();
   toggleAppointmentCustomTime();
