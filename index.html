@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.44">
+  <link rel="stylesheet" href="styles.css?v=7.45">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -67,6 +67,8 @@
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
+        <button class="nav-item" data-view="schedulemaster"><svg><use href="#i-calendar"/></svg><span>Master Schedule</span></button>
+        <button class="nav-item" data-view="photos"><svg><use href="#i-register"/></svg><span>Photo Report</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
       </nav>
 
@@ -328,8 +330,6 @@
             <label>Planning Date<input type="date" id="teamDate"></label>
             <button class="icon-date-btn" id="plannerNextDay" type="button">›</button>
             <button class="ghost-btn" id="plannerToday" type="button">Today</button>
-            <button class="ghost-btn photo-schedule-btn" id="photoScheduleCsvBtn" type="button">Photo Schedule CSV</button>
-            <button class="ghost-btn photo-generator-btn" id="openPhotoGeneratorBtn" type="button">Photo Report Generator</button>
           </div>
         </div>
 
@@ -364,6 +364,91 @@
         <article class="panel unassigned-panel">
           <div class="panel-head"><div><span class="section-label">EXISTING SCHEDULE</span><h3>Unassigned appointments</h3><p>Appointments already in the system for this date but not yet allocated to Team 1 or Team 2.</p></div></div>
           <div id="plannerUnassigned" class="planner-unassigned"></div>
+        </article>
+      </section>
+
+
+      <section class="view" id="schedulemaster">
+        <div class="planner-hero master-schedule-hero">
+          <div>
+            <span class="section-label">22 → 21 CYCLE · QUICK ENTRY</span>
+            <h2>Master Appointment Schedule</h2>
+            <p>Enter appointments continuously in one place. Daily Appointment Planner will automatically show the same records by date.</p>
+          </div>
+          <div class="master-cycle-controls">
+            <label>Cycle Reference Date<input type="date" id="masterCycleDate"></label>
+            <label>View Zone<select id="masterZoneFilter"></select></label>
+          </div>
+        </div>
+
+        <article class="panel master-entry-panel">
+          <div class="panel-head"><div><span class="section-label">FAST ENTRY</span><h3>Add appointment row</h3><p>Date / Zone / Team stay in place after saving so you can enter the next unit quickly.</p></div></div>
+          <form id="masterScheduleForm" class="master-schedule-form">
+            <label>Date<input type="date" id="masterDate"></label>
+            <label>Zone<select id="masterZone"></select></label>
+            <label>Block<select id="masterBlock"></select></label>
+            <label>Unit<select id="masterUnit"></select></label>
+            <label>Team<select id="masterTeam"><option>Team 1</option><option>Team 2</option></select></label>
+            <label>Slot<select id="masterSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option><option value="CUSTOM">Custom Time</option></select></label>
+            <div class="master-custom-time hidden" id="masterCustomRow">
+              <label>Start<input type="time" id="masterCustomStart"></label>
+              <label>End<input type="time" id="masterCustomEnd"></label>
+            </div>
+            <label class="master-note">Remarks<input id="masterRemarks" placeholder="Resident / access note"></label>
+            <button class="primary-btn" type="submit">Add Appointment</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head register-head">
+            <div><span class="section-label">MONTHLY WORKING SHEET</span><h3 id="masterCycleTitle">22 → 21 Schedule</h3><p>Zone-wise schedule. This is the same live appointment source used by Planner, Dashboard and Photo Report.</p></div>
+          </div>
+          <div id="masterScheduleTable" class="table-shell"></div>
+        </article>
+      </section>
+
+      <section class="view" id="photos">
+        <div class="planner-hero photo-report-hero">
+          <div>
+            <span class="section-label">PHOTO INBOX · 22 → 21 CYCLE</span>
+            <h2>Zone-wise Photo Report</h2>
+            <p>Schedule comes directly from ELU. Daily work is only: choose Zone + Date, upload the WhatsApp photo ZIP, then check the photos.</p>
+          </div>
+          <div class="photo-cycle-controls">
+            <label>Zone<select id="photoZone"></select></label>
+            <label>Date<input type="date" id="photoDate"></label>
+            <label>Target Unit<select id="photoTargetUnit"></select></label>
+          </div>
+        </div>
+
+        <article class="panel photo-import-panel">
+          <div class="panel-head"><div><span class="section-label">DAILY PHOTO DROP</span><h3>Upload WhatsApp ZIP</h3><p>Recommended ZIP name: <strong>2026-09-23_Blk537_13-302.zip</strong>. If the unit is not in the filename, select the Target Unit above.</p></div></div>
+          <div class="photo-import-row">
+            <input type="file" id="photoZipInput" accept=".zip,application/zip">
+            <button class="primary-btn" id="photoImportBtn" type="button">Import ZIP</button>
+            <span id="photoImportStatus" class="photo-import-status">No ZIP selected.</span>
+          </div>
+          <div class="photo-rule-note">All imported photos are stored in browser IndexedDB, not localStorage. The first 3 remaining photos for a unit are used in the monthly report; extra photos stay visible until you delete the unwanted ones.</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head register-head">
+            <div><span class="section-label">DAILY CHECK</span><h3 id="photoDailyTitle">Scheduled units & photos</h3><p>Green = at least 3 photos ready. Extra photos are kept and can be deleted individually.</p></div>
+          </div>
+          <div id="photoDailyBoard" class="photo-daily-board"></div>
+        </article>
+
+        <article class="panel photo-monthly-panel">
+          <div class="panel-head register-head">
+            <div><span class="section-label">MONTHLY OUTPUT</span><h3 id="photoCycleTitle">22 → 21 Photo Report</h3><p>Generate Zone-wise Word or Print/PDF from stored photos. Report order is date → team → time → block/unit.</p></div>
+            <div class="register-tools">
+              <label class="mini-filter">Cycle Reference Date<input type="date" id="photoCycleDate"></label>
+              <button class="primary-btn" id="photoWordBtn" type="button">Generate Word</button>
+              <button class="ghost-btn" id="photoPdfBtn" type="button">Print / PDF</button>
+            </div>
+          </div>
+          <div class="photo-retention-note" id="photoRetentionNote"></div>
+          <div id="photoMonthlySummary" class="photo-monthly-summary"></div>
         </article>
       </section>
 
@@ -458,7 +543,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.44"></script>
-<script src="app.js?v=7.44"></script>
+  <script src="data.js?v=7.45"></script>
+  <script src="jszip.min.js"></script>
+<script src="app.js?v=7.45"></script>
 </body>
 </html>

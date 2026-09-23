@@ -394,6 +394,8 @@ appointments:["Appointment Schedule","Main operational source for resident, date
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 teams:["Appointment Planner","Zone-first Team 1 / Team 2 planning. Standard and custom times stay together in one daily sheet."],
+schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
+photos:["Photo Report","Zone-wise WhatsApp ZIP photo inbox and 22 → 21 monthly output."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."]
 }[view]}
 function setView(view){
@@ -408,6 +410,8 @@ function setView(view){
   else if(view==="units")renderUnitTable();
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams")renderPlanner();
+  else if(view==="schedulemaster")renderMasterSchedule();
+  else if(view==="photos"){renderPhotoCenter();photoAutoCleanup()}
   else if(view==="reports")renderReport();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1014,39 +1018,6 @@ function savePlannerAppointment(){
   resetPlannerForm();save(existing.length?"Appointment rescheduled · old booking moved to history":"Planner updated · Master Data synced")
 }
 
-function photoScheduleRowsForDate(date){
-  const teamRank=t=>t==="Team 1"?1:t==="Team 2"?2:9;
-  return state.appointments
-    .filter(a=>!isInactiveSchedule(a)&&a.date===date)
-    .sort((a,b)=>
-      String(a.date||"").localeCompare(String(b.date||""))||
-      teamRank(a.team)-teamRank(b.team)||
-      slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
-      Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||
-      Number(a.block)-Number(b.block)||
-      Number(b.floor)-Number(a.floor)||
-      Number(a.unit)-Number(b.unit)
-    )
-}
-function exportPhotoScheduleCSV(){
-  const date=document.getElementById("teamDate").value||isoTodaySG();
-  const rows=photoScheduleRowsForDate(date);
-  if(!rows.length){toast("No appointments on the selected date");return}
-  const csv=[
-    ["Date","Team","Slot","Zone","Block","Floor","Unit","UnitDisplay","Owner","Contact","Remarks"],
-    ...rows.map(a=>[
-      a.date,a.team||"Unassigned",a.slot||"",a.zone||zoneOfBlock(a.block),a.block,a.floor,a.unit,
-      a.unitDisplay||unitDisplay(a.floor,a.unit),a.ownerName||"",a.contact||"",a.remarks||""
-    ])
-  ];
-  download(`ELU_Photo_Schedule_${date}.csv`,toCSV(csv));
-  toast(`Photo Schedule CSV downloaded · ${rows.length} unit${rows.length===1?"":"s"}`)
-}
-document.getElementById("photoScheduleCsvBtn").addEventListener("click",exportPhotoScheduleCSV);
-document.getElementById("openPhotoGeneratorBtn").addEventListener("click",()=>{
-  window.open("photo-report-generator/index.html","_blank")
-});
-
 document.getElementById("plannerForm").addEventListener("submit",e=>{e.preventDefault();savePlannerAppointment()});
 document.getElementById("plannerCancelEdit").addEventListener("click",resetPlannerForm);
 document.getElementById("plannerViewZone").addEventListener("change",()=>{const z=document.getElementById("plannerViewZone").value;document.getElementById("plannerViewBlock").innerHTML=filterBlockOptions(z,true);renderPlanner()});
@@ -1408,7 +1379,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.44">
+<link rel="stylesheet" href="styles.css?v=7.45">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -1519,7 +1490,305 @@ document.getElementById("exportProgressBtn").addEventListener("click",()=>{const
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
 document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json")});
 
-function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderReport()}
+
+/* V7.45 — Master Schedule + integrated Photo Inbox */
+function cycleForDate(iso){
+  const m=String(iso||isoTodaySG()).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return null;
+  let y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]);
+  let sy=y,sm=mo,ey=y,em=mo;
+  if(d>=22){
+    sm=mo;sy=y;em=mo+1;ey=y;if(em===13){em=1;ey++}
+  }else{
+    em=mo;ey=y;sm=mo-1;sy=y;if(sm===0){sm=12;sy--}
+  }
+  const start=`${sy}-${String(sm).padStart(2,"0")}-22`;
+  const end=`${ey}-${String(em).padStart(2,"0")}-21`;
+  return {start,end,id:`${start}_to_${end}`,cleanup:`${ey}-${String(em).padStart(2,"0")}-25`}
+}
+function inCycle(date,cycle){return Boolean(date&&cycle&&date>=cycle.start&&date<=cycle.end)}
+function formatCycle(c){return c?`${safeDate(c.start)} → ${safeDate(c.end)}`:"—"}
+
+function masterSlotValue(){
+  const v=document.getElementById("masterSlot").value;
+  if(v!=="CUSTOM")return v;
+  return customSlotLabel(document.getElementById("masterCustomStart").value,document.getElementById("masterCustomEnd").value)
+}
+function syncMasterBlocks(){
+  const z=document.getElementById("masterZone").value;
+  document.getElementById("masterBlock").innerHTML=blockOptions(z);
+  syncMasterUnits()
+}
+function syncMasterUnits(){
+  document.getElementById("masterUnit").innerHTML=unitOptionsForBlock(document.getElementById("masterBlock").value)
+}
+function toggleMasterCustom(){
+  document.getElementById("masterCustomRow").classList.toggle("hidden",document.getElementById("masterSlot").value!=="CUSTOM")
+}
+function initMasterSchedule(){
+  const z=document.getElementById("masterZone"),zf=document.getElementById("masterZoneFilter");
+  z.innerHTML=zoneOptions();zf.innerHTML=zoneOptions(true);
+  z.value="1";zf.value="all";
+  document.getElementById("masterDate").value=isoTodaySG();
+  document.getElementById("masterCycleDate").value=isoTodaySG();
+  syncMasterBlocks();toggleMasterCustom()
+}
+function masterScheduleRows(){
+  const c=cycleForDate(document.getElementById("masterCycleDate").value||isoTodaySG());
+  const zf=document.getElementById("masterZoneFilter").value;
+  return state.appointments.filter(a=>{
+    if(isInactiveSchedule(a)||!a.date||!inCycle(a.date,c))return false;
+    const z=Number(a.zone||zoneOfBlock(a.block));
+    return zf==="all"||z===Number(zf)
+  }).sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
+    String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+    Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
+}
+function renderMasterSchedule(){
+  const table=document.getElementById("masterScheduleTable");if(!table)return;
+  const c=cycleForDate(document.getElementById("masterCycleDate").value||isoTodaySG());
+  document.getElementById("masterCycleTitle").textContent=`${formatCycle(c)} Schedule`;
+  const rows=masterScheduleRows();
+  if(!rows.length){table.innerHTML=`<div class="empty-state">No appointments in this cycle / zone yet.</div>`;return}
+  table.innerHTML=`<table class="master-schedule-table"><thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Remarks</th><th>Action</th></tr></thead><tbody>
+  ${rows.map(a=>`<tr><td>${safeDate(a.date)}</td><td>Zone ${a.zone||zoneOfBlock(a.block)}</td><td>${esc(a.team||"—")}</td><td>${esc(a.slot||"—")}</td><td>Blk ${a.block}</td><td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td><td>${esc(a.remarks||"")}</td><td><button class="table-action" data-master-open="${a.id}">Open</button><button class="table-action delete" data-master-delete="${a.id}">Delete</button></td></tr>`).join("")}
+  </tbody></table>`
+}
+function saveMasterScheduleEntry(){
+  const date=document.getElementById("masterDate").value,key=document.getElementById("masterUnit").value,u=getUnit(key);
+  if(!date||!u){toast("Select date and unit");return}
+  if(!appointmentYearIsValid(date)){toast(`Appointment year must be ${currentAppointmentYear()}`);return}
+  const slot=masterSlotValue();if(!slot){toast("Enter custom start and end time");return}
+  const team=document.getElementById("masterTeam").value,remarks=document.getElementById("masterRemarks").value.trim();
+  const active=state.appointments.filter(x=>x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x));
+  const exact=active.find(x=>x.date===date&&x.slot===slot);
+  if(exact){
+    exact.team=team;exact.remarks=remarks;exact.source="Master Schedule";exact.scheduleState="Active";
+  }else{
+    if(active.length){
+      if(!confirm(`This unit already has an active booking. Reschedule to ${safeDate(date)} · ${slot}?`))return;
+      active.forEach(x=>x.scheduleState="Rescheduled")
+    }
+    state.appointments.push({id:Date.now(),unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),
+      ownerName:u.ownerName||"",contact:u.contact||"",date,slot,team,remarks,source:"Master Schedule",scheduleState:"Active",workStatus:"Pending"})
+  }
+  document.getElementById("masterRemarks").value="";
+  save("Master Schedule updated")
+}
+document.getElementById("masterScheduleForm").addEventListener("submit",e=>{e.preventDefault();saveMasterScheduleEntry()});
+document.getElementById("masterZone").addEventListener("change",syncMasterBlocks);
+document.getElementById("masterBlock").addEventListener("change",syncMasterUnits);
+document.getElementById("masterSlot").addEventListener("change",toggleMasterCustom);
+document.getElementById("masterCycleDate").addEventListener("change",renderMasterSchedule);
+document.getElementById("masterZoneFilter").addEventListener("change",renderMasterSchedule);
+document.getElementById("masterScheduleTable").addEventListener("click",e=>{
+  let b=e.target.closest("[data-master-open]");
+  if(b){
+    const a=state.appointments.find(x=>x.id===Number(b.dataset.masterOpen));if(!a)return;
+    document.getElementById("teamDate").value=a.date;setView("teams");renderPlanner();return
+  }
+  b=e.target.closest("[data-master-delete]");if(b)deleteAppointment(Number(b.dataset.masterDelete))
+});
+
+/* Photo IndexedDB */
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=1;
+function photoDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"})
+    };
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
+  })
+}
+async function photoDbPut(store,value){
+  const db=await photoDb();return new Promise((res,rej)=>{
+    const tx=db.transaction(store,"readwrite");tx.objectStore(store).put(value);tx.oncomplete=()=>{db.close();res()};tx.onerror=()=>{db.close();rej(tx.error)}
+  })
+}
+async function photoDbAll(store){
+  const db=await photoDb();return new Promise((res,rej)=>{
+    const tx=db.transaction(store,"readonly"),req=tx.objectStore(store).getAll();
+    req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error);tx.oncomplete=()=>db.close()
+  })
+}
+async function photoDbDelete(store,key){
+  const db=await photoDb();return new Promise((res,rej)=>{
+    const tx=db.transaction(store,"readwrite");tx.objectStore(store).delete(key);tx.oncomplete=()=>{db.close();res()};tx.onerror=()=>{db.close();rej(tx.error)}
+  })
+}
+async function photoDbDeleteWhere(store,pred){
+  const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
+}
+function photoSchedule(date,zone){
+  return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&Number(a.zone||zoneOfBlock(a.block))===Number(zone))
+    .sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+      Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
+}
+function syncPhotoTargetUnits(){
+  const zone=document.getElementById("photoZone").value,date=document.getElementById("photoDate").value;
+  const sel=document.getElementById("photoTargetUnit"),rows=photoSchedule(date,zone);
+  sel.innerHTML=`<option value="">Auto detect from ZIP / schedule</option>`+rows.map(a=>`<option value="${a.unitKey}">Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)} · ${a.team||""} ${a.slot||""}</option>`).join("");
+  renderPhotoCenter()
+}
+function parsePhotoZipName(name){
+  const s=String(name||"");
+  let date="";
+  let m=s.match(/(20\d{2})[-_. ]?(\d{2})[-_. ]?(\d{2})/);if(m)date=`${m[1]}-${m[2]}-${m[3]}`;
+  if(!date){m=s.match(/(\d{2})[-_. ](\d{2})[-_. ](20\d{2})/);if(m)date=`${m[3]}-${m[2]}-${m[1]}`}
+  const blockMatch=s.match(/(?:blk|block|b)?\s*([5][3-6][0-9])/i);
+  const unitMatch=s.match(/#?\s*(\d{1,2})[-_ ](\d{2,3})(?!\d)/);
+  return {date,block:blockMatch?Number(blockMatch[1]):0,floor:unitMatch?Number(unitMatch[1]):0,unit:unitMatch?Number(unitMatch[2]):0}
+}
+async function compressPhotoBlob(bytes,name){
+  const type=/\.png$/i.test(name)?"image/png":"image/jpeg",blob=new Blob([bytes],{type}),url=URL.createObjectURL(blob),img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+  const max=1600,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+  const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+  const out=await new Promise(res=>c.toBlob(res,"image/jpeg",.84));return {blob:out,width:w,height:h}
+}
+async function importPhotoZip(){
+  const file=document.getElementById("photoZipInput").files[0];if(!file){toast("Choose a photo ZIP");return}
+  if(typeof JSZip==="undefined"){toast("Photo ZIP library not loaded");return}
+  const zone=Number(document.getElementById("photoZone").value),selectedDate=document.getElementById("photoDate").value||isoTodaySG();
+  const parsed=parsePhotoZipName(file.name),date=parsed.date||selectedDate;
+  if(date!==selectedDate&&!confirm(`ZIP filename date looks like ${safeDate(date)}, but selected date is ${safeDate(selectedDate)}. Use ZIP date?`))return;
+  const schedule=photoSchedule(date,zone);
+  if(!schedule.length){toast("No scheduled units for this Zone / Date");return}
+  let targetKey=document.getElementById("photoTargetUnit").value;
+  if(!targetKey&&parsed.block&&parsed.floor&&parsed.unit){
+    const key=unitKey(parsed.block,parsed.floor,parsed.unit);
+    if(schedule.some(a=>a.unitKey===key))targetKey=key
+  }
+  if(!targetKey&&parsed.block){
+    const c=schedule.filter(a=>Number(a.block)===parsed.block);if(c.length===1)targetKey=c[0].unitKey
+  }
+  if(!targetKey&&schedule.length===1)targetKey=schedule[0].unitKey;
+  if(!targetKey){toast("Select Target Unit, or include Block + Unit in ZIP filename");return}
+  const appt=schedule.find(a=>a.unitKey===targetKey);if(!appt){toast("Selected target is not scheduled on this Zone / Date");return}
+  const zip=await JSZip.loadAsync(file);
+  const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(jpe?g|png)$/i.test(x.name)&&!/(^|\/)__MACOSX\//i.test(x.name))
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),undefined,{numeric:true,sensitivity:"base"}));
+  if(!entries.length){toast("No JPG / PNG photos found in ZIP");return}
+  const cycle=cycleForDate(date),existing=(await photoDbAll("photos")).filter(p=>p.date===date&&p.unitKey===targetKey);
+  let order=existing.length;
+  document.getElementById("photoImportStatus").textContent=`Importing ${entries.length} photo(s)…`;
+  for(const e of entries){
+    const bytes=await e.async("uint8array"),c=await compressPhotoBlob(bytes,e.name);
+    order++;
+    await photoDbPut("photos",{id:`${Date.now()}_${Math.random().toString(36).slice(2)}`,cycleId:cycle.id,date,zone,block:appt.block,unitKey:targetKey,
+      unitDisplay:appt.unitDisplay||unitDisplay(appt.floor,appt.unit),team:appt.team||"",slot:appt.slot||"",order,name:e.name.split("/").pop(),blob:c.blob,width:c.width,height:c.height,importedAt:new Date().toISOString()})
+  }
+  document.getElementById("photoZipInput").value="";
+  document.getElementById("photoImportStatus").textContent=`Imported ${entries.length} photo(s) → Blk ${appt.block} ${appt.unitDisplay||unitDisplay(appt.floor,appt.unit)}`;
+  await renderPhotoCenter();toast("Photo ZIP imported")
+}
+async function renderPhotoCenter(){
+  const board=document.getElementById("photoDailyBoard");if(!board)return;
+  const zone=Number(document.getElementById("photoZone").value||1),date=document.getElementById("photoDate").value||isoTodaySG(),cycle=cycleForDate(document.getElementById("photoCycleDate").value||date);
+  document.getElementById("photoDailyTitle").textContent=`${safeDate(date)} · Zone ${zone}`;
+  document.getElementById("photoCycleTitle").textContent=`${formatCycle(cycle)} · Zone ${zone}`;
+  document.getElementById("photoRetentionNote").innerHTML=`Photos for this cycle are eligible for automatic cleanup on <strong>${safeDate(cycle.cleanup)}</strong>, but only after a Word or PDF report has been generated successfully.`;
+  const all=await photoDbAll("photos"),sched=photoSchedule(date,zone);
+  if(!sched.length){board.innerHTML=`<div class="empty-state">No scheduled appointments for this Zone / Date.</div>`}
+  else board.innerHTML=sched.map(a=>{
+    const ps=all.filter(p=>p.date===date&&p.unitKey===a.unitKey).sort((x,y)=>x.order-y.order);
+    return `<section class="photo-unit-card ${ps.length>=3?"ready":""}">
+      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${esc(a.team||"")} · ${esc(a.slot||"")}</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
+      <div class="photo-thumb-grid">${ps.map((p,i)=>`<div class="photo-thumb ${i<3?"used":"extra"}"><img src="${URL.createObjectURL(p.blob)}" alt=""><span>${i<3?`Use ${i+1}`:"Extra"}</span><button type="button" data-photo-delete="${p.id}">×</button></div>`).join("")||`<div class="photo-empty">No photos yet</div>`}</div>
+    </section>`
+  }).join("");
+  const cyclePhotos=all.filter(p=>p.cycleId===cycle.id&&p.zone===zone),units=new Set(cyclePhotos.map(p=>`${p.date}|${p.unitKey}`));
+  const ready=[...units].filter(k=>cyclePhotos.filter(p=>`${p.date}|${p.unitKey}`===k).length>=3).length;
+  document.getElementById("photoMonthlySummary").innerHTML=`<span>${cyclePhotos.length} photos stored</span><span>${units.size} unit-days</span><span>${ready} ready with 3+ photos</span>`;
+}
+document.getElementById("photoImportBtn").addEventListener("click",()=>importPhotoZip().catch(e=>{console.error(e);toast("Photo import failed")}));
+document.getElementById("photoZone").addEventListener("change",syncPhotoTargetUnits);
+document.getElementById("photoDate").addEventListener("change",syncPhotoTargetUnits);
+document.getElementById("photoCycleDate").addEventListener("change",renderPhotoCenter);
+document.getElementById("photoDailyBoard").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-photo-delete]");if(!b)return;
+  if(!confirm("Delete this stored photo?"))return;await photoDbDelete("photos",b.dataset.photoDelete);await renderPhotoCenter()
+});
+
+function photoFitEmu(p,maxW,maxH){
+  const ratio=p.width/p.height;let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio}return {cx:Math.round(w*914400),cy:Math.round(h*914400)}
+}
+function photoEscXml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;")}
+function photoRun(text,bold=false,size=16){return `<w:r><w:rPr>${bold?"<w:b/>":""}<w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:t xml:space="preserve">${photoEscXml(text)}</w:t></w:r>`}
+function photoP(text,bold=false,size=16,align="center"){return `<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:before="0" w:after="0"/></w:pPr>${photoRun(text,bold,size)}</w:p>`}
+function photoImageP(p,rId,docId,maxW,maxH){
+  const d=photoFitEmu(p,maxW,maxH);return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${d.cx}" cy="${d.cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${docId}" name="Photo ${docId}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${docId}" name="image${docId}.jpg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${d.cx}" cy="${d.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`
+}
+function photoTc(width,content){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`}
+function photoPageTable(rows,refs){
+  const w=[1032,2580,3909,3909];let x=`<w:tbl><w:tblPr><w:tblW w:w="11430" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:color="000000"/></w:tblBorders></w:tblPr><w:tblGrid>${w.map(n=>`<w:gridCol w:w="${n}"/>`).join("")}</w:tblGrid>`;
+  for(let i=0;i<6;i++){const r=rows[i];if(r){x+=`<w:tr><w:trPr><w:trHeight w:val="306" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP("DATE",true,15))}${photoTc(w[1],photoP(`Blk${r.block}${r.unitDisplay}`,true,15))}${photoTc(w[2],photoP("BEFORE",true,15))}${photoTc(w[3],photoP("AFTER",true,15))}</w:tr>`;
+    const rr=refs[i]||[],p1=rr[0]?photoImageP(rr[0].photo,rr[0].rId,rr[0].docId,1.70,1.38):photoP(""),p2=rr[1]?photoImageP(rr[1].photo,rr[1].rId,rr[1].docId,2.62,1.38):photoP(""),p3=rr[2]?photoImageP(rr[2].photo,rr[2].rId,rr[2].docId,2.62,1.38):photoP("");
+    x+=`<w:tr><w:trPr><w:trHeight w:val="2110" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP(safeDate(r.date),true,14))}${photoTc(w[1],p1)}${photoTc(w[2],p2)}${photoTc(w[3],p3)}</w:tr>`}
+  }
+  return x+"</w:tbl>"
+}
+async function monthlyPhotoGroups(zone,cycle){
+  const all=(await photoDbAll("photos")).filter(p=>p.zone===zone&&p.cycleId===cycle.id);
+  const map=new Map();
+  for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
+  const groups=[];
+  for(const [k,ps] of map){ps.sort((a,b)=>a.order-b.order);const [date,key]=k.split("|"),a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&!isInactiveSchedule(x));
+    groups.push({date,unitKey:key,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:ps.slice(0,3)})}
+  return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
+}
+async function markPhotoExport(zone,cycle,type){
+  await photoDbPut("meta",{key:`export:${zone}:${cycle.id}`,zone,cycleId:cycle.id,cycleStart:cycle.start,cycleEnd:cycle.end,cleanup:cycle.cleanup,type,exportedAt:new Date().toISOString()})
+}
+async function generateMonthlyPhotoWord(){
+  const zone=Number(document.getElementById("photoZone").value),cycle=cycleForDate(document.getElementById("photoCycleDate").value||isoTodaySG()),groups=await monthlyPhotoGroups(zone,cycle);
+  if(!groups.length){toast("No stored photos for this Zone / Cycle");return}
+  if(groups.some(g=>g.photos.length<3)&&!confirm("Some units have fewer than 3 photos. Generate Word with blank cells?"))return;
+  const zip=new JSZip(),rels=[],media=[];let rn=2,docId=1;const pages=[];
+  for(let p=0;p<groups.length;p+=6){const rows=groups.slice(p,p+6),refs=[];
+    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){const ph=rows[i].photos[j];if(!ph){refs[i][j]=null;continue}const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});refs[i][j]={photo:ph,rId,docId:docId++}}}
+    pages.push(photoP("ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51",true,18)+photoPageTable(rows,refs));if(p+6<groups.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
+  }
+  const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
+  const dr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.map(r=>`<Relationship Id="${r.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join("")}</Relationships>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="16"/></w:rPr></w:style></w:styles>`;
+  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const rr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  zip.file("[Content_Types].xml",types);zip.folder("_rels").file(".rels",rr);zip.folder("word").file("document.xml",doc);zip.folder("word").file("styles.xml",styles);zip.folder("word").folder("_rels").file("document.xml.rels",dr);
+  for(const m of media)zip.folder("word").file(m.target,m.blob);
+  const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`ELU_Photo_Report_Zone${zone}_${cycle.start}_to_${cycle.end}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
+  await markPhotoExport(zone,cycle,"Word");await renderPhotoCenter();toast("Monthly Word report downloaded")
+}
+async function generateMonthlyPhotoPdf(){
+  const zone=Number(document.getElementById("photoZone").value),cycle=cycleForDate(document.getElementById("photoCycleDate").value||isoTodaySG()),groups=await monthlyPhotoGroups(zone,cycle);
+  if(!groups.length){toast("No stored photos for this Zone / Cycle");return}
+  const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
+  const cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${[0,1,2].map(i=>g.photos[i]?`<div><img src="${URL.createObjectURL(g.photos[i].blob)}"></div>`:`<div></div>`).join("")}</div></div>`).join("");
+  win.document.write(`<!doctype html><html><head><title>ELU Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0 4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51 · Zone ${zone}</div>${cards}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close();
+  await markPhotoExport(zone,cycle,"PDF");await renderPhotoCenter()
+}
+document.getElementById("photoWordBtn").addEventListener("click",()=>generateMonthlyPhotoWord().catch(e=>{console.error(e);toast("Word report generation failed")}));
+document.getElementById("photoPdfBtn").addEventListener("click",()=>generateMonthlyPhotoPdf().catch(e=>{console.error(e);toast("PDF report generation failed")}));
+
+async function photoAutoCleanup(){
+  try{
+    const today=isoTodaySG(),meta=await photoDbAll("meta"),eligible=meta.filter(m=>m.key?.startsWith("export:")&&m.cleanup&&today>=m.cleanup);
+    for(const m of eligible){
+      await photoDbDeleteWhere("photos",p=>p.zone===m.zone&&p.cycleId===m.cycleId);
+      await photoDbDelete("meta",m.key)
+    }
+    if(eligible.length&&document.getElementById("photos")?.classList.contains("active")){await renderPhotoCenter();toast(`Old exported photo cycle cleaned: ${eligible.length}`)}
+  }catch(e){console.error("Photo cleanup",e)}
+}
+function initPhotoCenter(){
+  document.getElementById("photoZone").innerHTML=zoneOptions();document.getElementById("photoZone").value="1";
+  document.getElementById("photoDate").value=isoTodaySG();document.getElementById("photoCycleDate").value=isoTodaySG();syncPhotoTargetUnits()
+}
+
+function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))renderPhotoCenter()}
 function startApp(){
   if(appStarted)return;
   appStarted=true;
@@ -1528,12 +1797,15 @@ function startApp(){
   document.getElementById("teamDate").value=isoTodaySG();
   configureAppointmentYearInputs();
   initSelectors();
+  initMasterSchedule();
+  initPhotoCenter();
   togglePlannerCustomTime();
   toggleAppointmentCustomTime();
   resetAppointmentForm();
   rebuildAllMasters();
   renderAll();
   autoCompleteAppointments();
+  photoAutoCleanup();
   autoCompleteTimer=setInterval(()=>autoCompleteAppointments(true),60000)
 }
 initSecurityGate();

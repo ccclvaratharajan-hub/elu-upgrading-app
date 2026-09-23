@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.44 Secure + Photo Report Generator
+# ELU Upgrading — Premium V7.45 Secure · Master Schedule + Integrated Photo Report
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -480,3 +480,15 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - Photos are compressed before Word generation to keep the report manageable.
 - Generator runs locally in the browser; selected photos are processed on-device by the page.
 - Existing ELU statuses, reports, security and encrypted storage are unchanged.
+
+
+## V7.45 — one-source schedule + photo inbox
+- Added **Master Schedule**: a fast 22nd → next 21st appointment entry page using the same live appointment records as Daily Planner.
+- Added **Photo Report** directly inside the ELU app; schedule CSV upload is no longer required.
+- Photo workflow: select Zone + Date → choose/auto-detect scheduled unit → upload WhatsApp ZIP → photos are stored in IndexedDB.
+- Recommended ZIP name: `2026-09-23_Blk537_13-302.zip`. Date + Block + Unit gives full auto matching. Date + Block alone auto-matches when only one scheduled unit exists for that block/date; otherwise choose Target Unit.
+- All photos are retained until report cleanup. The first 3 remaining photos are used in the report; extras remain visible and can be deleted individually.
+- Monthly output is Zone-wise for the 22 → 21 cycle as Word or Print/PDF, using the supplied ELU 3-photo sheet layout.
+- Photo storage is separate from encrypted localStorage to avoid bloating the ELU data store.
+- Auto-cleanup runs on/after the **25th** for an ended cycle, but **only after a Word/PDF report for that Zone/cycle has been generated**.
+- Existing ELU status logic, reports, security key and encrypted project data are unchanged.
