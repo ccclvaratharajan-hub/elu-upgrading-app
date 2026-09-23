@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.40 Secure
+# ELU Upgrading — Premium V7.41 Secure
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -433,3 +433,13 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - Unit Register uses the same top-floor-to-lower-floor ordering.
 - Block Board ordering is unchanged because it was already top-down.
 - Existing Cancel / Reschedule / Opt-Out / P Pending logic, security and encrypted storage are unchanged.
+
+
+## V7.41 — login/startup correction
+- Fixed a V7.40 startup crash in Appointment Register.
+- Cause: some completed A units do not have an appointment object; V7.40 tried to build Edit/Delete buttons from a missing appointment ID during initial render.
+- Completed manual appointments that actually have an appointment record still show Edit/Delete for correction.
+- Completed seed/master units without an appointment record simply show Completed.
+- Login error handling now distinguishes an actual credential failure from an app startup or saved-state issue, so a runtime problem is no longer mislabeled as “Wrong username or password”.
+- V7.40 date-year protection and 13th-floor-to-lower-floor sorting are retained.
+- Encryption seed, secure storage key and project data are unchanged.

@@ -180,14 +180,25 @@ function startIdleLockWatch(){
 async function unlockSecureApp(password){
   if(!window.crypto?.subtle)throw new Error("This browser does not support secure encryption.");
   const key=await deriveSecureKey(password);
-  const seed=await decryptPayload(SECURE_SEED_PAYLOAD,key);
+
+  let seed;
+  try{
+    seed=await decryptPayload(SECURE_SEED_PAYLOAD,key);
+  }catch(err){
+    const e=new Error("INVALID_CREDENTIALS");e.code="INVALID_CREDENTIALS";throw e
+  }
+
   PROJECT_LAYOUT=seed.PROJECT_LAYOUT||{};
   SOURCE_APPOINTMENTS=seed.SOURCE_APPOINTMENTS||[];
   SECURE_PROFILE_NAME=seed.profileName||"Secure User";
 
   let saved=null;
   if(localStorage.getItem(SECURE_STATE_KEY)){
-    saved=await loadEncryptedRuntimeState(key);
+    try{
+      saved=await loadEncryptedRuntimeState(key);
+    }catch(err){
+      const e=new Error("SAVED_STATE_DECRYPT_FAILED");e.code="SAVED_STATE_DECRYPT_FAILED";throw e
+    }
   }else{
     saved=loadLegacyPlainState();
   }
@@ -226,8 +237,14 @@ function initSecurityGate(){
       await unlockSecureApp(password)
     }catch(err){
       console.error(err);
-      showSecurityMessage("Wrong username or password.");
-      input.select()
+      if(err?.code==="INVALID_CREDENTIALS"){
+        showSecurityMessage("Wrong username or password.");
+        input.select()
+      }else if(err?.code==="SAVED_STATE_DECRYPT_FAILED"){
+        showSecurityMessage("Login is correct, but saved browser data could not be opened. Do not clear site data.");
+      }else{
+        showSecurityMessage("Login is correct, but the app could not start. Please use the latest ELU version.");
+      }
     }finally{
       btn.disabled=false;btn.textContent="Login"
     }
@@ -797,7 +814,9 @@ function renderAppointmentTable(){
     const actions=d.active
       ? `<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
       : d.completed
-        ? `<span class="register-done-note">Completed</span><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
+        ? (a
+            ? `<span class="register-done-note">Completed</span><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
+            : `<span class="register-done-note">Completed</span>`)
         : d.status==="D"
           ? `<span class="register-optout-note">Opt-Out</span>`
           : `<button class="table-action" data-appt-book="${u.key}">Appointment</button>`;
@@ -1175,7 +1194,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.40">
+<link rel="stylesheet" href="styles.css?v=7.41">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
