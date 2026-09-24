@@ -1,0 +1,27 @@
+ELU V7.49 — Zone 6 Excel Import Notes
+
+Source:
+PR3 551-556 Unit Survey Report.xlsx
+
+Detailed units processed: 459
+Block 551: 87
+Block 552: 72
+Block 553: 72
+Block 554: 84
+Block 555: 72
+Block 556: 72
+
+Imported baseline classification from detailed unit rows:
+A / Completed baseline: 188
+C / Responded or appointment baseline: 71
+D / Opt-Out: 3
+NR / No Response: 197
+
+Parseable dated appointment rows: 211
+Exact existing imported appointments reused: 209
+Genuinely new appointment seed rows: 2
+
+Important:
+- Detailed block/unit sheets are treated as authoritative for this import.
+- Existing browser-side manual appointments, cancellations, permanent deletes and reschedules are preserved by the merge logic.
+- The workbook Progress Summary contains totals that do not fully match detailed rows; no attempt was made to silently reconcile them.

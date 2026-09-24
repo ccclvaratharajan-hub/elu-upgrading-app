@@ -79,7 +79,7 @@ function mergeSavedIntoFresh(saved){
   // user's saved appointment list, that absence represents a prior user Delete.
   if(!Array.isArray(saved.appointmentTombstones)){
     fresh.appointments.forEach(seed=>{
-      if(seed?.id!=null&&!savedIds.has(String(seed.id)))tombstones.add(String(seed.id))
+      if(seed?.id!=null&&!seed?.newSeedImport&&!savedIds.has(String(seed.id)))tombstones.add(String(seed.id))
     })
   }
 
@@ -1752,6 +1752,16 @@ async function importPhotoZip(){
   document.getElementById("photoImportStatus").textContent=`Imported ${entries.length} photo(s) → Blk ${appt.block} ${appt.unitDisplay||unitDisplay(appt.floor,appt.unit)}`;
   await renderPhotoCenter();toast("Photo ZIP imported")
 }
+
+function photoReportOrder(photos){
+  const ordered=[...(photos||[])].sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+  if(!ordered.length)return [];
+  const manual=ordered.find(p=>p.reportFirst===true);
+  const first=manual||ordered[ordered.length-1];
+  const rest=ordered.filter(p=>p.id!==first.id);
+  return [first,...rest].slice(0,3)
+}
+
 async function renderPhotoCenter(){
   const board=document.getElementById("photoDailyBoard");if(!board)return;
   const zone=Number(document.getElementById("photoZone").value||1),date=document.getElementById("photoDate").value||isoTodaySG(),cycle=cycleForDate(document.getElementById("photoCycleDate").value||date);
@@ -1762,9 +1772,14 @@ async function renderPhotoCenter(){
   if(!sched.length){board.innerHTML=`<div class="empty-state">No scheduled appointments for this Zone / Date.</div>`}
   else board.innerHTML=sched.map(a=>{
     const ps=all.filter(p=>p.date===date&&p.unitKey===a.unitKey).sort((x,y)=>x.order-y.order);
+    const report=photoReportOrder(ps),role=new Map(report.map((p,i)=>[p.id,i]));
     return `<section class="photo-unit-card ${ps.length>=3?"ready":""}">
       <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${esc(a.team||"")} · ${esc(a.slot||"")}</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
-      <div class="photo-thumb-grid">${ps.map((p,i)=>`<div class="photo-thumb ${i<3?"used":"extra"}"><img src="${URL.createObjectURL(p.blob)}" alt=""><span>${i<3?`Use ${i+1}`:"Extra"}</span><button type="button" data-photo-delete="${p.id}">×</button></div>`).join("")||`<div class="photo-empty">No photos yet</div>`}</div>
+      <div class="photo-thumb-grid">${ps.map(p=>{
+        const pos=role.has(p.id)?role.get(p.id):-1;
+        const label=pos===0?"First · Closed DB":pos===1?"BEFORE":pos===2?"AFTER":"Extra";
+        return `<div class="photo-thumb ${pos>=0?"used":"extra"}"><img src="${URL.createObjectURL(p.blob)}" alt=""><span>${label}</span><button class="photo-delete-btn" type="button" data-photo-delete="${p.id}">×</button>${pos!==0?`<button class="photo-first-btn" type="button" data-photo-first="${p.id}" title="Use this as the first Closed DB photo">Set First</button>`:""}</div>`
+      }).join("")||`<div class="photo-empty">No photos yet</div>`}</div>
     </section>`
   }).join("");
   const cyclePhotos=all.filter(p=>p.cycleId===cycle.id&&p.zone===zone),units=new Set(cyclePhotos.map(p=>`${p.date}|${p.unitKey}`));
@@ -1776,6 +1791,14 @@ document.getElementById("photoZone").addEventListener("change",syncPhotoTargetUn
 document.getElementById("photoDate").addEventListener("change",syncPhotoTargetUnits);
 document.getElementById("photoCycleDate").addEventListener("change",renderPhotoCenter);
 document.getElementById("photoDailyBoard").addEventListener("click",async e=>{
+  const first=e.target.closest("[data-photo-first]");
+  if(first){
+    const all=await photoDbAll("photos"),chosen=all.find(p=>p.id===first.dataset.photoFirst);if(!chosen)return;
+    for(const p of all.filter(p=>p.date===chosen.date&&p.unitKey===chosen.unitKey)){
+      if(Boolean(p.reportFirst)!==(p.id===chosen.id)){p.reportFirst=p.id===chosen.id;await photoDbPut("photos",p)}
+    }
+    await renderPhotoCenter();toast("First report photo updated");return
+  }
   const b=e.target.closest("[data-photo-delete]");if(!b)return;
   if(!confirm("Delete this stored photo?"))return;await photoDbDelete("photos",b.dataset.photoDelete);await renderPhotoCenter()
 });
@@ -1804,7 +1827,7 @@ async function monthlyPhotoGroups(zone,cycle){
   for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
   const groups=[];
   for(const [k,ps] of map){ps.sort((a,b)=>a.order-b.order);const [date,key]=k.split("|"),a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&liveScheduleRecord(x));
-    groups.push({date,unitKey:key,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:ps.slice(0,3)})}
+    groups.push({date,unitKey:key,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:photoReportOrder(ps)})}
   return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 async function markPhotoExport(zone,cycle,type){

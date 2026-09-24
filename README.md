@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.47 Secure · Permanent Delete/Cancel
+# ELU Upgrading — Premium V7.49 Secure · Zone 6 Excel Merge
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -512,3 +512,29 @@ Login, encryption, encrypted project data, secure storage key, search, Reschedul
 - Unit Register, Appointment Register, Planner, Master Schedule and Photo Report all read the same corrected appointment state.
 - A new appointment created later is still allowed and will appear normally.
 - Existing encrypted project data, security key, photo storage and reports are unchanged.
+
+
+## V7.48 — Closed DB photo first in each unit report row
+- Monthly Word and Print/PDF photo reports now place the **last photo first** by default for each unit/day.
+- Default report order is: **Closed DB / final photo → BEFORE → AFTER**.
+- With 3 photos, output order becomes 3 → 1 → 2.
+- With 4 or more photos, the last photo is used first, followed by the earliest two; remaining photos stay as Extras.
+- The Photo Report daily preview now labels the actual report roles: `First · Closed DB`, `BEFORE`, `AFTER`, and `Extra`.
+- Added a small **Set First** button so the first/closed-DB photo can be manually corrected when a ZIP arrives in a different order.
+- Existing schedule, security, project data, photo cleanup and storage behavior are unchanged.
+
+
+## V7.49 — Zone 6 Unit Survey Excel merge
+Source workbook: `PR3 551-556 Unit Survey Report.xlsx`
+
+- Imported detailed unit-level data from block sheets **551, 552, 553, 554, 555 and 556**.
+- Updated Zone 6 baseline owner names, contact numbers, Opt-In / Opt-Out / No Response state, imported schedule text, Excel remarks and explicit completed-work flags.
+- Rebuilt Zone 6 imported appointment records from the detailed unit sheets.
+- Existing exact imported appointments keep their original IDs and team assignments so browser-side Cancel/Delete/manual overrides can continue to match them.
+- Existing manual Planner / Appointment changes remain higher priority than the refreshed Excel baseline.
+- Added an upgrade guard so genuinely new Excel appointments are not mistaken for previously deleted seed records when upgrading directly from older builds.
+- Includes the V7.48 Closed-DB-first photo report ordering.
+- Security username/password derivation, PBKDF2 salt/iterations and encrypted browser state key compatibility are unchanged.
+
+### Source-data note
+The workbook's `Progress Summary` does not fully agree with some detailed unit rows (for example, Block 552 has two unit rows marked Opt-Out while the summary shows zero). V7.49 intentionally uses the **detailed block/unit rows** as the import source and does not silently replace them with summary totals.
