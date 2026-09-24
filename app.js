@@ -1653,14 +1653,15 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=1;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=2;
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
     req.onupgradeneeded=()=>{
       const db=req.result;
       if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"})
+      if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
+      if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"})
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -1684,22 +1685,95 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
-function photoSchedule(date,zone){
-  const rows=state.appointments.filter(a=>liveScheduleRecord(a)&&a.date===date&&Number(a.zone||zoneOfBlock(a.block))===Number(zone));
-  const byUnit=new Map();
-  rows.forEach(a=>{
-    const prev=byUnit.get(a.unitKey);
-    if(!prev||Number(a.id||0)>Number(prev.id||0))byUnit.set(a.unitKey,a)
-  });
-  return [...byUnit.values()].sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
-      Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
+function photoScheduleRowId(date,unitKey){return `${date}|${unitKey}`}
+
+async function photoSchedule(date,zone){
+  const rows=(await photoDbAll("schedule")).filter(r=>r.date===date&&Number(r.zone)===Number(zone));
+  return rows.sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||
+    slotStartMinutes(a.slot||"")-slotStartMinutes(b.slot||"")||
+    Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
 }
-function syncPhotoTargetUnits(){
-  const zone=document.getElementById("photoZone").value,date=document.getElementById("photoDate").value;
-  const sel=document.getElementById("photoTargetUnit"),rows=photoSchedule(date,zone);
-  sel.innerHTML=`<option value="">Auto detect from ZIP / schedule</option>`+rows.map(a=>`<option value="${a.unitKey}">Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)} · ${a.team||""} ${a.slot||""}</option>`).join("");
-  renderPhotoCenter()
+
+async function photoDisplayRows(date,zone){
+  const schedule=await photoSchedule(date,zone);
+  const photos=(await photoDbAll("photos")).filter(p=>p.date===date&&Number(p.zone)===Number(zone));
+  const byUnit=new Map(schedule.map(r=>[r.unitKey,{...r,photoOnly:false}]));
+  for(const p of photos){
+    if(byUnit.has(p.unitKey))continue;
+    const u=getUnit(p.unitKey);
+    byUnit.set(p.unitKey,{
+      id:photoScheduleRowId(date,p.unitKey),date,zone:Number(p.zone||zone),
+      block:Number(p.block||u?.block||0),floor:Number(u?.floor||0),unit:Number(u?.unit||0),
+      unitKey:p.unitKey,unitDisplay:p.unitDisplay||(u?unitDisplay(u.floor,u.unit):p.unitKey),
+      team:p.team||"",slot:p.slot||"",photoOnly:true
+    })
+  }
+  return [...byUnit.values()].sort((a,b)=>String(a.team||"").localeCompare(String(b.team||""))||
+    slotStartMinutes(a.slot||"")-slotStartMinutes(b.slot||"")||
+    Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
 }
+
+function syncPhotoScheduleBlocks(){
+  const z=document.getElementById("photoScheduleZone").value||"1";
+  const block=document.getElementById("photoScheduleBlock");
+  if(!block)return;
+  block.innerHTML=blockOptions(z);
+  syncPhotoScheduleUnits()
+}
+
+function syncPhotoScheduleUnits(){
+  const block=document.getElementById("photoScheduleBlock")?.value;
+  const unit=document.getElementById("photoScheduleUnit");
+  if(unit&&block)unit.innerHTML=unitOptionsForBlock(block)
+}
+
+async function renderPhotoScheduleTable(){
+  const box=document.getElementById("photoScheduleTable");if(!box)return;
+  const ref=document.getElementById("photoScheduleDate").value||isoTodaySG(),cycle=cycleForDate(ref);
+  const rows=(await photoDbAll("schedule")).filter(r=>inCycle(r.date,cycle))
+    .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.zone)-Number(b.zone)||
+      String(a.team||"").localeCompare(String(b.team||""))||
+      slotStartMinutes(a.slot||"")-slotStartMinutes(b.slot||"")||
+      Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit));
+  const photos=await photoDbAll("photos");
+  if(!rows.length){box.innerHTML=`<div class="empty-state">No Photo Daily Register rows in ${formatCycle(cycle)} yet.</div>`;return}
+  box.innerHTML=`<table><thead><tr><th>Date</th><th>Zone</th><th>Block</th><th>Unit</th><th>Team</th><th>Time</th><th>Photos</th><th>Action</th></tr></thead><tbody>${rows.map(r=>{
+    const n=photos.filter(p=>p.date===r.date&&p.unitKey===r.unitKey).length;
+    return `<tr><td>${safeDate(r.date)}</td><td>Zone ${r.zone}</td><td>Blk ${r.block}</td><td><strong>${esc(r.unitDisplay)}</strong></td><td>${esc(r.team||"")}</td><td>${esc(r.slot||"")}</td><td>${n}</td><td><button class="table-action delete" type="button" data-photo-schedule-delete="${esc(r.id)}">Remove</button></td></tr>`
+  }).join("")}</tbody></table>`
+}
+
+async function syncPhotoTargetUnits(){
+  const zone=Number(document.getElementById("photoZone").value||1),date=document.getElementById("photoDate").value||isoTodaySG();
+  const sel=document.getElementById("photoTargetUnit"),prev=sel?.value||"",rows=await photoDisplayRows(date,zone);
+  if(sel){
+    sel.innerHTML=`<option value="">Auto detect from Photo Daily Register</option>`+rows.map(a=>`<option value="${a.unitKey}">Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}${a.photoOnly?" · stored photos":` · ${a.team||""} ${a.slot||""}`}</option>`).join("");
+    if(rows.some(r=>r.unitKey===prev))sel.value=prev
+  }
+  await renderPhotoScheduleTable();
+  await renderPhotoCenter()
+}
+
+async function savePhotoScheduleEntry(){
+  const date=document.getElementById("photoScheduleDate").value||isoTodaySG();
+  const zone=Number(document.getElementById("photoScheduleZone").value||1);
+  const key=document.getElementById("photoScheduleUnit").value,u=getUnit(key);
+  if(!date||!u){toast("Select Date and Unit");return}
+  const row={
+    id:photoScheduleRowId(date,key),date,zone,block:u.block,floor:u.floor,unit:u.unit,unitKey:key,
+    unitDisplay:unitDisplay(u.floor,u.unit),team:document.getElementById("photoScheduleTeam").value||"Team 1",
+    slot:document.getElementById("photoScheduleTime").value.trim(),updatedAt:new Date().toISOString()
+  };
+  await photoDbPut("schedule",row);
+  document.getElementById("photoScheduleTime").value="";
+  await renderPhotoScheduleTable();
+  if(date===document.getElementById("photoDate").value&&zone===Number(document.getElementById("photoZone").value)){
+    await syncPhotoTargetUnits();
+    document.getElementById("photoTargetUnit").value=key
+  }
+  toast("Photo Daily Register unit added / updated")
+}
+
 function parsePhotoZipName(name){
   const s=String(name||"");
   let date="";
@@ -1722,8 +1796,8 @@ async function importPhotoZip(){
   const zone=Number(document.getElementById("photoZone").value),selectedDate=document.getElementById("photoDate").value||isoTodaySG();
   const parsed=parsePhotoZipName(file.name),date=parsed.date||selectedDate;
   if(date!==selectedDate&&!confirm(`ZIP filename date looks like ${safeDate(date)}, but selected date is ${safeDate(selectedDate)}. Use ZIP date?`))return;
-  const schedule=photoSchedule(date,zone);
-  if(!schedule.length){toast("No scheduled units for this Zone / Date");return}
+  const schedule=await photoDisplayRows(date,zone);
+  if(!schedule.length){toast("Add the unit to Photo Daily Register first");return}
   let targetKey=document.getElementById("photoTargetUnit").value;
   if(!targetKey&&parsed.block&&parsed.floor&&parsed.unit){
     const key=unitKey(parsed.block,parsed.floor,parsed.unit);
@@ -1734,7 +1808,7 @@ async function importPhotoZip(){
   }
   if(!targetKey&&schedule.length===1)targetKey=schedule[0].unitKey;
   if(!targetKey){toast("Select Target Unit, or include Block + Unit in ZIP filename");return}
-  const appt=schedule.find(a=>a.unitKey===targetKey);if(!appt){toast("Selected target is not scheduled on this Zone / Date");return}
+  const appt=schedule.find(a=>a.unitKey===targetKey);if(!appt){toast("Selected target is not in the Photo Daily Register / stored photo list");return}
   const zip=await JSZip.loadAsync(file);
   const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(jpe?g|png)$/i.test(x.name)&&!/(^|\/)__MACOSX\//i.test(x.name))
     .sort((a,b)=>String(a.name).localeCompare(String(b.name),undefined,{numeric:true,sensitivity:"base"}));
@@ -1774,13 +1848,13 @@ async function renderPhotoCenter(){
   document.getElementById("photoDailyTitle").textContent=`${safeDate(date)} · Zone ${zone}`;
   document.getElementById("photoCycleTitle").textContent=`${formatCycle(cycle)} · Zone ${zone}`;
   document.getElementById("photoRetentionNote").innerHTML=`Photos for this cycle are eligible for automatic cleanup on <strong>${safeDate(cycle.cleanup)}</strong>, but only after a Word or PDF report has been generated successfully.`;
-  const all=await photoDbAll("photos"),sched=photoSchedule(date,zone);
-  if(!sched.length){board.innerHTML=`<div class="empty-state">No scheduled appointments for this Zone / Date.</div>`}
+  const all=await photoDbAll("photos"),sched=await photoDisplayRows(date,zone);
+  if(!sched.length){board.innerHTML=`<div class="empty-state">No Photo Daily Register units or stored photos for this Zone / Date.</div>`}
   else board.innerHTML=sched.map(a=>{
     const ps=all.filter(p=>p.date===date&&p.unitKey===a.unitKey).sort((x,y)=>x.order-y.order);
     const report=photoReportOrder(ps),role=new Map(report.map((p,i)=>[p.id,i]));
     return `<section class="photo-unit-card ${ps.length>=3?"ready":""}" data-photo-date="${date}" data-photo-unit="${a.unitKey}">
-      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${esc(a.team||"")} · ${esc(a.slot||"")} · Drag photos to set print order</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
+      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${a.photoOnly?`Stored photos · Daily Register row missing`:`${esc(a.team||"")} · ${esc(a.slot||"")}`} · Drag photos to set print order</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
       <div class="photo-thumb-grid">${ps.map(p=>{
         const pos=role.has(p.id)?role.get(p.id):-1;
         const label=pos===0?"1 · Closed DB":pos===1?"2 · BEFORE":pos===2?"3 · AFTER":"Extra";
@@ -1793,6 +1867,18 @@ async function renderPhotoCenter(){
   document.getElementById("photoMonthlySummary").innerHTML=`<span>${cyclePhotos.length} photos stored</span><span>${units.size} unit-days</span><span>${ready} ready with 3+ photos</span>`;
 }
 document.getElementById("photoImportBtn").addEventListener("click",()=>importPhotoZip().catch(e=>{console.error(e);toast("Photo import failed")}));
+document.getElementById("photoScheduleForm").addEventListener("submit",e=>{e.preventDefault();savePhotoScheduleEntry().catch(err=>{console.error(err);toast("Photo Daily Register save failed")})});
+document.getElementById("photoScheduleZone").addEventListener("change",syncPhotoScheduleBlocks);
+document.getElementById("photoScheduleBlock").addEventListener("change",syncPhotoScheduleUnits);
+document.getElementById("photoScheduleDate").addEventListener("change",renderPhotoScheduleTable);
+document.getElementById("photoScheduleTable").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-photo-schedule-delete]");if(!b)return;
+  if(!confirm("Remove this unit from Photo Daily Register? Stored photos will NOT be deleted."))return;
+  await photoDbDelete("schedule",b.dataset.photoScheduleDelete);
+  await renderPhotoScheduleTable();
+  await syncPhotoTargetUnits();
+  toast("Photo Daily Register row removed")
+});
 document.getElementById("photoZone").addEventListener("change",syncPhotoTargetUnits);
 document.getElementById("photoDate").addEventListener("change",syncPhotoTargetUnits);
 document.getElementById("photoCycleDate").addEventListener("change",renderPhotoCenter);
@@ -1848,11 +1934,14 @@ function photoPageTable(rows,refs){
 }
 async function monthlyPhotoGroups(zone,cycle){
   const all=(await photoDbAll("photos")).filter(p=>p.zone===zone&&p.cycleId===cycle.id);
+  const schedule=await photoDbAll("schedule"),scheduleMap=new Map(schedule.map(r=>[`${r.date}|${r.unitKey}`,r]));
   const map=new Map();
   for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
   const groups=[];
-  for(const [k,ps] of map){ps.sort((a,b)=>a.order-b.order);const [date,key]=k.split("|"),a=state.appointments.find(x=>x.unitKey===key&&x.date===date&&liveScheduleRecord(x));
-    groups.push({date,unitKey:key,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:photoReportOrder(ps)})}
+  for(const [k,ps] of map){
+    ps.sort((a,b)=>a.order-b.order);const a=scheduleMap.get(k);
+    groups.push({date:ps[0].date,unitKey:ps[0].unitKey,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:photoReportOrder(ps)})
+  }
   return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 async function markPhotoExport(zone,cycle,type){
@@ -1900,7 +1989,11 @@ async function photoAutoCleanup(){
 }
 function initPhotoCenter(){
   document.getElementById("photoZone").innerHTML=zoneOptions();document.getElementById("photoZone").value="1";
-  document.getElementById("photoDate").value=isoTodaySG();document.getElementById("photoCycleDate").value=isoTodaySG();syncPhotoTargetUnits()
+  document.getElementById("photoDate").value=isoTodaySG();document.getElementById("photoCycleDate").value=isoTodaySG();
+  document.getElementById("photoScheduleDate").value=isoTodaySG();
+  document.getElementById("photoScheduleZone").innerHTML=zoneOptions();document.getElementById("photoScheduleZone").value="1";
+  syncPhotoScheduleBlocks();
+  syncPhotoTargetUnits()
 }
 
 function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))renderPhotoCenter()}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.50">
+  <link rel="stylesheet" href="styles.css?v=7.51">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -401,7 +401,7 @@
 
         <article class="panel">
           <div class="panel-head register-head">
-            <div><span class="section-label">MONTHLY WORKING SHEET</span><h3 id="masterCycleTitle">22 → 21 Schedule</h3><p>Zone-wise schedule. This is the same live appointment source used by Planner, Dashboard and Photo Report.</p></div>
+            <div><span class="section-label">MONTHLY WORKING SHEET</span><h3 id="masterCycleTitle">22 → 21 Schedule</h3><p>Zone-wise appointment schedule. This stays with Planner, Dashboard and the project records. Photo Report now has its own separate Daily Photo Schedule.</p></div>
           </div>
           <div id="masterScheduleTable" class="table-shell"></div>
         </article>
@@ -412,7 +412,7 @@
           <div>
             <span class="section-label">PHOTO INBOX · 22 → 21 CYCLE</span>
             <h2>Zone-wise Photo Report</h2>
-            <p>Schedule comes directly from ELU. Daily work is only: choose Zone + Date, upload the WhatsApp photo ZIP, then check the photos.</p>
+            <p>Photo work is separate from the project appointment records. Enter the Daily Photo Schedule here, then choose the day and attach the WhatsApp photo ZIPs.</p>
           </div>
           <div class="photo-cycle-controls">
             <label>Zone<select id="photoZone"></select></label>
@@ -421,8 +421,29 @@
           </div>
         </div>
 
+        <article class="panel photo-schedule-panel">
+          <div class="panel-head register-head">
+            <div>
+              <span class="section-label">PHOTO DAILY REGISTER</span>
+              <h3>Daily Photo Schedule</h3>
+              <p>This register is for photos only. Add tomorrow / next week units here. It does not change Master Schedule, Appointment Planner, Unit Register, Block Board or status.</p>
+            </div>
+          </div>
+          <form id="photoScheduleForm" class="photo-schedule-form">
+            <label>Date<input type="date" id="photoScheduleDate" required></label>
+            <label>Zone<select id="photoScheduleZone"></select></label>
+            <label>Block<select id="photoScheduleBlock"></select></label>
+            <label>Unit<select id="photoScheduleUnit"></select></label>
+            <label>Team<select id="photoScheduleTeam"><option>Team 1</option><option>Team 2</option></select></label>
+            <label>Time<input id="photoScheduleTime" placeholder="e.g. 9am–11am"></label>
+            <button class="primary-btn" type="submit">Add / Update Unit</button>
+          </form>
+          <div class="photo-rule-note">You can prepare a full week in advance. Removing a row here removes only the photo schedule row — stored photos are never deleted by this button.</div>
+          <div id="photoScheduleTable" class="table-shell photo-schedule-table"></div>
+        </article>
+
         <article class="panel photo-import-panel">
-          <div class="panel-head"><div><span class="section-label">DAILY PHOTO DROP</span><h3>Upload WhatsApp ZIP</h3><p>Recommended ZIP name: <strong>2026-09-23_Blk537_13-302.zip</strong>. If the unit is not in the filename, select the Target Unit above.</p></div></div>
+          <div class="panel-head"><div><span class="section-label">DAILY PHOTO DROP</span><h3>Upload WhatsApp ZIP</h3><p>Recommended ZIP name: <strong>2026-09-23_Blk537_13-302.zip</strong>. If the ZIP name is unclear, select the Target Unit above from the separate Daily Photo Schedule.</p></div></div>
           <div class="photo-import-row">
             <input type="file" id="photoZipInput" accept=".zip,application/zip">
             <button class="primary-btn" id="photoImportBtn" type="button">Import ZIP</button>
@@ -433,7 +454,7 @@
 
         <article class="panel">
           <div class="panel-head register-head">
-            <div><span class="section-label">DAILY CHECK</span><h3 id="photoDailyTitle">Scheduled units & photos</h3><p>Green = at least 3 photos ready. Extra photos are kept and can be deleted individually.</p></div>
+            <div><span class="section-label">DAILY CHECK</span><h3 id="photoDailyTitle">Daily photo units & photos</h3><p>Green = at least 3 photos ready. Units with stored photos remain visible even if their Daily Photo Schedule row was removed.</p></div>
           </div>
           <div id="photoDailyBoard" class="photo-daily-board"></div>
         </article>
@@ -543,8 +564,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.50"></script>
+  <script src="data.js?v=7.51"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.50"></script>
+<script src="app.js?v=7.51"></script>
 </body>
 </html>

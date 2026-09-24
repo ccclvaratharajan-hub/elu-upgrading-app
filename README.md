@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.50 Secure · Manual Photo Order
+# ELU Upgrading — Premium V7.51 Secure · Independent Photo Daily Schedule
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -547,3 +547,17 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Photos after position 3 remain **Extra** and are not printed unless dragged into the first three positions.
 - The chosen order is saved in IndexedDB and is used by both Monthly Word and Print/PDF outputs.
 - Existing photo files, schedule, cleanup logic, security key, Zone 6 merge and project data are unchanged.
+
+
+## V7.51 — Photo section separated from project records
+- Added a separate **Photo Daily Register** with Date, Zone, Block, Unit, Team and Time.
+- It is stored in its own IndexedDB `schedule` store and does not update Master Schedule, Appointment Planner, Unit Register, Block Board, Dashboard or resident status.
+- You can prepare tomorrow / next week units in advance, like a simple Excel daily schedule.
+- Photo Report Zone + Date shows only that Photo Daily Register day plus any already-stored photos for correction.
+- Target Unit dropdown uses the Photo Daily Register, not the project appointment schedule.
+- Add / Update and Remove are available. Remove never deletes stored photos.
+- Existing stored-photo units with no daily row stay visible as `Stored photos · Daily Register row missing`.
+- Monthly Word / Print-PDF reports continue to use stored photos; Photo Daily Register Team/Time is used only for report ordering when available.
+- Existing V7.50 manual drag order remains: 1 Closed DB, 2 BEFORE, 3 AFTER.
+- Existing photo IndexedDB data is preserved; database version is upgraded in-place and only the new schedule store is added.
+- Project encrypted data, security key, Zone 6 data and all non-photo modules are unchanged.

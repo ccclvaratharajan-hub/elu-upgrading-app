@@ -1423,3 +1423,22 @@ body.secure-locked .toast{visibility:hidden}
 .photo-thumb[draggable="true"]:active{cursor:grabbing}
 .photo-thumb.dragging{opacity:.45}
 .photo-thumb.drag-over{outline:3px dashed currentColor;outline-offset:-4px}
+
+/* V7.51 · Independent Photo Daily Register */
+.photo-schedule-panel{border:1px solid rgba(47,126,204,.18)}
+.photo-schedule-form{
+  display:grid;
+  grid-template-columns:150px 120px 150px minmax(150px,1fr) 130px 160px auto;
+  gap:10px;
+  align-items:end;
+}
+.photo-schedule-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:800;color:#58718d}
+.photo-schedule-form input,.photo-schedule-form select{
+  min-height:42px;border:1px solid #cfddeb;border-radius:10px;background:#fff;padding:8px 10px;color:#17314c;font-weight:700
+}
+.photo-schedule-table{margin-top:14px}
+.photo-schedule-table table{min-width:850px}
+@media(max-width:1100px){
+  .photo-schedule-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .photo-schedule-form .primary-btn{min-height:42px}
+}
