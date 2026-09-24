@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.52">
+  <link rel="stylesheet" href="styles.css?v=7.53">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -67,7 +67,6 @@
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
-        <button class="nav-item" data-view="schedulemaster"><svg><use href="#i-calendar"/></svg><span>Master Schedule</span></button>
         <button class="nav-item" data-view="photos"><svg><use href="#i-register"/></svg><span>Photo Report</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
       </nav>
@@ -317,58 +316,55 @@
       </section>
 
       <section class="view" id="teams">
-        <div class="planner-hero">
+        <div class="planner-hero simple-planner-hero">
           <div>
-            <span class="section-label">DAILY APPOINTMENT PLANNER</span>
-            <h2>Two teams · four fixed slots + special time</h2>
-            <p>Fill appointments days in advance here. Use the four normal slots, or Custom Time for an exceptional booking such as 6pm–8pm. The same schedule updates Master Data, C status and Dashboard.</p>
+            <span class="section-label">APPOINTMENT PLANNER</span>
+            <h2>Today’s appointment working sheet</h2>
+            <p>Display only. Appointments come directly from Appointment Schedule. To add, edit, reschedule or cancel, open the appointment record.</p>
           </div>
-          <div class="planner-date-nav planner-nav-wide">
-            <label>View Zone<select id="plannerViewZone"></select></label>
-            <label>View Block<select id="plannerViewBlock"></select></label>
-            <button class="icon-date-btn" id="plannerPrevDay" type="button">‹</button>
-            <label>Planning Date<input type="date" id="teamDate"></label>
-            <button class="icon-date-btn" id="plannerNextDay" type="button">›</button>
+          <div class="simple-planner-controls">
+            <label>Zone<select id="plannerViewZone"></select></label>
+            <label>Date<input type="date" id="teamDate"></label>
             <button class="ghost-btn" id="plannerToday" type="button">Today</button>
+            <button class="ghost-btn" id="plannerTomorrow" type="button">Tomorrow</button>
+            <button class="ghost-btn" id="plannerNext7" type="button">Next 7 Days</button>
           </div>
         </div>
 
-        <article class="panel planner-entry-panel">
-          <div class="panel-head"><div><span class="section-label">QUICK ENTRY</span><h3>Add to selected day</h3><p>New entries and existing imported appointments use the same appointment record.</p></div></div>
-          <div class="planner-rule-note"><strong>One active appointment per unit.</strong> If you reschedule it in Planner, the old booking moves to Rescheduled history automatically.</div>
-          <form id="plannerForm" class="planner-form">
+        <article class="panel simple-planner-panel">
+          <div class="planner-sheet-title">
+            <div>
+              <span class="section-label">LIVE FROM APPOINTMENT SCHEDULE</span>
+              <h3 id="plannerDateTitle">Today appointments</h3>
+            </div>
+            <div class="planner-sheet-actions"><span class="panel-badge" id="plannerCountBadge">0 appointments</span></div>
+          </div>
+          <div id="plannerTable" class="table-shell simple-planner-table"></div>
+        </article>
+
+        <div class="hidden" aria-hidden="true">
+          <select id="plannerViewBlock"></select>
+          <button id="plannerPrevDay" type="button"></button>
+          <button id="plannerNextDay" type="button"></button>
+
+          <form id="plannerForm">
             <input type="hidden" id="plannerEditId">
-            <label>Zone<select id="plannerZone"></select></label>
-            <label>Block<select id="plannerBlock"></select></label>
-            <label>Unit<select id="plannerUnit"></select></label>
-            <label>Team<select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select></label>
-            <label>Slot<select id="plannerSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option><option value="CUSTOM">Custom Time</option></select></label>
-            <div class="planner-custom-time hidden" id="plannerCustomTimeRow">
-              <label>Start<input type="time" id="plannerCustomStart"></label>
-              <label>End<input type="time" id="plannerCustomEnd"></label>
-            </div>
-            <label class="planner-remarks">Remarks<input id="plannerRemarks" placeholder="Access note / resident note"></label>
-            <div class="planner-form-actions">
-              <button class="primary-btn" id="plannerSaveBtn" type="submit">Add to Planner</button>
-              <button class="ghost-btn hidden" id="plannerCancelEdit" type="button">Cancel Edit</button>
-            </div>
+            <select id="plannerZone"></select>
+            <select id="plannerBlock"></select>
+            <select id="plannerUnit"></select>
+            <select id="plannerTeam"><option>Team 1</option><option>Team 2</option></select>
+            <select id="plannerSlot"><option>9am–11am</option><option>11am–1pm</option><option>2pm–4pm</option><option>4pm–6pm</option><option value="CUSTOM">Custom Time</option></select>
+            <div id="plannerCustomTimeRow"><input type="time" id="plannerCustomStart"><input type="time" id="plannerCustomEnd"></div>
+            <input id="plannerRemarks">
+            <button id="plannerSaveBtn" type="submit"></button>
+            <button id="plannerCancelEdit" type="button"></button>
           </form>
-        </article>
-
-        <article class="panel planner-sheet-panel">
-          <div class="planner-sheet-title"><div><span class="section-label">DAILY SHEET</span><h3 id="plannerDateTitle">Daily appointment sheet</h3></div><div class="planner-sheet-actions"><span class="panel-badge">LIVE</span></div></div>
-          <div id="plannerTable" class="planner-table-wrap"></div>
-          <div id="plannerSpecialTimes" class="planner-special-times integrated-special-times" aria-hidden="true"></div>
-        </article>
-
-        <article class="panel unassigned-panel">
-          <div class="panel-head"><div><span class="section-label">EXISTING SCHEDULE</span><h3>Unassigned appointments</h3><p>Appointments already in the system for this date but not yet allocated to Team 1 or Team 2.</p></div></div>
-          <div id="plannerUnassigned" class="planner-unassigned"></div>
-        </article>
+          <div id="plannerSpecialTimes"></div>
+          <div id="plannerUnassigned"></div>
+        </div>
       </section>
 
-
-      <section class="view" id="schedulemaster">
+      <section class="view hidden" id="schedulemaster" aria-hidden="true">
         <div class="planner-hero master-schedule-hero">
           <div>
             <span class="section-label">22 → 21 CYCLE · QUICK ENTRY</span>
@@ -582,8 +578,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.52"></script>
+  <script src="data.js?v=7.53"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.52"></script>
+<script src="app.js?v=7.53"></script>
 </body>
 </html>

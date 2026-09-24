@@ -577,3 +577,14 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Photo section remains independent from Master Schedule, Appointment Planner, Unit Register, Block Board, Dashboard and resident status.
 - Existing manual photo order remains: 1 Closed DB, 2 BEFORE, 3 AFTER.
 - Security key and encrypted project state are unchanged.
+
+
+## V7.53 — Master Schedule hidden; Appointment Planner simplified
+- Master Schedule is removed from the visible sidebar/UI, but its underlying code/data is intentionally retained so no appointment/history/status data is deleted.
+- Appointment Schedule remains the only visible place to add, edit, reschedule or cancel appointments.
+- Appointment Planner is now display-only and reads the same live appointment records.
+- Planner shows Date, Zone, Team, Time, Block, Unit, Owner/Contact, Remarks and one Open Appointment action.
+- Quick views: Today, Tomorrow, Next 7 Days, plus Date and Zone filters.
+- Open Appointment jumps to the matching Appointment Schedule record for correction.
+- Photo workflow from V7.52 is unchanged.
+- Unit Register, Block Board, Dashboard, Survey, Complaints, Meeting Report, photo IndexedDB, encryption key and saved project data are unchanged.
