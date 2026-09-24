@@ -1754,12 +1754,18 @@ async function importPhotoZip(){
 }
 
 function photoReportOrder(photos){
-  const ordered=[...(photos||[])].sort((a,b)=>Number(a.order||0)-Number(b.order||0));
-  if(!ordered.length)return [];
-  const manual=ordered.find(p=>p.reportFirst===true);
-  const first=manual||ordered[ordered.length-1];
-  const rest=ordered.filter(p=>p.id!==first.id);
-  return [first,...rest].slice(0,3)
+  return [...(photos||[])].sort((a,b)=>Number(a.order||0)-Number(b.order||0)).slice(0,3)
+}
+async function savePhotoManualOrder(date,unitKey,orderedIds){
+  const all=await photoDbAll("photos"),rows=all.filter(p=>p.date===date&&p.unitKey===unitKey);
+  const byId=new Map(rows.map(p=>[p.id,p]));
+  const ordered=orderedIds.map(id=>byId.get(id)).filter(Boolean);
+  rows.filter(p=>!orderedIds.includes(p.id)).sort((a,b)=>Number(a.order||0)-Number(b.order||0)).forEach(p=>ordered.push(p));
+  for(let i=0;i<ordered.length;i++){
+    const p=ordered[i];p.order=i+1;
+    if("reportFirst" in p)delete p.reportFirst;
+    await photoDbPut("photos",p)
+  }
 }
 
 async function renderPhotoCenter(){
@@ -1773,12 +1779,12 @@ async function renderPhotoCenter(){
   else board.innerHTML=sched.map(a=>{
     const ps=all.filter(p=>p.date===date&&p.unitKey===a.unitKey).sort((x,y)=>x.order-y.order);
     const report=photoReportOrder(ps),role=new Map(report.map((p,i)=>[p.id,i]));
-    return `<section class="photo-unit-card ${ps.length>=3?"ready":""}">
-      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${esc(a.team||"")} · ${esc(a.slot||"")}</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
+    return `<section class="photo-unit-card ${ps.length>=3?"ready":""}" data-photo-date="${date}" data-photo-unit="${a.unitKey}">
+      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${esc(a.team||"")} · ${esc(a.slot||"")} · Drag photos to set print order</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
       <div class="photo-thumb-grid">${ps.map(p=>{
         const pos=role.has(p.id)?role.get(p.id):-1;
-        const label=pos===0?"First · Closed DB":pos===1?"BEFORE":pos===2?"AFTER":"Extra";
-        return `<div class="photo-thumb ${pos>=0?"used":"extra"}"><img src="${URL.createObjectURL(p.blob)}" alt=""><span>${label}</span><button class="photo-delete-btn" type="button" data-photo-delete="${p.id}">×</button>${pos!==0?`<button class="photo-first-btn" type="button" data-photo-first="${p.id}" title="Use this as the first Closed DB photo">Set First</button>`:""}</div>`
+        const label=pos===0?"1 · Closed DB":pos===1?"2 · BEFORE":pos===2?"3 · AFTER":"Extra";
+        return `<div class="photo-thumb ${pos>=0?"used":"extra"}" draggable="true" data-photo-drag="${p.id}"><img src="${URL.createObjectURL(p.blob)}" alt=""><span>${label}</span><button class="photo-delete-btn" type="button" data-photo-delete="${p.id}">×</button></div>`
       }).join("")||`<div class="photo-empty">No photos yet</div>`}</div>
     </section>`
   }).join("");
@@ -1791,16 +1797,35 @@ document.getElementById("photoZone").addEventListener("change",syncPhotoTargetUn
 document.getElementById("photoDate").addEventListener("change",syncPhotoTargetUnits);
 document.getElementById("photoCycleDate").addEventListener("change",renderPhotoCenter);
 document.getElementById("photoDailyBoard").addEventListener("click",async e=>{
-  const first=e.target.closest("[data-photo-first]");
-  if(first){
-    const all=await photoDbAll("photos"),chosen=all.find(p=>p.id===first.dataset.photoFirst);if(!chosen)return;
-    for(const p of all.filter(p=>p.date===chosen.date&&p.unitKey===chosen.unitKey)){
-      if(Boolean(p.reportFirst)!==(p.id===chosen.id)){p.reportFirst=p.id===chosen.id;await photoDbPut("photos",p)}
-    }
-    await renderPhotoCenter();toast("First report photo updated");return
-  }
   const b=e.target.closest("[data-photo-delete]");if(!b)return;
   if(!confirm("Delete this stored photo?"))return;await photoDbDelete("photos",b.dataset.photoDelete);await renderPhotoCenter()
+});
+let photoDragId="";
+document.getElementById("photoDailyBoard").addEventListener("dragstart",e=>{
+  const card=e.target.closest("[data-photo-drag]");if(!card)return;
+  photoDragId=card.dataset.photoDrag||"";card.classList.add("dragging");
+  if(e.dataTransfer){e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",photoDragId)}
+});
+document.getElementById("photoDailyBoard").addEventListener("dragend",e=>{
+  const card=e.target.closest("[data-photo-drag]");if(card)card.classList.remove("dragging");
+  document.querySelectorAll(".photo-thumb.drag-over").forEach(x=>x.classList.remove("drag-over"));photoDragId=""
+});
+document.getElementById("photoDailyBoard").addEventListener("dragover",e=>{
+  const target=e.target.closest("[data-photo-drag]");if(!target||!photoDragId||target.dataset.photoDrag===photoDragId)return;
+  const src=document.querySelector(`[data-photo-drag="${CSS.escape(photoDragId)}"]`);if(!src)return;
+  const srcUnit=src.closest(".photo-unit-card"),dstUnit=target.closest(".photo-unit-card");if(!srcUnit||srcUnit!==dstUnit)return;
+  e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect="move";
+  document.querySelectorAll(".photo-thumb.drag-over").forEach(x=>x.classList.remove("drag-over"));target.classList.add("drag-over")
+});
+document.getElementById("photoDailyBoard").addEventListener("drop",async e=>{
+  const target=e.target.closest("[data-photo-drag]");if(!target||!photoDragId||target.dataset.photoDrag===photoDragId)return;
+  const src=document.querySelector(`[data-photo-drag="${CSS.escape(photoDragId)}"]`),unitCard=target.closest(".photo-unit-card");if(!src||!unitCard||src.closest(".photo-unit-card")!==unitCard)return;
+  e.preventDefault();
+  const grid=unitCard.querySelector(".photo-thumb-grid"),cards=[...grid.querySelectorAll("[data-photo-drag]")],srcIndex=cards.indexOf(src),dstIndex=cards.indexOf(target);
+  if(srcIndex<0||dstIndex<0)return;
+  cards.splice(srcIndex,1);cards.splice(dstIndex,0,src);
+  await savePhotoManualOrder(unitCard.dataset.photoDate,unitCard.dataset.photoUnit,cards.map(x=>x.dataset.photoDrag));
+  await renderPhotoCenter();toast("Photo print order saved")
 });
 
 function photoFitEmu(p,maxW,maxH){

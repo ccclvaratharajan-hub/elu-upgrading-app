@@ -1417,3 +1417,9 @@ body.secure-locked .toast{visibility:hidden}
 /* V7.48 photo report ordering */
 .photo-thumb .photo-delete-btn{position:absolute;right:5px;top:5px;border:0;border-radius:999px;width:22px;height:22px;background:#fff;color:#ad3b49;font-weight:900;cursor:pointer}
 .photo-thumb .photo-first-btn{position:absolute;right:5px;bottom:5px;top:auto;width:auto;height:auto;border:1px solid rgba(255,255,255,.8);border-radius:6px;padding:4px 7px;background:rgba(18,47,70,.82);color:#fff;font-size:8px;font-weight:800;cursor:pointer}
+
+/* V7.50 manual photo ordering */
+.photo-thumb[draggable="true"]{cursor:grab}
+.photo-thumb[draggable="true"]:active{cursor:grabbing}
+.photo-thumb.dragging{opacity:.45}
+.photo-thumb.drag-over{outline:3px dashed currentColor;outline-offset:-4px}

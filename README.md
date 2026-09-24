@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.49 Secure · Zone 6 Excel Merge
+# ELU Upgrading — Premium V7.50 Secure · Manual Photo Order
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -538,3 +538,12 @@ Source workbook: `PR3 551-556 Unit Survey Report.xlsx`
 
 ### Source-data note
 The workbook's `Progress Summary` does not fully agree with some detailed unit rows (for example, Block 552 has two unit rows marked Opt-Out while the summary shows zero). V7.49 intentionally uses the **detailed block/unit rows** as the import source and does not silently replace them with summary totals.
+
+
+## V7.50 — manual drag photo order
+- Removed the automatic “last photo becomes first” rule.
+- In Photo Report, each unit’s uploaded thumbnails can now be dragged left/right into the exact print order wanted.
+- Print roles are always based on the saved order: **1 Closed DB → 2 BEFORE → 3 AFTER**.
+- Photos after position 3 remain **Extra** and are not printed unless dragged into the first three positions.
+- The chosen order is saved in IndexedDB and is used by both Monthly Word and Print/PDF outputs.
+- Existing photo files, schedule, cleanup logic, security key, Zone 6 merge and project data are unchanged.
