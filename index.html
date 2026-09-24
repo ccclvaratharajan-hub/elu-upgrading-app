@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.51">
+  <link rel="stylesheet" href="styles.css?v=7.52">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -412,7 +412,7 @@
           <div>
             <span class="section-label">PHOTO INBOX · 22 → 21 CYCLE</span>
             <h2>Zone-wise Photo Report</h2>
-            <p>Photo work is separate from the project appointment records. Enter the Daily Photo Schedule here, then choose the day and attach the WhatsApp photo ZIPs.</p>
+            <p>Choose one Zone + Date. Enter that day's units, then attach photos unit-by-unit. Photo work stays separate from all project appointment records.</p>
           </div>
           <div class="photo-cycle-controls">
             <label>Zone<select id="photoZone"></select></label>
@@ -421,36 +421,54 @@
           </div>
         </div>
 
-        <article class="panel photo-schedule-panel">
-          <div class="panel-head register-head">
-            <div>
-              <span class="section-label">PHOTO DAILY REGISTER</span>
-              <h3>Daily Photo Schedule</h3>
-              <p>This register is for photos only. Add tomorrow / next week units here. It does not change Master Schedule, Appointment Planner, Unit Register, Block Board or status.</p>
-            </div>
-          </div>
-          <form id="photoScheduleForm" class="photo-schedule-form">
-            <label>Date<input type="date" id="photoScheduleDate" required></label>
-            <label>Zone<select id="photoScheduleZone"></select></label>
-            <label>Block<select id="photoScheduleBlock"></select></label>
-            <label>Unit<select id="photoScheduleUnit"></select></label>
-            <label>Team<select id="photoScheduleTeam"><option>Team 1</option><option>Team 2</option></select></label>
-            <label>Time<input id="photoScheduleTime" placeholder="e.g. 9am–11am"></label>
-            <button class="primary-btn" type="submit">Add / Update Unit</button>
-          </form>
-          <div class="photo-rule-note">You can prepare a full week in advance. Removing a row here removes only the photo schedule row — stored photos are never deleted by this button.</div>
-          <div id="photoScheduleTable" class="table-shell photo-schedule-table"></div>
-        </article>
+        <div id="photoZoneTabs" class="photo-zone-tabs" aria-label="Photo zones">
+          <button type="button" data-photo-zone-tab="1">Zone 1</button>
+          <button type="button" data-photo-zone-tab="2">Zone 2</button>
+          <button type="button" data-photo-zone-tab="3">Zone 3</button>
+          <button type="button" data-photo-zone-tab="4">Zone 4</button>
+          <button type="button" data-photo-zone-tab="5">Zone 5</button>
+          <button type="button" data-photo-zone-tab="6">Zone 6</button>
+        </div>
 
-        <article class="panel photo-import-panel">
-          <div class="panel-head"><div><span class="section-label">DAILY PHOTO DROP</span><h3>Upload WhatsApp ZIP</h3><p>Recommended ZIP name: <strong>2026-09-23_Blk537_13-302.zip</strong>. If the ZIP name is unclear, select the Target Unit above from the separate Daily Photo Schedule.</p></div></div>
-          <div class="photo-import-row">
-            <input type="file" id="photoZipInput" accept=".zip,application/zip">
-            <button class="primary-btn" id="photoImportBtn" type="button">Import ZIP</button>
-            <span id="photoImportStatus" class="photo-import-status">No ZIP selected.</span>
-          </div>
-          <div class="photo-rule-note">All imported photos are stored in browser IndexedDB, not localStorage. The first 3 remaining photos for a unit are used in the monthly report; extra photos stay visible until you delete the unwanted ones.</div>
-        </article>
+        <div class="photo-day-workbench">
+          <article class="panel photo-schedule-panel">
+            <div class="panel-head register-head">
+              <div>
+                <span class="section-label">PHOTO DAILY REGISTER</span>
+                <h3 id="photoScheduleContextTitle">Daily Photo Schedule</h3>
+                <p>Only the selected Zone + Date is shown here. Change Zone / Date above to prepare another day. This register stays separate from all project records.</p>
+              </div>
+              <span id="photoScheduleCount" class="panel-badge">0 units</span>
+            </div>
+
+            <form id="photoScheduleForm" class="photo-schedule-form photo-schedule-form-compact">
+              <label>Block<select id="photoScheduleBlock"></select></label>
+              <label>Unit<select id="photoScheduleUnit"></select></label>
+              <label>Team<select id="photoScheduleTeam"><option>Team 1</option><option>Team 2</option></select></label>
+              <label>Time<input id="photoScheduleTime" placeholder="e.g. 9am–11am"></label>
+              <button class="primary-btn" type="submit">Add Unit</button>
+            </form>
+
+            <div class="photo-rule-note">Type one day at a time. For a week, change the Date above and enter that day's units. Remove deletes only this daily schedule line — not photos.</div>
+            <div id="photoScheduleTable" class="table-shell photo-schedule-table photo-schedule-table-compact"></div>
+          </article>
+
+          <article class="panel photo-import-panel photo-import-side">
+            <div class="panel-head">
+              <div>
+                <span class="section-label">DAILY PHOTO DROP</span>
+                <h3>Upload WhatsApp ZIP</h3>
+                <p>Select the Target Unit above, then attach its ZIP. The unit list comes only from this Zone + Date Photo Daily Register.</p>
+              </div>
+            </div>
+            <div class="photo-import-row photo-import-row-compact">
+              <input type="file" id="photoZipInput" accept=".zip,application/zip">
+              <button class="primary-btn" id="photoImportBtn" type="button">Import ZIP</button>
+              <span id="photoImportStatus" class="photo-import-status">No ZIP selected.</span>
+            </div>
+            <div class="photo-rule-note">Photos remain in the separate photo store. The first 3 ordered photos are used in the report; extras stay available until you delete them.</div>
+          </article>
+        </div>
 
         <article class="panel">
           <div class="panel-head register-head">
@@ -564,8 +582,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.51"></script>
+  <script src="data.js?v=7.52"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.51"></script>
+<script src="app.js?v=7.52"></script>
 </body>
 </html>

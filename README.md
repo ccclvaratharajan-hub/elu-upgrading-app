@@ -1,4 +1,4 @@
-# ELU Upgrading — Premium V7.51 Secure · Independent Photo Daily Schedule
+# ELU Upgrading — Premium V7.52 Secure · Compact Zone Daily Photo Workflow
 
 ## Main V7 addition: Appointment Planner
 A separate calendar-style daily planning page now mirrors the familiar Team 1 / Team 2 sheet:
@@ -561,3 +561,19 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Existing V7.50 manual drag order remains: 1 Closed DB, 2 BEFORE, 3 AFTER.
 - Existing photo IndexedDB data is preserved; database version is upgraded in-place and only the new schedule store is added.
 - Project encrypted data, security key, Zone 6 data and all non-photo modules are unchanged.
+
+
+## V7.52 — compact Zone + Date photo workflow
+- Photo Daily Register now shows **only one selected Zone + one selected Date** at a time.
+- Added Zone 1–6 tabs for fast switching. The top Zone dropdown and tabs stay synchronized.
+- Removed the duplicate Date and Zone inputs from the entry form. The selected Zone + Date at the top are the single source for the daily photo register.
+- Entry form is now compact: Block, Unit, Team, Time, Add Unit.
+- The schedule table is compact and shows only that day's units; it no longer grows into a full 22→21 all-zone list.
+- Daily Photo Schedule and WhatsApp ZIP upload are side-by-side on desktop, so photo work is not pushed far down the page.
+- Target Unit updates immediately from the selected Zone + Date daily register.
+- Remove deletes only the selected day's photo schedule line; stored photos remain untouched.
+- Existing stored-photo-only units remain available for correction in Daily Check / Target Unit.
+- Existing V7.51 IndexedDB schedule/photos/meta data is preserved.
+- Photo section remains independent from Master Schedule, Appointment Planner, Unit Register, Block Board, Dashboard and resident status.
+- Existing manual photo order remains: 1 Closed DB, 2 BEFORE, 3 AFTER.
+- Security key and encrypted project state are unchanged.

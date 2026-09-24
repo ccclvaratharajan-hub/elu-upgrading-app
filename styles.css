@@ -1442,3 +1442,88 @@ body.secure-locked .toast{visibility:hidden}
   .photo-schedule-form{grid-template-columns:repeat(2,minmax(0,1fr))}
   .photo-schedule-form .primary-btn{min-height:42px}
 }
+
+
+/* V7.52 · Compact Zone + Date Photo Daily workflow */
+.photo-zone-tabs{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin:0 0 12px;
+}
+.photo-zone-tabs button{
+  min-height:40px;
+  border:1px solid #cfe0ef;
+  border-radius:10px;
+  background:#fff;
+  color:#52708d;
+  font-weight:800;
+  cursor:pointer;
+}
+.photo-zone-tabs button.active{
+  border-color:#58a7f5;
+  background:#eaf5ff;
+  color:#1768b2;
+  box-shadow:0 0 0 2px rgba(80,159,239,.08) inset;
+}
+.photo-day-workbench{
+  display:grid;
+  grid-template-columns:minmax(0,1.45fr) minmax(330px,.75fr);
+  gap:12px;
+  align-items:start;
+}
+.photo-day-workbench .panel{margin:0}
+.photo-schedule-form-compact{
+  grid-template-columns:150px minmax(180px,1fr) 130px 160px auto;
+}
+.photo-schedule-table-compact{
+  max-height:360px;
+  overflow:auto;
+  margin-top:12px;
+}
+.photo-schedule-table-compact table{
+  min-width:640px;
+}
+.photo-schedule-table-compact th,
+.photo-schedule-table-compact td{
+  padding-top:9px;
+  padding-bottom:9px;
+}
+.photo-count-chip{
+  display:inline-flex;
+  min-width:28px;
+  min-height:24px;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  background:#edf3f8;
+  color:#5d7186;
+  font-weight:900;
+  font-size:11px;
+}
+.photo-count-chip.ready{
+  background:#e6f7ec;
+  color:#18733c;
+}
+.photo-import-side{
+  position:sticky;
+  top:16px;
+}
+.photo-import-row-compact{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.photo-import-row-compact .photo-import-status{
+  grid-column:1/-1;
+}
+@media(max-width:1180px){
+  .photo-day-workbench{grid-template-columns:1fr}
+  .photo-import-side{position:static}
+  .photo-schedule-form-compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .photo-zone-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .photo-schedule-form-compact{grid-template-columns:1fr}
+}
