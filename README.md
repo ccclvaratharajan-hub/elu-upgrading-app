@@ -616,3 +616,18 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Audit entries record lock, re-confirm, migration and explicit unlock actions.
 - Existing status colours remain unchanged: A green, C pink/magenta, P blue, D yellow, NR red.
 - Existing appointments, Unit Register, Block Board, reports, photo database, security key and production seed data are preserved.
+
+
+## V7.56 — Latest User Edit Wins
+- Removed the V7.55 Opt-Out **lock / re-open** workflow.
+- No status is permanently locked.
+- The latest explicit user action is the operational source of truth.
+- If a user saves **D · Opt-Out**, old appointments, imported seed data and reload/rebuild logic cannot bring an older A/C status back.
+- If the user later explicitly creates or updates an appointment, that newer edit replaces the earlier Opt-Out automatically; no separate unlock step is needed.
+- Existing V7.55 Opt-Out decisions are preserved during upgrade, but their `locked` flag is discarded.
+- Appointment Schedule, Planner and Master Schedule all follow the same last-edit precedence.
+- Status audit history is retained so later changes can be traced.
+- Existing encrypted state key, project seed data, photos, reports, complaints and unit records are unchanged.
+
+### Example
+`Blk 537 #08-54`: if the last user action is **Opt-Out**, it stays D after reload. If the user later creates a new appointment, the newer appointment becomes the current status. If Opt-Out is selected again after that, D becomes current again.
