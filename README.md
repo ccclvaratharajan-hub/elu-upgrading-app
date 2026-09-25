@@ -600,3 +600,19 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Existing Zone-wise 22→21 Word / PDF remains unchanged.
 - Block-wise report does not copy, move, delete or modify photos and does not trigger auto-cleanup.
 - Project data, security key, appointment data, Unit Register and Block Board are unchanged.
+
+
+## V7.55 — Permanent Manual Status Lock / Source of Truth
+- Fixed the recurring-status problem system-wide, not only for one unit.
+- **Manual confirmed Opt-Out is now a persistent locked status decision** stored separately from appointment history.
+- A locked manual status has higher priority than imported seed data, old appointments, reload, auto-completion and master rebuild logic.
+- V7.54 and older confirmed Opt-Out records are migrated automatically on first V7.55 login when they are still the latest decision.
+- A newer legitimate appointment is respected during migration and is not incorrectly changed back to Opt-Out.
+- Appointment Schedule, Planner and hidden Master Schedule cannot silently bypass a locked status. They require explicit user confirmation to re-open/change it.
+- Appointment Schedule shows **Opt-Out · Locked** with a **Re-open** action for an intentional status change.
+- Re-confirming the same Opt-Out is idempotent and keeps the lock instead of creating uncontrolled duplicate status behavior.
+- Auto-completion and appointment normalization skip locked units.
+- Added encrypted `statusOverrides`, `statusAudit`, and `statusDecisionSchema` to the saved state and backup JSON.
+- Audit entries record lock, re-confirm, migration and explicit unlock actions.
+- Existing status colours remain unchanged: A green, C pink/magenta, P blue, D yellow, NR red.
+- Existing appointments, Unit Register, Block Board, reports, photo database, security key and production seed data are preserved.

@@ -1550,3 +1550,7 @@ body.secure-locked .toast{visibility:hidden}
 .block-photo-tools .mini-filter{min-width:130px}
 .block-photo-tools select,.block-photo-tools input{min-height:38px;border:1px solid #cfdeeb;border-radius:9px;background:#fff;color:#173c62;padding:7px 9px;font-weight:750}
 @media(max-width:1000px){.block-photo-tools{justify-content:flex-start}}
+
+
+/* V7.55 permanent manual status lock */
+.register-optout-note + .table-action{margin-left:6px}

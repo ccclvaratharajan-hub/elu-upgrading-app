@@ -53,7 +53,7 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],statusDecisionSchema:1,createdAt:new Date().toISOString()};
 }
 function isUserAppointment(a){
   return ["Planner","Manual","Planner History"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
@@ -129,6 +129,31 @@ function mergeSavedIntoFresh(saved){
     }
   });
 
+  // V7.55 permanent status source-of-truth.
+  // Once this schema exists, an intentionally cleared lock must NOT be rebuilt from old history.
+  fresh.statusDecisionSchema=1;
+  fresh.statusOverrides=(saved.statusDecisionSchema>=1&&saved.statusOverrides&&typeof saved.statusOverrides==="object")
+    ? {...saved.statusOverrides}
+    : {};
+  fresh.statusAudit=Array.isArray(saved.statusAudit)?[...saved.statusAudit]:[];
+
+  // One-time migration from V7.54 and earlier. Preserve a manual Opt-Out only when
+  // it is still the latest explicit decision (no newer active appointment exists).
+  if(!(saved.statusDecisionSchema>=1)){
+    const latestOptOutByUnit={};
+    fresh.appointments.forEach(a=>{
+      if(a?.scheduleState!=="OptOut")return;
+      const prev=latestOptOutByUnit[a.unitKey];
+      if(!prev||Number(a.id)>Number(prev.id))latestOptOutByUnit[a.unitKey]=a
+    });
+    Object.entries(latestOptOutByUnit).forEach(([key,o])=>{
+      const newerBooking=fresh.appointments.some(a=>a.unitKey===key&&Number(a.id)>Number(o.id)&&!["Rescheduled","Cancelled","History","OptOut"].includes(a?.scheduleState));
+      if(newerBooking)return;
+      fresh.statusOverrides[key]={status:"D",locked:true,source:"Manual",reason:"Migrated confirmed Opt-Out",updatedAt:o.cancelledAt||new Date(Number(o.id)||Date.now()).toISOString(),decisionId:o.id};
+      fresh.statusAudit.push({id:`migration-${o.id}`,unitKey:key,from:"",to:"D",action:"migrate-lock",source:"V7.55 migration",at:o.cancelledAt||new Date(Number(o.id)||Date.now()).toISOString()})
+    })
+  }
+
   return fresh
 }
 function loadLegacyPlainState(){
@@ -141,7 +166,7 @@ function loadLegacyPlainState(){
   }
   return null
 }
-let state={units:{},surveys:[],appointments:[],complaints:[],createdAt:""};
+let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],statusDecisionSchema:1,createdAt:""};
 let secureSessionKey=null;
 let securePersistChain=Promise.resolve();
 let appStarted=false;
@@ -170,7 +195,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],statusDecisionSchema:1,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -302,6 +327,48 @@ function appointmentHasEnded(a){
   const end=SLOT_END_MINUTES[a.slot]??slotEndMinutes(a.slot);return end==null?false:now.minutes>=Number(end);
 }
 function latestById(arr){return [...arr].sort((a,b)=>Number(b.id)-Number(a.id))[0]||null}
+function manualStatusOverride(key){
+  const o=state.statusOverrides&&state.statusOverrides[key];
+  if(!o||!o.locked)return null;
+  const status=normalizeStatus(o.status);
+  return status?{...o,status}:null
+}
+function hasManualStatusLock(key){return Boolean(manualStatusOverride(key))}
+function appendStatusAudit(key,from,to,action,detail=""){
+  state.statusAudit=Array.isArray(state.statusAudit)?state.statusAudit:[];
+  state.statusAudit.push({id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,unitKey:key,from:normalizeStatus(from),to:normalizeStatus(to),action,detail,source:"Manual",at:new Date().toISOString()});
+  if(state.statusAudit.length>5000)state.statusAudit=state.statusAudit.slice(-5000)
+}
+function setManualStatusLock(key,status,detail=""){
+  status=normalizeStatus(status);if(!status)return false;
+  state.statusOverrides=state.statusOverrides&&typeof state.statusOverrides==="object"?state.statusOverrides:{};
+  const before=currentUnitAppointmentState(key).status;
+  const prev=state.statusOverrides[key];
+  state.statusOverrides[key]={status,locked:true,source:"Manual",reason:detail||"Manual confirmed status",updatedAt:new Date().toISOString(),decisionId:prev?.decisionId||null};
+  appendStatusAudit(key,before,status,prev?"reconfirm-lock":"set-lock",detail||"Manual confirmed status");
+  return true
+}
+function clearManualStatusLock(key,detail="Explicit user change"){
+  const o=manualStatusOverride(key);if(!o)return false;
+  delete state.statusOverrides[key];
+  appendStatusAudit(key,o.status,"","clear-lock",detail);
+  return true
+}
+function confirmReleaseStatusLockForAppointment(key,sourceLabel="appointment"){
+  const o=manualStatusOverride(key);if(!o)return true;
+  const u=getUnit(key),label=u?`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`:key;
+  if(!confirm(`${label} is locked as ${statusLabel(o.status)}. Create/update this ${sourceLabel} and explicitly change the locked status?`))return false;
+  clearManualStatusLock(key,`Explicitly reopened by ${sourceLabel}`);
+  return true
+}
+function reopenOptOutUnit(key){
+  const u=getUnit(key),o=manualStatusOverride(key);if(!u||!o)return;
+  if(!confirm(`Re-open Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}? This explicitly removes the locked ${statusLabel(o.status)} decision.`))return;
+  clearManualStatusLock(key,"Explicit Re-open from Appointment Schedule");
+  save("Manual status lock removed · you can create a new appointment");
+  startAppointmentForUnit(key)
+}
+
 function latestOptOutDecision(key){
   return latestById(state.appointments.filter(a=>a.unitKey===key&&a.scheduleState==="OptOut"))
 }
@@ -312,6 +379,7 @@ function isInactiveSchedule(a){
 }
 function activeAppointmentsForUnit(key){return state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a))}
 function preferredMasterAppointment(key){
+  if(hasManualStatusLock(key))return null;
   const arr=activeAppointmentsForUnit(key);if(!arr.length)return null;
   const pending=arr.filter(a=>a.workStatus!=="Completed"&&!appointmentHasEnded(a));
   if(pending.length){
@@ -323,12 +391,12 @@ function preferredMasterAppointment(key){
 }
 
 function currentUnitAppointmentState(key){
-  const a=preferredMasterAppointment(key);
-  const optOut=latestOptOutDecision(key);
-
-  if(optOut&&(!a||Number(optOut.id)>Number(a.id||0))){
-    return {appointment:null,status:"D",workStatus:"Pending",active:false,completed:false,optOut}
+  const locked=manualStatusOverride(key);
+  if(locked){
+    return {appointment:null,status:locked.status,workStatus:locked.status==="A"?"Completed":"Pending",active:false,completed:locked.status==="A",manualOverride:locked}
   }
+
+  const a=preferredMasterAppointment(key);
 
   if(a&&a.date){
     const completed=a.workStatus==="Completed"||appointmentHasEnded(a);
@@ -366,7 +434,7 @@ function currentUnitAppointmentState(key){
 function normalizeManualOverrides(){
   const by={};
   state.appointments.forEach(a=>{
-    if(isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a))return;
+    if(hasManualStatusLock(a.unitKey)||isInactiveSchedule(a)||a.workStatus==="Completed"||appointmentHasEnded(a))return;
     (by[a.unitKey]||(by[a.unitKey]=[])).push(a)
   });
   Object.values(by).forEach(arr=>{
@@ -422,7 +490,7 @@ function save(msg){normalizeManualOverrides();rebuildAllMasters();persist();rend
 function autoCompleteAppointments(showToast=false){
   let changed=0;
   state.appointments.forEach(a=>{
-    if(!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&appointmentHasEnded(a)){a.workStatus="Completed";changed++}
+    if(!hasManualStatusLock(a.unitKey)&&!isInactiveSchedule(a)&&a.workStatus!=="Completed"&&appointmentHasEnded(a)){a.workStatus="Completed";changed++}
   });
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
@@ -719,20 +787,33 @@ function optOutAppointmentUnit(){
   const ownerName=document.getElementById("appointmentOwner").value.trim()||u.ownerName||"";
   const contact=document.getElementById("appointmentContact").value.trim()||u.contact||"";
   const remarks=document.getElementById("appointmentRemarks").value.trim();
+  const existing=manualStatusOverride(key);
 
-  if(!confirm(`Mark Blk ${u.block} · ${unitDisplay(u.floor,u.unit)} as D · Opt-Out?`))return;
+  if(!confirm(`${existing?"Re-confirm":"Mark"} Blk ${u.block} · ${unitDisplay(u.floor,u.unit)} as D · Opt-Out${existing?" (locked)":""}?`))return;
 
+  if(existing?.status==="D"){
+    const decision=latestOptOutDecision(key);
+    if(decision){decision.ownerName=ownerName;decision.contact=contact;if(remarks){decision.remarks=remarks;decision.userRemarks=true}}
+    setManualStatusLock(key,"Opt-Out re-confirmed by user");
+    resetAppointmentForm();
+    save("D · Opt-Out re-confirmed · permanent manual lock retained");
+    return
+  }
+
+  const decisionId=Date.now();
   state.appointments.push({
-    id:Date.now(),
+    id:decisionId,
     unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,
     unitDisplay:unitDisplay(u.floor,u.unit),
     ownerName,contact,date:"",slot:"",team:"",
     remarks,userRemarks:true,source:"Manual",
     scheduleState:"OptOut",workStatus:"Pending"
   });
+  setManualStatusLock(key,"Opt-Out confirmed by user");
+  if(state.statusOverrides[key])state.statusOverrides[key].decisionId=decisionId;
 
   resetAppointmentForm();
-  save("D · Opt-Out saved · Block Board and Unit Register synced")
+  save("D · Opt-Out saved and locked · auto logic cannot overwrite it")
 }
 document.getElementById("appointmentOptOutBtn").addEventListener("click",optOutAppointmentUnit);
 
@@ -744,6 +825,7 @@ function saveDirectAppointment(){
   if(!date){toast("Select appointment date");return}
   if(!appointmentYearIsValid(date)){toast(`Appointment year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
+  if(!confirmReleaseStatusLockForAppointment(key,"Appointment Schedule booking"))return;
 
   if(editId){
     const a=state.appointments.find(x=>x.id===editId);if(!a)return;
@@ -872,7 +954,7 @@ function renderAppointmentTable(){
             ? `<span class="register-done-note">Completed</span><button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
             : `<span class="register-done-note">Completed</span>`)
         : d.status==="D"
-          ? `<span class="register-optout-note">Opt-Out</span>`
+          ? `<span class="register-optout-note">Opt-Out · Locked</span><button class="table-action" data-status-reopen="${u.key}">Re-open</button>`
           : `<button class="table-action" data-appt-book="${u.key}">Appointment</button>`;
 
     return `<tr>
@@ -904,7 +986,7 @@ function renderAppointmentTable(){
     ? `<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,units.filter(u=>u.zone===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`
     : table(units)
 }
-document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-book]");if(b)return startAppointmentForUnit(b.dataset.apptBook);b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
+document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-status-reopen]");if(b)return reopenOptOutUnit(b.dataset.statusReopen);b=e.target.closest("[data-appt-book]");if(b)return startAppointmentForUnit(b.dataset.apptBook);b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
 
 document.getElementById("unitSearch").addEventListener("input",renderUnitTable);
 document.getElementById("unitZoneFilter").addEventListener("change",()=>{const z=document.getElementById("unitZoneFilter").value;document.getElementById("unitBlockFilter").innerHTML=filterBlockOptions(z,true);renderUnitTable()});
@@ -1078,6 +1160,7 @@ function savePlannerAppointment(){
   configureAppointmentYearInputs();
   if(!appointmentYearIsValid(date)){toast(`Planning year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
+  if(!confirmReleaseStatusLockForAppointment(key,"Planner booking"))return;
 
   if(editId){
     const a=state.appointments.find(x=>x.id===editId);if(!a)return;
@@ -1582,7 +1665,7 @@ document.getElementById("exportBlockChartPdfBtn").addEventListener("click",expor
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","PENDING P","P %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.p,pct(x.pPct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.p,pct(t.pPct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
-document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints},null,2),"application/json")});
+document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],statusDecisionSchema:1},null,2),"application/json")});
 
 
 /* V7.45 — Master Schedule + integrated Photo Inbox */
@@ -1665,6 +1748,7 @@ function saveMasterScheduleEntry(){
   if(!date||!u){toast("Select date and unit");return}
   if(!appointmentYearIsValid(date)){toast(`Appointment year must be ${currentAppointmentYear()}`);return}
   const slot=masterSlotValue();if(!slot){toast("Enter custom start and end time");return}
+  if(!confirmReleaseStatusLockForAppointment(key,"Master Schedule booking"))return;
   const team=document.getElementById("masterTeam").value,remarks=document.getElementById("masterRemarks").value.trim();
   const active=state.appointments.filter(x=>x.unitKey===key&&!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x));
   const exact=active.find(x=>x.date===date&&x.slot===slot);
