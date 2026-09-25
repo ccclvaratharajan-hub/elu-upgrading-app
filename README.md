@@ -588,3 +588,15 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Open Appointment jumps to the matching Appointment Schedule record for correction.
 - Photo workflow from V7.52 is unchanged.
 - Unit Register, Block Board, Dashboard, Survey, Complaints, Meeting Report, photo IndexedDB, encryption key and saved project data are unchanged.
+
+## V7.54 — Block-wise Photo Report
+- Added **Block-wise Photo Report** under Photo Report.
+- Daily photo upload workflow is unchanged.
+- Select Block + From date + To date.
+- The report automatically collects all stored photos for that block across the chosen date range, even when uploaded on different days.
+- Output order: Date → Unit.
+- Added **Block Word** and **Block Print / PDF**.
+- Existing manual photo order is reused; the first three ordered photos are printed.
+- Existing Zone-wise 22→21 Word / PDF remains unchanged.
+- Block-wise report does not copy, move, delete or modify photos and does not trigger auto-cleanup.
+- Project data, security key, appointment data, Unit Register and Block Board are unchanged.

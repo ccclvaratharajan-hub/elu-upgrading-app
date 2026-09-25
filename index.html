@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.53">
+  <link rel="stylesheet" href="styles.css?v=7.54">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -485,6 +485,22 @@
           <div class="photo-retention-note" id="photoRetentionNote"></div>
           <div id="photoMonthlySummary" class="photo-monthly-summary"></div>
         </article>
+        <article class="panel photo-block-report-panel">
+          <div class="panel-head register-head">
+            <div><span class="section-label">BLOCK-WISE OUTPUT</span><h3>Block-wise Photo Report</h3>
+              <p>Daily uploads stay unchanged. This report collects every stored photo for the selected block across the chosen date range.</p>
+            </div>
+            <div class="register-tools block-photo-tools">
+              <label class="mini-filter">Block<select id="photoBlockReportBlock"></select></label>
+              <label class="mini-filter">From<input type="date" id="photoBlockReportFrom"></label>
+              <label class="mini-filter">To<input type="date" id="photoBlockReportTo"></label>
+              <button class="primary-btn" id="photoBlockWordBtn" type="button">Block Word</button>
+              <button class="ghost-btn" id="photoBlockPdfBtn" type="button">Block Print / PDF</button>
+            </div>
+          </div>
+          <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
+          <div id="photoBlockSummary" class="photo-monthly-summary"></div>
+        </article>
       </section>
 
       <section class="view" id="reports">
@@ -578,8 +594,8 @@
   </aside>
 
   <div class="toast" id="toast"></div>
-  <script src="data.js?v=7.53"></script>
+  <script src="data.js?v=7.54"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.53"></script>
+<script src="app.js?v=7.54"></script>
 </body>
 </html>

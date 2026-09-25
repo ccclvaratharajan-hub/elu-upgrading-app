@@ -1543,3 +1543,10 @@ body.secure-locked .toast{visibility:hidden}
 .planner-person span{font-size:10px;color:#72879c}
 #schedulemaster.hidden{display:none!important}
 @media(max-width:900px){.simple-planner-hero{align-items:stretch}.simple-planner-controls{justify-content:flex-start}}
+
+/* V7.54 · Block-wise Photo Report */
+.photo-block-report-panel{border:1px solid rgba(27,113,188,.18)}
+.block-photo-tools{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
+.block-photo-tools .mini-filter{min-width:130px}
+.block-photo-tools select,.block-photo-tools input{min-height:38px;border:1px solid #cfdeeb;border-radius:9px;background:#fff;color:#173c62;padding:7px 9px;font-weight:750}
+@media(max-width:1000px){.block-photo-tools{justify-content:flex-start}}

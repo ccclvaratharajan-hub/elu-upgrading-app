@@ -435,7 +435,7 @@ units:["Unit Register","Read-only master data populated automatically from your 
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 teams:["Appointment Planner","Simple read-only daily view of appointments entered in Appointment Schedule."],
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
-photos:["Photo Report","Zone-wise WhatsApp ZIP photo inbox and 22 → 21 monthly output."],
+photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."]
 }[view]}
 function setView(view){
@@ -1968,7 +1968,13 @@ document.getElementById("photoZoneTabs").addEventListener("click",e=>{
 });
 document.getElementById("photoZone").addEventListener("change",syncPhotoTargetUnits);
 document.getElementById("photoDate").addEventListener("change",syncPhotoTargetUnits);
-document.getElementById("photoCycleDate").addEventListener("change",renderPhotoCenter);
+document.getElementById("photoCycleDate").addEventListener("change",()=>{
+  const cycle=cycleForDate(document.getElementById("photoCycleDate").value||isoTodaySG());
+  document.getElementById("photoBlockReportFrom").value=cycle.start;
+  document.getElementById("photoBlockReportTo").value=cycle.end;
+  renderPhotoCenter();
+  renderBlockPhotoSummary().catch(console.error)
+});
 document.getElementById("photoDailyBoard").addEventListener("click",async e=>{
   const b=e.target.closest("[data-photo-delete]");if(!b)return;
   if(!confirm("Delete this stored photo?"))return;await photoDbDelete("photos",b.dataset.photoDelete);await renderPhotoCenter()
@@ -2031,6 +2037,71 @@ async function monthlyPhotoGroups(zone,cycle){
   }
   return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
+
+function photoBlockOptions(){
+  return Object.keys(PROJECT_LAYOUT).sort((a,b)=>Number(a)-Number(b))
+    .map(b=>`<option value="${b}">Blk ${b} · Zone ${zoneOfBlock(b)}</option>`).join("")
+}
+async function blockPhotoGroups(block,fromDate,toDate){
+  const all=(await photoDbAll("photos")).filter(p=>Number(p.block)===Number(block)&&p.date>=fromDate&&p.date<=toDate);
+  const map=new Map();
+  for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
+  const groups=[];
+  for(const ps of map.values()){
+    ps.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+    groups.push({date:ps[0].date,unitKey:ps[0].unitKey,block:Number(ps[0].block),unitDisplay:ps[0].unitDisplay,
+      photos:photoReportOrder(ps),storedCount:ps.length})
+  }
+  return groups.sort((a,b)=>a.date.localeCompare(b.date)||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
+}
+async function renderBlockPhotoSummary(){
+  const box=document.getElementById("photoBlockSummary");if(!box)return;
+  const block=Number(document.getElementById("photoBlockReportBlock").value||0);
+  const from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
+  if(!block||!from||!to){box.innerHTML="";return}
+  const groups=await blockPhotoGroups(block,from,to),photos=groups.reduce((n,g)=>n+g.storedCount,0),ready=groups.filter(g=>g.photos.length>=3).length;
+  box.innerHTML=`<div><strong>Blk ${block}</strong><span>${groups.length} unit-day${groups.length===1?"":"s"}</span></div>
+  <div><strong>${photos}</strong><span>stored photos</span></div><div><strong>${ready}</strong><span>ready with 3+</span></div>
+  <div><strong>${safeDate(from)} → ${safeDate(to)}</strong><span>report range</span></div>`
+}
+async function buildBlockPhotoDocx(groups,block,from,to){
+  const zip=new JSZip(),rels=[],media=[];let rn=2,docId=1;const pages=[];
+  for(let p=0;p<groups.length;p+=6){
+    const rows=groups.slice(p,p+6),refs=[];
+    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){
+      const ph=rows[i].photos[j];if(!ph){refs[i][j]=null;continue}
+      const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});
+      refs[i][j]={photo:ph,rId,docId:docId++}
+    }}
+    pages.push(photoP(`ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCK ${block} PASIR RIS STREET 51 · ${safeDate(from)} TO ${safeDate(to)}`,true,18)+photoPageTable(rows,refs));
+    if(p+6<groups.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
+  }
+  const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
+  const dr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.map(r=>`<Relationship Id="${r.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join("")}</Relationships>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="16"/></w:rPr></w:style></w:styles>`;
+  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const rr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  zip.file("[Content_Types].xml",types);zip.folder("_rels").file(".rels",rr);zip.folder("word").file("document.xml",doc);zip.folder("word").file("styles.xml",styles);zip.folder("word").folder("_rels").file("document.xml.rels",dr);
+  for(const m of media)zip.folder("word").file(m.target,m.blob);
+  return zip.generateAsync({type:"blob",compression:"DEFLATE"})
+}
+async function generateBlockPhotoWord(){
+  const block=Number(document.getElementById("photoBlockReportBlock").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
+  if(!block||!from||!to){toast("Select Block, From and To dates");return} if(from>to){toast("From date cannot be after To date");return}
+  const groups=await blockPhotoGroups(block,from,to);if(!groups.length){toast(`No stored photos for Blk ${block} in this date range`);return}
+  if(groups.some(g=>g.photos.length<3)&&!confirm("Some units have fewer than 3 photos. Generate Word with blank cells?"))return;
+  const blob=await buildBlockPhotoDocx(groups,block,from,to),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`ELU_Photo_Report_Blk${block}_${from}_to_${to}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast(`Block ${block} Word report downloaded`)
+}
+async function generateBlockPhotoPdf(){
+  const block=Number(document.getElementById("photoBlockReportBlock").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
+  if(!block||!from||!to){toast("Select Block, From and To dates");return} if(from>to){toast("From date cannot be after To date");return}
+  const groups=await blockPhotoGroups(block,from,to);if(!groups.length){toast(`No stored photos for Blk ${block} in this date range`);return}
+  const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
+  const urls=[],cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${[0,1,2].map(i=>{if(!g.photos[i])return"<div></div>";const u=URL.createObjectURL(g.photos[i].blob);urls.push(u);return `<div><img src="${u}"></div>`}).join("")}</div></div>`).join("");
+  win.document.write(`<!doctype html><html><head><title>ELU Blk ${block} Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0}.sub{text-align:center;font-size:8px;margin-bottom:4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCK ${block} PASIR RIS STREET 51</div><div class="sub">${safeDate(from)} TO ${safeDate(to)}</div>${cards}<script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);win.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),60000)
+}
+
 async function markPhotoExport(zone,cycle,type){
   await photoDbPut("meta",{key:`export:${zone}:${cycle.id}`,zone,cycleId:cycle.id,cycleStart:cycle.start,cycleEnd:cycle.end,cleanup:cycle.cleanup,type,exportedAt:new Date().toISOString()})
 }
@@ -2063,6 +2134,9 @@ async function generateMonthlyPhotoPdf(){
 }
 document.getElementById("photoWordBtn").addEventListener("click",()=>generateMonthlyPhotoWord().catch(e=>{console.error(e);toast("Word report generation failed")}));
 document.getElementById("photoPdfBtn").addEventListener("click",()=>generateMonthlyPhotoPdf().catch(e=>{console.error(e);toast("PDF report generation failed")}));
+document.getElementById("photoBlockWordBtn").addEventListener("click",()=>generateBlockPhotoWord().catch(e=>{console.error(e);toast("Block Word report generation failed")}));
+document.getElementById("photoBlockPdfBtn").addEventListener("click",()=>generateBlockPhotoPdf().catch(e=>{console.error(e);toast("Block PDF report generation failed")}));
+["photoBlockReportBlock","photoBlockReportFrom","photoBlockReportTo"].forEach(id=>document.getElementById(id).addEventListener("change",()=>renderBlockPhotoSummary().catch(console.error)));
 
 async function photoAutoCleanup(){
   try{
@@ -2079,9 +2153,17 @@ function initPhotoCenter(){
   document.getElementById("photoZone").value="1";
   document.getElementById("photoDate").value=isoTodaySG();
   document.getElementById("photoCycleDate").value=isoTodaySG();
+  const cycle=cycleForDate(isoTodaySG()),blockSel=document.getElementById("photoBlockReportBlock");
+  if(blockSel){
+    blockSel.innerHTML=photoBlockOptions();
+    blockSel.value=Object.keys(PROJECT_LAYOUT).sort((a,b)=>Number(a)-Number(b))[0]||"531";
+    document.getElementById("photoBlockReportFrom").value=cycle.start;
+    document.getElementById("photoBlockReportTo").value=cycle.end
+  }
   syncPhotoZoneTabs();
   syncPhotoScheduleBlocks();
-  syncPhotoTargetUnits()
+  syncPhotoTargetUnits();
+  renderBlockPhotoSummary().catch(console.error)
 }
 
 function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))renderPhotoCenter()}
