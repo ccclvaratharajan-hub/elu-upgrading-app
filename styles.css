@@ -1,5 +1,5 @@
 *{box-sizing:border-box} :root{
---bg:#f4f9ff;--bg2:#eef6ff;--card:#fff;--ink:#15243b;--muted:#6f8199;--line:#e3edf8;
+--bg:#c7d9eb;--bg2:#d8e6f3;--card:#fff;--ink:#15243b;--muted:#6f8199;--line:#e3edf8;
 --blue:#3d8df5;--blue2:#76b8ff;--blueSoft:#eaf4ff;--navy:#254568;--green:#2cae7b;--greenSoft:#eaf9f3;
 --amber:#d79a2b;--amberSoft:#fff7e7;--rose:#d76475;--roseSoft:#fff0f3;--violet:#7c70d8;--violetSoft:#f3f0ff;
 --cyan:#2ea6bc;--cyanSoft:#e9f9fc;--shadow:0 18px 45px rgba(56,105,156,.10);--radius:22px
@@ -54,11 +54,11 @@ button,input,select,textarea{font:inherit}.svg-sprite{position:absolute;width:0;
 
 /* ==================== V6 VISUAL UPGRADE ==================== */
 :root{--pink:#e86fa0;--pinkSoft:#fff0f6;--heroBlue:#3e8fea;--heroSky:#72c7ff;--heroIce:#dff3ff}
-body{background:radial-gradient(circle at 82% -5%,#dcefff 0,transparent 29%),radial-gradient(circle at 18% 16%,#edf7ff 0,transparent 22%),linear-gradient(180deg,#f7fbff 0,#eef6ff 100%)}
+body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),radial-gradient(circle at 18% 16%,#d5e5f4 0,transparent 22%),linear-gradient(180deg,#dce9f5 0,#c5d8ea 100%)}
 .sidebar{box-shadow:12px 0 45px rgba(57,105,153,.055)}
 .brand-mark{background:linear-gradient(145deg,#87cdfd,#3c8fe8);box-shadow:0 14px 30px rgba(55,139,224,.28)}
 .nav-item.active{background:linear-gradient(90deg,#e0f1ff,#f7fbff);color:#2878cf;box-shadow:inset 3px 0 0 #4ca0ef,0 7px 18px rgba(66,139,205,.07)}
-.command-hero{position:relative;overflow:hidden;min-height:258px;border-radius:30px;padding:34px 36px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:35px;color:#fff;background:linear-gradient(118deg,#347fd5 0%,#4b9cec 45%,#70c8f9 100%);box-shadow:0 25px 55px rgba(50,127,205,.24)}
+.command-hero{position:relative;overflow:hidden;min-height:258px;border-radius:30px;padding:34px 36px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:35px;color:#fff;background:linear-gradient(100deg,rgba(15,49,84,.94) 0%,rgba(26,72,114,.84) 54%,rgba(30,90,140,.62) 100%),url("hero-building.jpg") center 52%/cover no-repeat;box-shadow:0 25px 55px rgba(34,80,126,.25)}
 .command-hero:before{content:"";position:absolute;width:430px;height:430px;border:1px solid rgba(255,255,255,.18);border-radius:50%;right:-155px;top:-205px;box-shadow:0 0 0 42px rgba(255,255,255,.035),0 0 0 95px rgba(255,255,255,.025)}
 .command-hero:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;left:45%;bottom:-160px;background:rgba(255,255,255,.10);filter:blur(2px)}
 .command-copy{position:relative;z-index:2;max-width:720px}.command-kicker{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:900;letter-spacing:.16em;color:#eaf7ff}.live-dot{width:8px;height:8px;border-radius:50%;background:#a9ffd7;box-shadow:0 0 0 5px rgba(169,255,215,.16)}
