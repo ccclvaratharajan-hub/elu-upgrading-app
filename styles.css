@@ -1801,3 +1801,23 @@ body{color:var(--ink);background:radial-gradient(circle at 13% 2%,rgba(244,252,2
 .site-building:hover,.site-building:focus-visible{transform:translateY(-7px);background:rgba(214,241,255,.3)}
 @media(max-width:900px){.site-view-buildings{flex-wrap:wrap}.site-building{flex:1 1 28%;min-width:125px}.site-building-art{height:140px}}
 @media(max-width:620px){.site-view-buildings{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}.site-building{flex:0 0 145px;min-width:145px}.site-building-art{height:140px}}
+
+/* V7.64 · One location map with raised buildings; no alternate card view */
+.zone-map-stage{height:610px;min-height:610px;overflow:hidden;border-radius:19px;background:#15517d}
+.zone-map-tiles{filter:saturate(1.15) brightness(1.12) contrast(1.04)}
+.zone-map-stage:after{background:linear-gradient(180deg,rgba(5,47,84,.19),transparent 34%,rgba(5,47,84,.13) 100%)}
+.map-zone-nav{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);display:flex;justify-content:center;flex-wrap:wrap;gap:5px;padding:7px;border:1px solid rgba(234,249,255,.55);border-radius:15px;background:rgba(9,54,87,.89);backdrop-filter:blur(14px);box-shadow:0 10px 25px rgba(0,25,50,.24);z-index:10;pointer-events:auto}
+.map-zone-nav button{border:1px solid transparent;border-radius:9px;padding:8px 11px;background:transparent;color:#d8f1ff;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}
+.map-zone-nav button:hover,.map-zone-nav button:focus-visible{background:rgba(117,203,246,.22);outline:2px solid #aee9ff;outline-offset:1px}
+.map-zone-nav button[aria-pressed="true"]{background:linear-gradient(145deg,#d6f1ff,#a7dbf6);color:#0a426b;box-shadow:0 3px 9px rgba(0,25,54,.23)}
+.map-zone-pin{padding:11px 13px;border-radius:13px;background:linear-gradient(145deg,#e5f8ff,#a8dafa);border:2px solid #fff;color:#0a4066;box-shadow:0 5px 0 #37759b,0 13px 19px rgba(0,27,55,.3)}
+.map-zone-pin span{font-size:15px;letter-spacing:.03em}.map-zone-pin small{font-size:11px;color:#1f5b7e;font-weight:800}
+.map-building-pin{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:112px;min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;transform:translate(-50%,-91%);filter:drop-shadow(5px 10px 7px rgba(4,29,52,.52));z-index:3}
+.map-building-pin:before{content:"";position:absolute;left:50%;bottom:7px;width:57px;height:14px;border-radius:50%;transform:translateX(-50%);background:rgba(2,31,54,.4);box-shadow:0 0 0 7px rgba(173,226,252,.12)}
+.map-block-number{position:relative;z-index:2;display:block;padding:4px 8px;border:1px solid #e8fbff;border-radius:8px;background:rgba(227,247,255,.96);color:#0b3e67;font-size:12px!important;line-height:1.15;font-weight:950!important;letter-spacing:.03em!important;box-shadow:0 5px 12px rgba(0,31,60,.29)}
+.map-building-image{position:relative;display:block;width:110px;height:94px;margin-top:-2px}.map-building-image img{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.map-building-pin small{position:relative;display:block;margin-top:-5px;padding:2px 6px;border-radius:5px;background:rgba(10,58,91,.84);font-size:10px;color:#e7f8ff;font-weight:800}
+.map-building-pin:hover,.map-building-pin:focus-visible{transform:translate(-50%,-98%) scale(1.13);background:none;filter:drop-shadow(5px 14px 9px rgba(0,21,47,.62));z-index:7}
+.map-building-pin:focus-visible{outline:2px solid #e9faff;outline-offset:3px;border-radius:8px}
+.zone-map-attribution{font-size:10px}.zone-map-note{margin:10px 2px 0;font-size:12px}
+@media(max-width:650px){.zone-map-stage{height:610px;min-height:610px}.map-zone-nav{top:10px;gap:2px;padding:5px}.map-zone-nav button{font-size:11px;padding:7px 8px}.map-zone-pin{padding:7px 8px}.map-zone-pin span{font-size:12px}.map-zone-pin small{display:block;font-size:9px}.map-building-pin{width:72px;min-width:0}.map-building-image{width:70px;height:68px}.map-block-number{font-size:11px!important;padding:3px 5px}.map-building-pin small{font-size:9px}}

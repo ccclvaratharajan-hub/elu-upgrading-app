@@ -527,22 +527,14 @@ function setView(view){
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
 document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)setView(b.dataset.go)});
-let activeMapZone="1";
+let activeMapZone="all";
 document.getElementById("zoneMapPanel").addEventListener("click",e=>{
-  const modeButton=e.target.closest("[data-zone-map-mode]");
-  if(modeButton){
-    const mode=modeButton.dataset.zoneMapMode;
-    if(mode!=="map"&&mode!=="side")return;
-    document.getElementById("zoneMapPanel").dataset.mode=mode;
-    document.querySelectorAll("[data-zone-map-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b===modeButton)));
-    if(mode==="map")requestAnimationFrame(()=>renderZoneMap(unitsArray()));
-    return;
-  }
   const blockButton=e.target.closest("[data-map-block]");
   const openButton=e.target.closest("[data-open-map-zone]");
   const zoneButton=e.target.closest("[data-map-zone]");
   if(!blockButton&&!openButton&&!zoneButton)return;
   const zone=blockButton?.dataset.mapZone||openButton?.dataset.openMapZone||zoneButton?.dataset.mapZone;
+  if(zone==="all"&&zoneButton){activeMapZone="all";renderZoneMap(unitsArray());return}
   if(!ZONE_BLOCKS[zone])return;
   if(zoneButton&&!blockButton&&!openButton){activeMapZone=zone;renderZoneMap(unitsArray());return;}
   document.getElementById("boardZone").value=zone;
@@ -666,24 +658,56 @@ document.getElementById("plannerSlot").addEventListener("change",togglePlannerCu
 document.getElementById("appointmentSlot").addEventListener("change",toggleAppointmentCustomTime);
 
 const ZONE_MAP_CENTER=[1.3690,103.95125];
-function zoneMapZoom(stage){return stage.clientWidth<650?16:17}
 function mapWorld(lat,lon,zoom){
   const scale=256*2**zoom,rad=Math.max(-85,Math.min(85,lat))*Math.PI/180;
   return{x:(lon+180)/360*scale,y:(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*scale};
 }
+function zoneMapViewport(stage){
+  if(activeMapZone==="all")return{center:ZONE_MAP_CENTER,zoom:stage.clientWidth<650?16:17};
+  const points=ZONE_BLOCKS[activeMapZone].map(b=>BLOCK_MAP_LOCATION[b]);
+  const center=[points.reduce((v,p)=>v+p[0],0)/points.length,points.reduce((v,p)=>v+p[1],0)/points.length];
+  let zoom=stage.clientWidth<650?17:18;
+  while(zoom>15){
+    const xy=points.map(p=>mapWorld(p[0],p[1],zoom));
+    const width=Math.max(...xy.map(p=>p.x))-Math.min(...xy.map(p=>p.x));
+    const height=Math.max(...xy.map(p=>p.y))-Math.min(...xy.map(p=>p.y));
+    if(width<stage.clientWidth-150&&height<stage.clientHeight-210)break;
+    zoom--;
+  }
+  return{center,zoom};
+}
 function mapPixel(lat,lon,stage){
-  const zoom=zoneMapZoom(stage),p=mapWorld(lat,lon,zoom),c=mapWorld(...ZONE_MAP_CENTER,zoom);
+  const {zoom,center}=zoneMapViewport(stage),p=mapWorld(lat,lon,zoom),c=mapWorld(...center,zoom);
   return{x:Math.round(stage.clientWidth/2+p.x-c.x),y:Math.round(stage.clientHeight/2+p.y-c.y)};
 }
 function renderZoneMapTiles(stage){
-  const layer=document.getElementById("zoneMapTiles"),w=stage.clientWidth,h=stage.clientHeight,zoom=zoneMapZoom(stage);
-  if(!w||!h||layer.dataset.size===`${w}x${h}z${zoom}`)return;
-  layer.dataset.size=`${w}x${h}z${zoom}`;
-  const c=mapWorld(...ZONE_MAP_CENTER,zoom),left=c.x-w/2,top=c.y-h/2;
+  const layer=document.getElementById("zoneMapTiles"),w=stage.clientWidth,h=stage.clientHeight,{zoom,center}=zoneMapViewport(stage);
+  if(!w||!h)return;
+  const key=`${w}x${h}z${zoom}-${center.map(v=>v.toFixed(6)).join(",")}`;
+  if(layer.dataset.size===key)return;
+  layer.dataset.size=key;
+  const c=mapWorld(...center,zoom),left=c.x-w/2,top=c.y-h/2;
   const x0=Math.floor(left/256),x1=Math.floor((left+w)/256),y0=Math.floor(top/256),y1=Math.floor((top+h)/256);
   let tiles="";
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles+=`<img alt="" loading="lazy" src="https://www.onemap.gov.sg/maps/tiles/Night/${zoom}/${x}/${y}.png" style="left:${Math.round(x*256-left)}px;top:${Math.round(y*256-top)}px">`;
   layer.innerHTML=tiles;
+}
+function layoutMapBuildings(blocks,stage){
+  const positions=blocks.map(b=>{const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);return{block:b,x:p.x,y:p.y}});
+  const mobile=stage.clientWidth<650,sepX=mobile?88:122,sepY=mobile?102:137;
+  const minX=mobile?43:60,maxX=Math.max(minX,stage.clientWidth-minX),minY=mobile?245:215,maxY=Math.max(minY,stage.clientHeight-45);
+  for(let k=0;k<90;k++){
+    for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++){
+      const a=positions[i],b=positions[j],dx=b.x-a.x,dy=b.y-a.y;
+      if(Math.abs(dx)<sepX&&Math.abs(dy)<sepY){
+        const sx=(dx===0?(j%2?1:-1):Math.sign(dx))*Math.min(10,(sepX-Math.abs(dx))*.21);
+        const sy=(dy===0?(j%2?-1:1):Math.sign(dy))*Math.min(9,(sepY-Math.abs(dy))*.17);
+        a.x-=sx;a.y-=sy;b.x+=sx;b.y+=sy;
+      }
+    }
+    positions.forEach(p=>{p.x=Math.min(maxX,Math.max(minX,p.x));p.y=Math.min(maxY,Math.max(minY,p.y))});
+  }
+  return positions;
 }
 function renderZoneMap(u){
   const zoneStats=z=>{
@@ -691,37 +715,23 @@ function renderZoneMap(u){
     return{units:units.length,completed,pct:units.length?Math.round(completed/units.length*100):0};
   };
   const stage=document.querySelector(".zone-map-stage");renderZoneMapTiles(stage);
-  document.getElementById("zoneMap").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
+  const nav=`<div class="map-zone-nav" aria-label="Project zones"><button type="button" data-map-zone="all" aria-pressed="${activeMapZone==="all"}">All zones</button>${Object.keys(ZONE_BLOCKS).map(z=>`<button type="button" data-map-zone="${z}" aria-pressed="${activeMapZone===z}">Zone ${z}</button>`).join("")}</div>`;
+  const markers=Object.keys(ZONE_BLOCKS).map(z=>{
     const s=zoneStats(z),active=z===activeMapZone;
-    if(active)return ZONE_BLOCKS[z].map(b=>{
-      const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);
-      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${p.x}px;top:${p.y}px" title="Blk ${b} · ${loc[2]}" aria-label="Open Block ${b} in Zone ${z}"><span>${b}</span></button>`;
+    if(active)return layoutMapBuildings(ZONE_BLOCKS[z],stage).map(({block:b,x,y})=>{
+      const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length;
+      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${Math.round(x)}px;top:${Math.round(y)}px" title="Open Blk ${b} · ${BLOCK_MAP_LOCATION[b][2]}" aria-label="Open Block ${b} in Zone ${z}"><span class="map-block-number">BLK ${b}</span><span class="map-building-image" aria-hidden="true"><img src="building-3d-wide.png" alt="" loading="lazy"></span><small>${floors} floors</small></button>`;
     }).join("");
+    if(activeMapZone!=="all")return"";
     const points=ZONE_BLOCKS[z].map(b=>BLOCK_MAP_LOCATION[b]);
     const lat=points.reduce((sum,p)=>sum+p[0],0)/points.length,lon=points.reduce((sum,p)=>sum+p[1],0)/points.length;
     const p=mapPixel(lat,lon,stage);
-    return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${p.x}px;top:${p.y}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${s.pct}% done</small></button>`;
+    return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${p.x}px;top:${p.y}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${ZONE_BLOCKS[z].length} blocks · ${s.pct}% done</small></button>`;
   }).join("");
-  const z=activeMapZone,s=zoneStats(z);
-  document.getElementById("zoneMapDetail").innerHTML=`
-    <span class="zone-map-detail-kicker">SELECTED PROJECT AREA</span>
-    <strong>Zone ${z}</strong><p>${z==="3"?"Pasir Ris Drive 1":"Pasir Ris Street 51"} · ${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p>
-    <div class="zone-map-detail-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b}">Blk ${b} ↗</button>`).join("")}</div>
-    <button class="zone-map-open" type="button" data-open-map-zone="${z}">Open Zone ${z} Block Board ↗</button>`;
-  document.getElementById("zoneMapSide").innerHTML=`<div class="site-view-nav" aria-label="Choose a zone">${Object.keys(ZONE_BLOCKS).map(n=>{
-    const x=zoneStats(n);return `<button type="button" data-map-zone="${n}" aria-pressed="${n===z}"><span>ZONE ${n}</span><strong>${x.pct}%</strong></button>`;
-  }).join("")}</div>
-    <section class="site-view-scene" aria-label="Zone ${z} three dimensional block view">
-      <div class="site-view-head"><div><span>SITE VIEW · ${z==="3"?"PASIR RIS DRIVE 1":"PASIR RIS STREET 51"}</span><h4>Zone ${z} Buildings</h4><p>${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p></div><button type="button" data-open-map-zone="${z}">Open Zone Board ↗</button></div>
-      <div class="site-view-buildings">${ZONE_BLOCKS[z].map(b=>{
-        const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length;
-        return `<button class="site-building" type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b} on the Block Board"><span class="site-building-art" aria-hidden="true"><img src="building-3d-wide.png" alt="" loading="lazy"></span><strong>BLK ${b}</strong><small>${floors} floors · Open ↗</small></button>`;
-      }).join("")}</div>
-      <div class="site-view-ground" aria-hidden="true"></div>
-    </section>`;
+  document.getElementById("zoneMap").innerHTML=nav+markers;
 }
 let zoneMapResizeTimer;
-window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>{if(document.getElementById("zoneMapPanel").dataset.mode==="map")renderZoneMap(unitsArray())},140)});
+window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>renderZoneMap(unitsArray()),140)});
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
   const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;

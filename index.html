@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.63">
+  <link rel="stylesheet" href="styles.css?v=7.64">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -118,17 +118,15 @@
 
         <article class="panel zone-map-panel" id="zoneMapPanel" data-mode="map" aria-labelledby="zoneMapTitle">
           <div class="panel-head zone-map-heading">
-            <div><span class="section-label">PROJECT COVERAGE</span><h3 id="zoneMapTitle">Zone & Block Views</h3><p>Live zones and blocks from the project register.</p></div>
-            <div class="zone-map-controls" aria-label="Zone view mode"><span class="zone-map-key">6 zones · 38 blocks</span><button type="button" data-zone-map-mode="map" aria-pressed="true">Map View</button><button type="button" data-zone-map-mode="side" aria-pressed="false">3D Buildings</button></div>
+            <div><span class="section-label">PROJECT COVERAGE</span><h3 id="zoneMapTitle">Pasir Ris project map</h3><p>Choose a zone, then select a building to open its block board.</p></div>
+            <span class="zone-map-key">6 zones · 38 blocks</span>
           </div>
           <div class="zone-map-stage">
             <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
-            <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone"></div>
-            <div id="zoneMapDetail" class="zone-map-detail" aria-live="polite"></div>
+            <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone or block"></div>
             <div class="zone-map-attribution"><a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer"><img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" alt="OneMap"> OneMap</a> © contributors · <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a></div>
           </div>
-          <div id="zoneMapSide" class="zone-map-side" aria-label="All zones and blocks"></div>
-          <p class="zone-map-note">Pasir Ris Drive 1 & Street 51 · block positions are approximate; 3D buildings are illustrative.</p>
+          <p class="zone-map-note">Pasir Ris Drive 1 & Street 51 · approximate block positions; 3D models are illustrative.</p>
         </article>
 
         <div class="dashboard-grid dashboard-grid-wow">
@@ -612,6 +610,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.63"></script>
+<script src="app.js?v=7.64"></script>
 </body>
 </html>
