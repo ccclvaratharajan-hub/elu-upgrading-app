@@ -714,8 +714,8 @@ function renderZoneMap(u){
     <section class="site-view-scene" aria-label="Zone ${z} three dimensional block view">
       <div class="site-view-head"><div><span>SITE VIEW · ${z==="3"?"PASIR RIS DRIVE 1":"PASIR RIS STREET 51"}</span><h4>Zone ${z} Buildings</h4><p>${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p></div><button type="button" data-open-map-zone="${z}">Open Zone Board ↗</button></div>
       <div class="site-view-buildings">${ZONE_BLOCKS[z].map(b=>{
-        const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length,height=Math.max(80,Math.min(176,65+floors*8));
-        return `<button class="site-building" type="button" data-map-zone="${z}" data-map-block="${b}" style="--tower-height:${height}px" aria-label="Open Block ${b} on the Block Board"><span class="site-building-art" aria-hidden="true"><i class="site-building-roof"></i><i class="site-building-side"></i><i class="site-building-front"></i></span><strong>BLK ${b}</strong><small>${floors} floors</small></button>`;
+        const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length;
+        return `<button class="site-building" type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b} on the Block Board"><span class="site-building-art" aria-hidden="true"><img src="building-3d-wide.png" alt="" loading="lazy"></span><strong>BLK ${b}</strong><small>${floors} floors · Open ↗</small></button>`;
       }).join("")}</div>
       <div class="site-view-ground" aria-hidden="true"></div>
     </section>`;
