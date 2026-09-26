@@ -3,6 +3,11 @@ const PREV_STORAGE_KEY="elu_premium_v12";
 const SECURE_STATE_KEY="elu_secure_state_v3";
 const AUTO_LOCK_MS=15*60*1000;
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
+const ZONE1_REQUESTED_CORRECTIONS={
+  "565-9-120":"NR","565-2-106":"NR","568-11-82":"NR",
+  "568-2-70":"NR","568-3-72":"NR","565-4-114":"A"
+};
+const ZONE1_OPT_IN_REASON="Zone 1 requested Opt-In correction (status only)";
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
 const fmtDate=new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"short",year:"numeric"});
@@ -53,7 +58,7 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],statusDecisionSchema:2,createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],statusDecisionSchema:2,createdAt:new Date().toISOString()};
 }
 function isUserAppointment(a){
   return ["Planner","Manual","Planner History"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
@@ -147,6 +152,7 @@ function mergeSavedIntoFresh(saved){
     })
   }
   fresh.statusAudit=Array.isArray(saved.statusAudit)?[...saved.statusAudit]:[];
+  fresh.zone1CorrectionsApplied=Array.isArray(saved.zone1CorrectionsApplied)?[...saved.zone1CorrectionsApplied]:[];
 
   // One-time migration from V7.54 and earlier. Keep a confirmed Opt-Out only when
   // it is still the latest explicit decision. A later user appointment will replace it.
@@ -177,7 +183,7 @@ function loadLegacyPlainState(){
   }
   return null
 }
-let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],statusDecisionSchema:2,createdAt:""};
+let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],statusDecisionSchema:2,createdAt:""};
 let secureSessionKey=null;
 let securePersistChain=Promise.resolve();
 let appStarted=false;
@@ -206,7 +212,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -281,6 +287,7 @@ async function unlockSecureApp(password){
 
   secureSessionKey=key;
   state=saved?mergeSavedIntoFresh(saved):makeInitialState();
+  applyZone1RequestedCorrections();
   normalizeManualOverrides();
   startApp();
   await securePersistNow();
@@ -395,7 +402,9 @@ function preferredMasterAppointment(key){
 function currentUnitAppointmentState(key){
   const manual=manualStatusOverride(key);
   if(manual){
-    return {appointment:null,status:manual.status,workStatus:manual.status==="A"?"Completed":"Pending",active:false,completed:manual.status==="A",manualOverride:manual}
+    // This requested A means Opt-In; it does not assert that work was completed.
+    const completed=manual.status==="A"&&manual.reason!==ZONE1_OPT_IN_REASON;
+    return {appointment:null,status:manual.status,workStatus:completed?"Completed":"Pending",active:false,completed,manualOverride:manual}
   }
 
   const a=preferredMasterAppointment(key);
@@ -431,6 +440,31 @@ function currentUnitAppointmentState(key){
 
   if(hasResidentResponse)return {appointment:null,status:"P",workStatus:"Pending",active:false,completed:false};
   return {appointment:null,status:"NR",workStatus:"Pending",active:false,completed:false}
+}
+
+function applyZone1RequestedCorrections(){
+  state.zone1CorrectionsApplied=Array.isArray(state.zone1CorrectionsApplied)?state.zone1CorrectionsApplied:[];
+  state.statusAudit=Array.isArray(state.statusAudit)?state.statusAudit:[];
+  for(const [key,status] of Object.entries(ZONE1_REQUESTED_CORRECTIONS)){
+    if(state.zone1CorrectionsApplied.includes(key))continue;
+    const auditId=`zone1-requested-20260926-${key}`;
+    if(state.statusAudit.some(event=>event.id===auditId)){
+      state.zone1CorrectionsApplied.push(key);
+      continue
+    }
+    const unit=state.units[key];
+    if(!unit||unit.zone!==1){console.warn("Zone 1 correction unit not found",key);continue}
+    const before=currentUnitAppointmentState(key).status;
+    const at=new Date().toISOString();
+    state.statusOverrides[key]={
+      status,source:"Manual",
+      reason:status==="A"?ZONE1_OPT_IN_REASON:"Zone 1 requested No Response correction",
+      updatedAt:at,decisionId:null
+    };
+    state.statusAudit.push({id:auditId,unitKey:key,from:before,to:status,
+      action:"user-requested-zone1-correction",source:"Manual",at});
+    state.zone1CorrectionsApplied.push(key)
+  }
 }
 
 function normalizeManualOverrides(){
@@ -1756,7 +1790,7 @@ document.getElementById("exportBlockChartPdfBtn").addEventListener("click",expor
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","PENDING P","P %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.p,pct(x.pPct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.p,pct(t.pPct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
-document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],statusDecisionSchema:2},null,2),"application/json")});
+document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2},null,2),"application/json")});
 
 
 /* V7.45 — Master Schedule + integrated Photo Inbox */
