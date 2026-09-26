@@ -2214,9 +2214,17 @@ async function monthlyPhotoGroups(zone,cycle){
   return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 
-function photoBlockOptions(){
-  return Object.keys(PROJECT_LAYOUT).sort((a,b)=>Number(a)-Number(b))
-    .map(b=>`<option value="${b}">Blk ${b} · Zone ${zoneOfBlock(b)}</option>`).join("")
+function photoBlockOptions(zone){
+  return (ZONE_BLOCKS[zone]||[]).filter(b=>Boolean(PROJECT_LAYOUT[String(b)]||PROJECT_LAYOUT[b]))
+    .map(b=>`<option value="${b}">Blk ${b}</option>`).join("")
+}
+function syncPhotoBlockReportBlocks(){
+  const zone=document.getElementById("photoBlockReportZone").value;
+  const block=document.getElementById("photoBlockReportBlock");
+  const previous=block.value;
+  block.innerHTML=photoBlockOptions(zone);
+  if([...block.options].some(o=>o.value===previous))block.value=previous;
+  renderBlockPhotoSummary().catch(console.error)
 }
 async function blockPhotoGroups(block,fromDate,toDate){
   const all=(await photoDbAll("photos")).filter(p=>Number(p.block)===Number(block)&&p.date>=fromDate&&p.date<=toDate);
@@ -2312,6 +2320,7 @@ document.getElementById("photoWordBtn").addEventListener("click",()=>generateMon
 document.getElementById("photoPdfBtn").addEventListener("click",()=>generateMonthlyPhotoPdf().catch(e=>{console.error(e);toast("PDF report generation failed")}));
 document.getElementById("photoBlockWordBtn").addEventListener("click",()=>generateBlockPhotoWord().catch(e=>{console.error(e);toast("Block Word report generation failed")}));
 document.getElementById("photoBlockPdfBtn").addEventListener("click",()=>generateBlockPhotoPdf().catch(e=>{console.error(e);toast("Block PDF report generation failed")}));
+document.getElementById("photoBlockReportZone").addEventListener("change",syncPhotoBlockReportBlocks);
 ["photoBlockReportBlock","photoBlockReportFrom","photoBlockReportTo"].forEach(id=>document.getElementById(id).addEventListener("change",()=>renderBlockPhotoSummary().catch(console.error)));
 
 async function photoAutoCleanup(){
@@ -2329,12 +2338,13 @@ function initPhotoCenter(){
   document.getElementById("photoZone").value="1";
   document.getElementById("photoDate").value=isoTodaySG();
   document.getElementById("photoCycleDate").value=isoTodaySG();
-  const cycle=cycleForDate(isoTodaySG()),blockSel=document.getElementById("photoBlockReportBlock");
-  if(blockSel){
-    blockSel.innerHTML=photoBlockOptions();
-    blockSel.value=Object.keys(PROJECT_LAYOUT).sort((a,b)=>Number(a)-Number(b))[0]||"531";
+  const cycle=cycleForDate(isoTodaySG()),blockZone=document.getElementById("photoBlockReportZone");
+  if(blockZone){
+    blockZone.innerHTML=zoneOptions();
+    blockZone.value="1";
     document.getElementById("photoBlockReportFrom").value=cycle.start;
-    document.getElementById("photoBlockReportTo").value=cycle.end
+    document.getElementById("photoBlockReportTo").value=cycle.end;
+    syncPhotoBlockReportBlocks()
   }
   syncPhotoZoneTabs();
   syncPhotoScheduleBlocks();
