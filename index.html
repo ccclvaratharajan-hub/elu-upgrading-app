@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.64">
+  <link rel="stylesheet" href="styles.css?v=7.66">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -21,6 +21,9 @@
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 3 3-4 4 5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 13h7l-1 9 10-12h-7z"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M5 19 19 5M8 5h11v11"/></symbol>
   </svg>
 
 
@@ -67,7 +70,7 @@
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
-        <button class="nav-item" data-view="photos"><svg><use href="#i-register"/></svg><span>Photo Report</span></button>
+        <button class="nav-item" data-view="photos"><svg><use href="#i-photo"/></svg><span>Photo Report</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
       </nav>
 
@@ -84,6 +87,7 @@
           <h1 id="pageTitle">Executive Dashboard</h1>
           <p id="pageSubtitle">One view of resident response, appointments and completed work.</p>
         </div>
+
         <div class="top-actions">
           <div class="user-name-chip" id="userNameChip">Secure User</div>
           <div class="today-chip" id="todayChip"></div>
@@ -116,17 +120,24 @@
           <article class="kpi-card accent-violet"><div class="kpi-icon violet"><svg><use href="#i-survey"/></svg></div><div><span>Survey Visits</span><strong id="kpiFollowups">0</strong><small>Upcoming visit appointments</small></div></article>
         </div>
 
+        <div class="dashboard-shortcuts" aria-label="Quick access">
+          <button type="button" data-go="survey"><span class="shortcut-icon"><svg><use href="#i-survey"/></svg></span><span><strong>Survey Visit</strong><small>Open visit register</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" data-go="appointments"><span class="shortcut-icon"><svg><use href="#i-calendar"/></svg></span><span><strong>Appointments</strong><small>Check the schedule</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" data-go="blockboard"><span class="shortcut-icon"><svg><use href="#i-building"/></svg></span><span><strong>Block Board</strong><small>View units by floor</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" data-go="photos"><span class="shortcut-icon"><svg><use href="#i-photo"/></svg></span><span><strong>Photo Report</strong><small>Open photo workflow</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+        </div>
+
         <article class="panel zone-map-panel" id="zoneMapPanel" data-mode="map" aria-labelledby="zoneMapTitle">
           <div class="panel-head zone-map-heading">
-            <div><span class="section-label">PROJECT COVERAGE</span><h3 id="zoneMapTitle">Pasir Ris project map</h3><p>Choose a zone, then select a building to open its block board.</p></div>
+            <div><span class="section-label">PROJECT COVERAGE</span><h3 id="zoneMapTitle">Pasir Ris project map</h3><p>Choose a zone, then select a block label to open its board.</p></div>
             <span class="zone-map-key">6 zones · 38 blocks</span>
           </div>
           <div class="zone-map-stage">
             <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
             <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone or block"></div>
-            <div class="zone-map-attribution"><a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer"><img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" alt="OneMap"> OneMap</a> © contributors · <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a></div>
+            <div class="zone-map-attribution">Imagery © <a href="https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank" rel="noopener noreferrer">Esri</a>, Maxar, Earthstar Geographics &amp; GIS User Community · Fallback © <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a> contributors / SLA</div>
           </div>
-          <p class="zone-map-note">Pasir Ris Drive 1 & Street 51 · approximate block positions; 3D models are illustrative.</p>
+          <p class="zone-map-note" id="zoneMapNote">Pasir Ris Drive 1 &amp; Street 51 · real satellite imagery from above, with approximate block labels.</p>
         </article>
 
         <div class="dashboard-grid dashboard-grid-wow">
@@ -610,6 +621,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.64"></script>
+<script src="app.js?v=7.66"></script>
 </body>
 </html>

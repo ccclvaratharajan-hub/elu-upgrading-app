@@ -689,13 +689,13 @@ function renderZoneMapTiles(stage){
   const c=mapWorld(...center,zoom),left=c.x-w/2,top=c.y-h/2;
   const x0=Math.floor(left/256),x1=Math.floor((left+w)/256),y0=Math.floor(top/256),y1=Math.floor((top+h)/256);
   let tiles="";
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles+=`<img alt="" loading="lazy" src="https://www.onemap.gov.sg/maps/tiles/Night/${zoom}/${x}/${y}.png" style="left:${Math.round(x*256-left)}px;top:${Math.round(y*256-top)}px">`;
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles+=`<img alt="" loading="lazy" src="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}" onerror="this.onerror=null;this.src='https://www.onemap.gov.sg/maps/tiles/Night/${zoom}/${x}/${y}.png'" style="left:${Math.round(x*256-left)}px;top:${Math.round(y*256-top)}px">`;
   layer.innerHTML=tiles;
 }
 function layoutMapBuildings(blocks,stage){
   const positions=blocks.map(b=>{const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);return{block:b,x:p.x,y:p.y}});
-  const mobile=stage.clientWidth<650,sepX=mobile?88:122,sepY=mobile?102:137;
-  const minX=mobile?43:60,maxX=Math.max(minX,stage.clientWidth-minX),minY=mobile?245:215,maxY=Math.max(minY,stage.clientHeight-45);
+  const mobile=stage.clientWidth<650,sepX=mobile?58:72,sepY=mobile?48:58;
+  const minX=36,maxX=Math.max(minX,stage.clientWidth-minX),minY=mobile?145:105,maxY=Math.max(minY,stage.clientHeight-36);
   for(let k=0;k<90;k++){
     for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++){
       const a=positions[i],b=positions[j],dx=b.x-a.x,dy=b.y-a.y;
@@ -719,8 +719,7 @@ function renderZoneMap(u){
   const markers=Object.keys(ZONE_BLOCKS).map(z=>{
     const s=zoneStats(z),active=z===activeMapZone;
     if(active)return layoutMapBuildings(ZONE_BLOCKS[z],stage).map(({block:b,x,y})=>{
-      const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length;
-      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${Math.round(x)}px;top:${Math.round(y)}px" title="Open Blk ${b} · ${BLOCK_MAP_LOCATION[b][2]}" aria-label="Open Block ${b} in Zone ${z}"><span class="map-block-number">BLK ${b}</span><span class="map-building-image" aria-hidden="true"><img src="building-3d-wide.png" alt="" loading="lazy"></span><small>${floors} floors</small></button>`;
+      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${Math.round(x)}px;top:${Math.round(y)}px" title="Open Blk ${b} · ${BLOCK_MAP_LOCATION[b][2]}" aria-label="Open Block ${b} in Zone ${z}"><span class="map-block-number">BLK ${b}</span></button>`;
     }).join("");
     if(activeMapZone!=="all")return"";
     const points=ZONE_BLOCKS[z].map(b=>BLOCK_MAP_LOCATION[b]);

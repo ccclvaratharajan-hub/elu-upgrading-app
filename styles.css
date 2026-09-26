@@ -1821,3 +1821,23 @@ body{color:var(--ink);background:radial-gradient(circle at 13% 2%,rgba(244,252,2
 .map-building-pin:focus-visible{outline:2px solid #e9faff;outline-offset:3px;border-radius:8px}
 .zone-map-attribution{font-size:10px}.zone-map-note{margin:10px 2px 0;font-size:12px}
 @media(max-width:650px){.zone-map-stage{height:610px;min-height:610px}.map-zone-nav{top:10px;gap:2px;padding:5px}.map-zone-nav button{font-size:11px;padding:7px 8px}.map-zone-pin{padding:7px 8px}.map-zone-pin span{font-size:12px}.map-zone-pin small{display:block;font-size:9px}.map-building-pin{width:72px;min-width:0}.map-building-image{width:70px;height:68px}.map-block-number{font-size:11px!important;padding:3px 5px}.map-building-pin small{font-size:9px}}
+
+/* V7.65 · Subtle electrical detail and functional dashboard shortcuts */
+body{background-image:url("electrical-circuit.svg"),radial-gradient(circle at 13% 2%,rgba(244,252,255,.96),transparent 31%),radial-gradient(circle at 86% 65%,rgba(43,126,194,.32),transparent 42%),linear-gradient(145deg,#d5efff 0%,#a2d1f1 43%,#63a8d9 100%);background-size:520px 520px,auto,auto,auto;background-repeat:repeat,no-repeat,no-repeat,no-repeat;background-attachment:fixed}
+.main .panel,.main .kpi-card,.main .floor-row,.main .today-team-panel{background-color:rgba(222,241,253,.86)}
+.nav-item{gap:10px}.nav-item svg{box-sizing:border-box;width:35px;height:35px;flex:0 0 35px;padding:8px;border-radius:11px;background:rgba(224,245,255,.78);stroke-width:2;transition:background .18s,transform .18s}.nav-item:hover svg,.nav-item.active svg{background:#b6e2fa;transform:translateY(-1px)}
+.dashboard-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.dashboard-shortcuts button{display:flex;align-items:center;gap:11px;min-width:0;padding:12px 13px;border:1px solid rgba(236,250,255,.91);border-radius:16px;background:linear-gradient(145deg,rgba(226,245,255,.95),rgba(179,221,247,.87));box-shadow:0 9px 21px rgba(19,82,128,.13);color:#103e60;text-align:left;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s}
+.dashboard-shortcuts button:hover{transform:translateY(-3px);border-color:#73b8e6;box-shadow:0 14px 27px rgba(15,78,130,.22)}.dashboard-shortcuts button:focus-visible{outline:3px solid #0c79bf;outline-offset:2px}
+.dashboard-shortcuts .shortcut-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#1688c5,#145c94);color:#fff;box-shadow:0 6px 13px rgba(13,75,125,.22)}
+.dashboard-shortcuts svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.dashboard-shortcuts strong,.dashboard-shortcuts small{display:block}.dashboard-shortcuts strong{font-size:13px;font-weight:900}.dashboard-shortcuts small{font-size:11px;color:#426988;margin-top:2px;font-weight:700}.dashboard-shortcuts .shortcut-arrow{margin-left:auto;width:16px;height:16px;color:#2877aa;flex:0 0 16px}
+@media(max-width:1100px){.dashboard-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.dashboard-shortcuts{gap:8px}.dashboard-shortcuts button{padding:9px;gap:7px}.dashboard-shortcuts .shortcut-icon{width:34px;height:34px;flex-basis:34px}.dashboard-shortcuts strong{font-size:12px}.dashboard-shortcuts small{font-size:10px}.dashboard-shortcuts .shortcut-arrow{display:none}}
+
+/* The real map uses provider imagery and georeferenced markers when configured. */
+.real-3d-map{position:absolute;inset:0;z-index:1}.real-3d-map[hidden]{display:none}.real-3d-map gmp-map-3d{display:block;width:100%;height:100%}
+.zone-map-panel.has-google-3d .zone-map-tiles,.zone-map-panel.has-google-3d .zone-map-attribution{display:none}
+.zone-map-panel.has-google-3d .zone-map-stage:after{display:none}
+.map-building-pin{width:auto;min-width:0;padding:5px 7px;border:2px solid #eafaff;border-radius:8px;background:#d6f2ff;box-shadow:0 5px 0 #28739f,0 10px 16px rgba(0,34,65,.3);filter:none;transform:translate(-50%,-95%)}
+.map-building-pin:before{display:none}.map-building-pin:hover,.map-building-pin:focus-visible{background:#ecfbff;transform:translate(-50%,-110%) scale(1.08);filter:none}
+.map-block-number{padding:0;border:0;background:none;box-shadow:none}
+@media(max-width:650px){.map-building-pin{padding:4px 5px}}
