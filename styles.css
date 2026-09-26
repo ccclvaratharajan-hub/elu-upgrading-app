@@ -1594,7 +1594,7 @@ body{
   border:1px solid rgba(61,105,146,.30);
   background:
     linear-gradient(90deg,rgba(10,39,67,.68) 0%,rgba(17,58,94,.30) 56%,rgba(16,55,88,.09) 100%),
-    url("zone-satellite-reference.png") center 52%/cover no-repeat;
+    linear-gradient(145deg,#214760,#16334b);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 16px 30px rgba(23,57,90,.16);
 }
 .zone-map-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;width:min(690px,68%);padding:19px;align-content:center;min-height:458px}
@@ -1647,3 +1647,58 @@ body{
 @media(max-width:650px){.zone-map-heading{align-items:stretch}.zone-map-controls{justify-content:flex-start}.zone-map-stage{display:block}.zone-map-grid{width:100%;max-width:none;min-height:0;grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}.zone-map-detail{width:auto;margin:8px 12px 12px}.zone-map-title small{font-size:8px}.zone-map-side-head strong{font-size:12px}}
 @media(max-width:430px){.zone-map-grid{grid-template-columns:1fr}.zone-map-tile .zone-map-meter{margin-left:38px}}
 .zone-map-panel[data-mode="side"] .zone-map-note{display:none}
+
+/* V7.61 · Electrical blue glass surfaces, with legible dark text */
+:root{--bg:#789ab8;--bg2:#9fbed6;--line:#bfd2e1;--shadow:0 18px 45px rgba(19,52,82,.16)}
+html{background:#789ab8}
+body{
+  background:
+    url("electrical-circuit.svg") 0 0/460px 460px repeat,
+    radial-gradient(circle at 78% -10%,#bfd8e9 0,transparent 36%),
+    linear-gradient(145deg,#7798b5 0%,#9bbbd3 52%,#6c90ae 100%);
+  background-attachment:fixed;
+}
+.sidebar{background:rgba(195,218,235,.88);border-right-color:rgba(61,100,134,.20);box-shadow:12px 0 38px rgba(17,49,78,.12)}
+.panel,.kpi-card,.team-panel,.floor-row,.report-hero,.hero,.block-headline,
+.zone-record-group,.planner-zone-section,.today-team-panel,.attention-panel{
+  background:rgba(209,229,243,.78);
+  border-color:rgba(229,244,255,.61);
+  box-shadow:0 14px 34px rgba(19,52,82,.15);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.zone-card-grid .zone-line,.premium-compact-list .compact-item,.compact-item,.attention-card,
+.team-card,.unit-card:not([class*="status-"]),.report-mini-card,.planned-schedule-card,
+.today-team-col,.zone-map-side-row{background:rgba(211,232,246,.75)}
+.table-shell{background:rgba(210,231,245,.56)}.table-shell th{background:rgba(195,219,238,.93)}
+.search-box,.today-chip,.ghost-btn,.section-toolbar select,.section-toolbar input,
+.premium-form input,.premium-form select,.premium-form textarea{
+  background:rgba(225,240,250,.86);
+}
+/* Map coordinates anchor the pins; raised faces supply the near-3D look. */
+.zone-map-stage{position:relative;display:block;min-height:550px;background:linear-gradient(145deg,#163753,#315e7d);isolation:isolate}
+.zone-map-tiles{position:absolute;inset:0;overflow:hidden;z-index:0;filter:saturate(.88) contrast(1.03)}
+.zone-map-tiles img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;pointer-events:none}
+.zone-map-stage:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(12,36,58,.12),transparent 55%,rgba(12,36,58,.16))}
+.zone-map-grid{position:absolute;inset:0;z-index:2;display:block;width:100%;max-width:none;min-height:0;padding:0;pointer-events:none}
+.zone-map-grid button{pointer-events:auto}
+.map-zone-pin,.map-building-pin{position:absolute;cursor:pointer;white-space:nowrap;color:#fff;transition:transform .18s,filter .18s}
+.map-zone-pin{transform:translate(-50%,-50%);display:grid;gap:2px;text-align:center;border:1px solid rgba(202,238,255,.7);border-radius:11px;padding:8px 10px;background:linear-gradient(150deg,#2077a3,#164669);box-shadow:0 5px 0 #0c304c,0 14px 20px rgba(0,17,34,.35)}
+.map-zone-pin:hover,.map-zone-pin:focus-visible{transform:translate(-50%,-55%);filter:brightness(1.18);z-index:5}
+.map-zone-pin span{font-size:10px;font-weight:950;letter-spacing:.08em}.map-zone-pin small{font-size:8px;color:#c5eafd}
+.map-zone-pin-5{margin-top:-29px}.map-zone-pin-1{margin-top:27px}.map-zone-pin-6{margin-left:45px}
+.map-building-pin{transform:translate(-50%,-66%);border:1px solid #a5e0f4;border-radius:6px;padding:7px 6px;background:linear-gradient(145deg,#53a9cb,#1b698c);box-shadow:3px 5px 0 #114660,7px 11px 17px rgba(0,18,34,.42);min-width:37px;z-index:3}
+.map-building-pin:before{content:"";position:absolute;left:45%;bottom:-10px;width:8px;height:8px;border-radius:50%;background:#89e1ef;box-shadow:0 0 0 3px rgba(106,204,232,.25)}
+.map-building-pin span{position:relative;font-size:10px;font-weight:950;letter-spacing:.01em}
+.map-building-pin:hover,.map-building-pin:focus-visible{transform:translate(-50%,-78%) scale(1.12);background:linear-gradient(145deg,#7bd6ee,#278cb1);z-index:6}
+.map-building-pin:focus-visible,.map-zone-pin:focus-visible{outline:2px solid white;outline-offset:3px}
+.zone-map-detail{position:absolute;right:16px;bottom:23px;z-index:4;width:min(312px,35%);margin:0;background:rgba(11,43,70,.91)}
+.zone-map-attribution{position:absolute;z-index:5;bottom:0;left:0;padding:4px 8px;background:rgba(6,29,47,.78);color:#e3f2ff;font-size:9px}.zone-map-attribution a{color:inherit;text-decoration:underline}
+.zone-map-note{color:#345979;font-weight:700}
+.zone-map-panel[data-mode="side"] .zone-map-stage{display:none}
+@media(max-width:900px){.zone-map-detail{width:min(270px,42%)}.zone-map-stage{min-height:520px}}
+@media(max-width:650px){.zone-map-stage{min-height:590px}.zone-map-detail{width:auto;left:10px;right:10px;bottom:26px;padding:12px}.zone-map-detail-blocks{grid-template-columns:repeat(6,minmax(0,1fr))}.zone-map-detail-blocks button{padding:6px 2px;font-size:8px}.map-zone-pin{padding:5px 6px}.map-zone-pin span{font-size:8px}.map-zone-pin small{display:none}.map-building-pin{min-width:29px;padding:5px 3px}.map-building-pin span{font-size:8px}}
+.zone-map-attribution a:first-child{display:inline-flex;align-items:center;gap:3px}.zone-map-attribution img{width:18px;height:18px;object-fit:contain}
+.project-badge,.nav-item.active,.sidebar-note,.unit-drawer,.report-hero,.block-headline{background:rgba(204,226,241,.88)}
+#blockboard .floor-row{background:rgba(209,229,243,.78)!important;border-color:rgba(229,244,255,.65)!important}
+.unit-register-table th{background:linear-gradient(180deg,#cfdfec,#bfd5e6)!important}
+.premium-form input,.premium-form select,.premium-form textarea,select,textarea{background-color:rgba(220,237,249,.88)}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eef7ff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.56">
+  <link rel="stylesheet" href="styles.css?v=7.61">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -122,11 +122,13 @@
             <div class="zone-map-controls" aria-label="Zone view mode"><span class="zone-map-key">6 zones · 38 blocks</span><button type="button" data-zone-map-mode="map" aria-pressed="true">Map View</button><button type="button" data-zone-map-mode="side" aria-pressed="false">Side View</button></div>
           </div>
           <div class="zone-map-stage">
+            <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
             <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone"></div>
             <div id="zoneMapDetail" class="zone-map-detail" aria-live="polite"></div>
+            <div class="zone-map-attribution"><a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer"><img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" alt="OneMap"> OneMap</a> © contributors · <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a></div>
           </div>
           <div id="zoneMapSide" class="zone-map-side" aria-label="All zones and blocks"></div>
-          <p class="zone-map-note">Satellite image: OneMap © 2026 SLA · zone cards show project groupings; exact block pins and boundaries are not marked.</p>
+          <p class="zone-map-note">Pasir Ris Drive 1 & Street 51 · building positions are approximate public postcode coordinates.</p>
         </article>
 
         <div class="dashboard-grid dashboard-grid-wow">
@@ -608,7 +610,8 @@
 
   <div class="toast" id="toast"></div>
   <script src="data.js?v=7.56"></script>
+  <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.56"></script>
+<script src="app.js?v=7.61"></script>
 </body>
 </html>

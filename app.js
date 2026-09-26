@@ -535,6 +535,7 @@ document.getElementById("zoneMapPanel").addEventListener("click",e=>{
     if(mode!=="map"&&mode!=="side")return;
     document.getElementById("zoneMapPanel").dataset.mode=mode;
     document.querySelectorAll("[data-zone-map-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b===modeButton)));
+    if(mode==="map")requestAnimationFrame(()=>renderZoneMap(unitsArray()));
     return;
   }
   const blockButton=e.target.closest("[data-map-block]");
@@ -664,33 +665,58 @@ document.getElementById("plannerZone").addEventListener("change",syncPlannerBloc
 document.getElementById("plannerSlot").addEventListener("change",togglePlannerCustomTime);
 document.getElementById("appointmentSlot").addEventListener("change",toggleAppointmentCustomTime);
 
+const ZONE_MAP_CENTER=[1.3690,103.95125];
+function zoneMapZoom(stage){return stage.clientWidth<650?16:17}
+function mapWorld(lat,lon,zoom){
+  const scale=256*2**zoom,rad=Math.max(-85,Math.min(85,lat))*Math.PI/180;
+  return{x:(lon+180)/360*scale,y:(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*scale};
+}
+function mapPixel(lat,lon,stage){
+  const zoom=zoneMapZoom(stage),p=mapWorld(lat,lon,zoom),c=mapWorld(...ZONE_MAP_CENTER,zoom);
+  return{x:Math.round(stage.clientWidth/2+p.x-c.x),y:Math.round(stage.clientHeight/2+p.y-c.y)};
+}
+function renderZoneMapTiles(stage){
+  const layer=document.getElementById("zoneMapTiles"),w=stage.clientWidth,h=stage.clientHeight,zoom=zoneMapZoom(stage);
+  if(!w||!h||layer.dataset.size===`${w}x${h}z${zoom}`)return;
+  layer.dataset.size=`${w}x${h}z${zoom}`;
+  const c=mapWorld(...ZONE_MAP_CENTER,zoom),left=c.x-w/2,top=c.y-h/2;
+  const x0=Math.floor(left/256),x1=Math.floor((left+w)/256),y0=Math.floor(top/256),y1=Math.floor((top+h)/256);
+  let tiles="";
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles+=`<img alt="" loading="lazy" src="https://www.onemap.gov.sg/maps/tiles/Night/${zoom}/${x}/${y}.png" style="left:${Math.round(x*256-left)}px;top:${Math.round(y*256-top)}px">`;
+  layer.innerHTML=tiles;
+}
 function renderZoneMap(u){
   const zoneStats=z=>{
     const units=u.filter(x=>x.zone===Number(z)),completed=units.filter(x=>x.workStatus==="Completed").length;
     return{units:units.length,completed,pct:units.length?Math.round(completed/units.length*100):0};
   };
+  const stage=document.querySelector(".zone-map-stage");renderZoneMapTiles(stage);
   document.getElementById("zoneMap").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
     const s=zoneStats(z),active=z===activeMapZone;
-    return `<button class="zone-map-tile ${active?"selected":""}" type="button" data-map-zone="${z}" aria-pressed="${active}">
-      <span class="zone-map-icon" aria-hidden="true">${z}</span>
-      <span class="zone-map-title"><strong>Zone ${z}</strong><small>${s.units.toLocaleString()} units · ${s.pct}% completed</small></span>
-      <span class="zone-map-arrow" aria-hidden="true">${active?"●":"›"}</span>
-      <span class="zone-map-meter" aria-hidden="true"><span style="width:${s.pct}%"></span></span>
-    </button>`;
+    if(active)return ZONE_BLOCKS[z].map(b=>{
+      const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);
+      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${p.x}px;top:${p.y}px" title="Blk ${b} · ${loc[2]}" aria-label="Open Block ${b} in Zone ${z}"><span>${b}</span></button>`;
+    }).join("");
+    const points=ZONE_BLOCKS[z].map(b=>BLOCK_MAP_LOCATION[b]);
+    const lat=points.reduce((sum,p)=>sum+p[0],0)/points.length,lon=points.reduce((sum,p)=>sum+p[1],0)/points.length;
+    const p=mapPixel(lat,lon,stage);
+    return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${p.x}px;top:${p.y}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${s.pct}% done</small></button>`;
   }).join("");
   const z=activeMapZone,s=zoneStats(z);
   document.getElementById("zoneMapDetail").innerHTML=`
     <span class="zone-map-detail-kicker">SELECTED PROJECT AREA</span>
-    <strong>Zone ${z}</strong><p>${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p>
+    <strong>Zone ${z}</strong><p>${z==="3"?"Pasir Ris Drive 1":"Pasir Ris Street 51"} · ${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p>
     <div class="zone-map-detail-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b}">Blk ${b} ↗</button>`).join("")}</div>
     <button class="zone-map-open" type="button" data-open-map-zone="${z}">Open Zone ${z} Block Board ↗</button>`;
   document.getElementById("zoneMapSide").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
     const s=zoneStats(z);
-    return `<section class="zone-map-side-row"><div class="zone-map-side-head"><div><span>ZONE ${z}</span><strong>${s.units.toLocaleString()} units · ${s.pct}% completed</strong></div><button type="button" data-open-map-zone="${z}">Open Zone ↗</button></div>
+    return `<section class="zone-map-side-row"><div class="zone-map-side-head"><div><span>ZONE ${z} · ${z==="3"?"PASIR RIS DRIVE 1":"PASIR RIS STREET 51"}</span><strong>${s.units.toLocaleString()} units · ${s.pct}% completed</strong></div><button type="button" data-open-map-zone="${z}">Open Zone ↗</button></div>
       <div class="zone-map-side-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}">Blk ${b}</button>`).join("")}</div>
       <div class="zone-map-meter" aria-hidden="true"><span style="width:${s.pct}%"></span></div></section>`;
   }).join("");
 }
+let zoneMapResizeTimer;
+window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>{if(document.getElementById("zoneMapPanel").dataset.mode==="map")renderZoneMap(unitsArray())},140)});
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
   const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
