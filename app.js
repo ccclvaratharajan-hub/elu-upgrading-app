@@ -1466,10 +1466,30 @@ function reportTotals(rows){
   return{...t,agreePct:t.total?t.agree/t.total*100:0,donePct:t.total?t.done/t.total*100:0,pPct:t.total?t.p/t.total*100:0,dPct:t.total?t.d/t.total*100:0,nrPct:t.total?t.nr/t.total*100:0}
 }
 function pct(v){return`${v.toFixed(1)}%`}
+function renderBlockStatusChart(rows){
+  if(!rows.length)return`<div class="empty-state">No blocks for this filter.</div>`;
+  const metrics=[
+    ["agree","Opt-In A+C","agreePct"],
+    ["done","Completed","donePct"],
+    ["p","Pending P","pPct"],
+    ["d","Opt-Out D","dPct"],
+    ["nr","NR","nrPct"]
+  ];
+  return rows.map(r=>`<article class="block-chart-card">
+    <div class="block-chart-identity"><span>ZONE ${r.zone}</span><strong>Block ${r.block}</strong><small>${r.total} units</small></div>
+    <div class="block-chart-metrics">${metrics.map(([key,label,pctKey])=>{
+      const value=Math.max(0,Math.min(100,r[pctKey]));
+      return `<div class="block-chart-metric metric-${key}" aria-label="Block ${r.block}, ${label}: ${r[key]} units, ${value.toFixed(1)} percent">
+        <div class="block-chart-metric-head"><span>${label}</span><strong>${r[key]} <small>${value.toFixed(1)}%</small></strong></div>
+        <div class="block-chart-track"><i style="width:${value.toFixed(1)}%"></i></div>
+      </div>`
+    }).join("")}</div>
+  </article>`).join("");
+}
 function renderReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
   document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card pending-card"><span>Pending P</span><strong>${t.p}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
-  document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["p",r.pPct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
+  document.getElementById("reportBlockChart").innerHTML=renderBlockStatusChart(rows);
   document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><thead><tr><th>S/N</th><th>BLK</th><th>TOTAL</th><th>A+C</th><th>A+C %</th><th>DONE</th><th>DONE %</th><th>P</th><th>P %</th><th>D</th><th>D %</th><th>NR</th><th>NR %</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.p}</td><td>${pct(r.pPct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.p}</td><td>${pct(t.pPct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
   renderResponseSummary();
 }
