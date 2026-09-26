@@ -2072,3 +2072,75 @@ body.theme-night .main .command-hero p{color:#e0f3ff}
 @media(max-width:900px){body.theme-night #blockboard .block-summary-grid{grid-template-columns:repeat(3,minmax(88px,1fr))}}
 @media(max-width:560px){body.theme-night #blockboard .block-summary-grid{grid-template-columns:repeat(2,minmax(88px,1fr))}}
 @media(max-width:760px){body.theme-night .twin-scene{background-position:57% center}body.theme-night .twin-scene-title{width:auto}}
+
+/* V7.84 · Dashboard night glass. Preserve all data and report rendering. */
+body.theme-night #dashboard>.panel,
+body.theme-night #dashboard .dashboard-grid-wow>.panel{
+  background:linear-gradient(138deg,rgba(5,35,64,.88),rgba(13,65,100,.77))!important;
+  border:1px solid rgba(110,202,237,.5)!important;
+  color:#e9f7ff;
+  backdrop-filter:blur(15px);
+  box-shadow:0 20px 37px rgba(0,13,33,.31),inset 0 1px 0 rgba(195,241,255,.18)!important
+}
+body.theme-night #dashboard .panel-head h3{color:#f5fbff!important;text-shadow:0 2px 14px rgba(43,167,221,.16)}
+body.theme-night #dashboard .panel-head p,
+body.theme-night #dashboard .zone-map-note{color:#bde3f5!important}
+body.theme-night #dashboard .section-label{color:#6edbeb!important}
+body.theme-night #dashboard .panel-badge{background:rgba(60,226,178,.17);border:1px solid rgba(100,239,190,.47);color:#9bf3cc}
+body.theme-night #dashboard .zone-map-key{background:rgba(102,198,235,.19);border:1px solid rgba(131,218,246,.4);color:#d9f4ff}
+body.theme-night #dashboard .zone-map-stage{border:1px solid rgba(140,224,246,.6);box-shadow:0 9px 25px rgba(0,15,32,.3),0 0 0 1px rgba(95,226,238,.11)}
+body.theme-night #dashboard .dashboard-shortcuts button{
+  background:linear-gradient(135deg,rgba(18,73,112,.83),rgba(17,97,133,.66));
+  border-color:rgba(117,212,242,.52);
+  color:#f1fbff;
+  box-shadow:0 11px 23px rgba(0,17,39,.27),inset 0 1px 0 rgba(207,250,255,.19);
+  backdrop-filter:blur(12px)
+}
+body.theme-night #dashboard .dashboard-shortcuts button:hover{border-color:#81f0ee;box-shadow:0 12px 30px rgba(34,193,221,.21),inset 0 1px 0 rgba(207,250,255,.25)}
+body.theme-night #dashboard .dashboard-shortcuts strong{color:#fff}
+body.theme-night #dashboard .dashboard-shortcuts small{color:#b5def1}
+body.theme-night #dashboard .dashboard-shortcuts .shortcut-arrow{color:#8ae8f5}
+body.theme-night #dashboard .dashboard-shortcuts .shortcut-icon{background:linear-gradient(135deg,#298eb9,#12649b);box-shadow:0 0 0 1px rgba(125,223,248,.44),0 0 19px rgba(48,193,229,.28)}
+body.theme-night #dashboard .kpi-card{background:linear-gradient(145deg,rgba(12,56,91,.88),rgba(21,89,125,.76))!important;border-color:rgba(118,205,236,.47)!important;backdrop-filter:blur(12px);box-shadow:0 12px 22px rgba(0,14,34,.23),inset 0 1px 0 rgba(211,245,255,.13)!important}
+body.theme-night #dashboard .kpi-card span{color:#b6e1f3}
+body.theme-night #dashboard .kpi-card strong{color:#f8fcff!important}
+body.theme-night #dashboard .kpi-card small{color:#acd5e8}
+body.theme-night #dashboard .zone-card-grid .zone-line{
+  background:rgba(94,163,204,.15)!important;
+  border-color:rgba(131,204,238,.42)!important;
+  color:#f0faff!important;
+  backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px 0 rgba(227,251,255,.1)
+}
+body.theme-night #dashboard .zone-name{color:#f6fbff;font-weight:900}
+body.theme-night #dashboard .zone-pct{color:#87dafa;font-weight:850}
+body.theme-night #dashboard .zone-mini{color:#c8e7f7}
+body.theme-night #dashboard .progress-track{background:rgba(151,205,234,.18);box-shadow:inset 0 1px 4px rgba(0,15,32,.25)}
+body.theme-night #dashboard .progress-fill{background:linear-gradient(90deg,#39b8e4,#6df0da);box-shadow:0 0 13px rgba(72,226,223,.5)}
+body.theme-night #dashboard .premium-compact-list .compact-item,
+body.theme-night #dashboard .attention-card{
+  background:rgba(113,180,216,.16)!important;
+  border-color:rgba(129,207,241,.43)!important;
+  color:#e9f8ff!important;
+  backdrop-filter:blur(8px)
+}
+body.theme-night #dashboard .compact-item strong,
+body.theme-night #dashboard .attention-card strong{color:#f4fbff}
+body.theme-night #dashboard .compact-item span,
+body.theme-night #dashboard .attention-card span{color:#c2e4f4}
+body.theme-night #dashboard .premium-compact-list .compact-item small{background:rgba(221,77,140,.17);border-color:rgba(246,141,190,.47);color:#ffc5e1}
+body.theme-night #dashboard .attention-card b{color:#8fe5ef}
+body.theme-night #dashboard .text-btn{color:#83e4f3;font-weight:900}
+body.theme-night #dashboard .today-zone-card{background:rgba(131,195,227,.12);border:1px solid rgba(122,202,239,.35);color:#e8f7ff}
+body.theme-night #dashboard .today-zone-head strong,
+body.theme-night #dashboard .today-zone-head em{color:#c5e6f6}
+body.theme-night #dashboard .today-zone-teams .today-team-col{background:rgba(10,57,91,.55)!important;border-color:rgba(124,200,233,.35)}
+body.theme-night #dashboard .today-team-head{background:rgba(96,176,211,.17)!important;border-color:rgba(138,210,237,.26)}
+body.theme-night #dashboard .today-team-head strong{color:#ecfaff}
+body.theme-night #dashboard .today-team-head span{color:#b8deee}
+body.theme-night #dashboard .today-slot{border-color:rgba(129,200,231,.18)}
+body.theme-night #dashboard .today-slot-time{background:rgba(19,78,113,.37)!important;border-color:rgba(129,200,231,.2);color:#c2e8f7}
+body.theme-night #dashboard .today-appt-chip{background:rgba(171,222,245,.15)!important;border-color:rgba(144,213,239,.39)!important;color:#dff3fc}
+body.theme-night #dashboard .today-appt-chip strong{color:#fff}
+body.theme-night #dashboard .today-empty,
+body.theme-night #dashboard .empty-state{color:#add5e9}
