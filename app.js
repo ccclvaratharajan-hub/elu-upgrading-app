@@ -611,7 +611,71 @@ function filterBlockOptions(zone,includeAll=true){if(zone==="all")return allBloc
 function zoneOfBlock(block){return Number(Object.keys(ZONE_BLOCKS).find(z=>(ZONE_BLOCKS[z]||[]).includes(Number(block)))||0)}
 function zoneGroupHeader(zone,count,label){return `<div class="zone-group-head"><div><span>ZONE ${zone}</span><strong>Blocks ${(ZONE_BLOCKS[zone]||[]).join(", ")}</strong></div><em>${count} ${label}</em></div>`}
 function unitOptionsForBlock(block){return getBlockUnits(block).map(u=>`<option value="${u.key}">${unitDisplay(u.floor,u.unit)}</option>`).join("")}
+function syncQuickJumpBlocks(){
+  const block=document.getElementById("quickJumpBlock");
+  block.innerHTML=blockOptions(document.getElementById("quickJumpZone").value);
+  syncQuickJumpUnits();
+}
+function syncQuickJumpUnits(){
+  const unit=document.getElementById("quickJumpUnit");
+  unit.innerHTML=unitOptionsForBlock(document.getElementById("quickJumpBlock").value);
+  document.getElementById("quickJumpUnitBtn").disabled=!unit.options.length;
+}
+function closeQuickJump(){
+  document.getElementById("quickJumpBackdrop").hidden=true;
+  document.getElementById("quickJumpBtn").focus();
+}
+function openQuickJump(){
+  if(document.body.classList.contains("secure-locked"))return;
+  const currentZone=document.getElementById("boardZone").value;
+  const zone=document.getElementById("quickJumpZone");
+  zone.value=currentZone||"1";
+  syncQuickJumpBlocks();
+  const currentBlock=document.getElementById("boardBlock").value;
+  if([...document.getElementById("quickJumpBlock").options].some(o=>o.value===currentBlock)){
+    document.getElementById("quickJumpBlock").value=currentBlock;
+    syncQuickJumpUnits();
+  }
+  document.getElementById("quickJumpBackdrop").hidden=false;
+  zone.focus();
+}
+function jumpToQuickBlock(openUnit){
+  const zone=document.getElementById("quickJumpZone").value;
+  const block=document.getElementById("quickJumpBlock").value;
+  const key=document.getElementById("quickJumpUnit").value;
+  if(!ZONE_BLOCKS[zone]?.includes(Number(block)))return;
+  document.getElementById("boardZone").value=zone;
+  syncBoardBlocks();
+  document.getElementById("boardBlock").value=block;
+  renderBoardFloorOptions();
+  document.getElementById("boardFloor").value="all";
+  document.getElementById("boardSearch").value="";
+  selectedBoardUnitKey=openUnit&&getUnit(key)?.block===Number(block)?key:"";
+  closeQuickJump();
+  setView("blockboard");
+  if(openUnit&&selectedBoardUnitKey)openDrawer(selectedBoardUnitKey);
+}
+document.getElementById("quickJumpBtn").addEventListener("click",openQuickJump);
+document.getElementById("quickJumpClose").addEventListener("click",closeQuickJump);
+document.getElementById("quickJumpBackdrop").addEventListener("click",e=>{if(e.target===e.currentTarget)closeQuickJump()});
+document.getElementById("quickJumpZone").addEventListener("change",syncQuickJumpBlocks);
+document.getElementById("quickJumpBlock").addEventListener("change",syncQuickJumpUnits);
+document.getElementById("quickJumpBlockBtn").addEventListener("click",()=>jumpToQuickBlock(false));
+document.getElementById("quickJumpUnitBtn").addEventListener("click",()=>jumpToQuickBlock(true));
+document.getElementById("mapJumpBtn").addEventListener("click",()=>{
+  if(document.body.classList.contains("secure-locked"))return;
+  setView("dashboard");
+  requestAnimationFrame(()=>document.getElementById("zoneMapPanel").scrollIntoView({behavior:"smooth",block:"start"}));
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!document.getElementById("quickJumpBackdrop").hidden){e.preventDefault();closeQuickJump();return}
+  if(e.key!=="/"||e.altKey||e.ctrlKey||e.metaKey||e.target.closest("input,textarea,select,[contenteditable]"))return;
+  e.preventDefault();openQuickJump();
+});
 function initSelectors(){
+  document.getElementById("quickJumpZone").innerHTML=zoneOptions();
+  document.getElementById("quickJumpZone").value="1";
+  syncQuickJumpBlocks();
   ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions());
   ["unitZoneFilter","appointmentZoneFilter","complaintZoneFilter","plannerViewZone","reportZoneFilter","responseSummaryZoneFilter"].forEach(id=>document.getElementById(id).innerHTML=zoneOptions(true));
   ["boardZone","surveyZone","appointmentZone","complaintZone","plannerZone"].forEach(id=>document.getElementById(id).value="1");
@@ -804,15 +868,40 @@ function renderDashboard(){
   document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Name not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.visitDate)}${s.visitTime?` · ${esc(s.visitTime)}`:""}</b></div>`).join(""):`<div class="empty-state">No upcoming survey visits.</div>`;
   renderTodayTeamBoard();
 }
+let selectedBoardUnitKey="";
+function classicBlockBoardHtml(units,floorFilter,q){
+  const floors=[...new Set(units.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
+  return floors.map(f=>{const fu=units.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
+}
 function renderBlockBoard(){
   const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),raw=getBlockUnits(block);
   const u=raw.map(x=>{const live=currentUnitAppointmentState(x.key),a=live.appointment;return{...x,response:live.status,workStatus:live.workStatus,appointmentDate:a?.date||"",appointmentSlot:a?.slot||"",team:a?.team||""}});
   const total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,pct=n=>total?Math.round(n/total*100):0;
-  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile p"><span>◷ P · Pending</span><strong>${p}</strong><small>${pct(p)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
-  const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
-  document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
+  const layout=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];
+  if(!layout){document.getElementById("blockHeadline").innerHTML="";document.getElementById("floorBoard").innerHTML='<div class="empty-state">Choose a block.</div>';return}
+  document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${layout.zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile p"><span>◷ P · Pending</span><strong>${p}</strong><small>${pct(p)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
+  const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a);
+  const visible=u.filter(x=>(floorFilter==="all"||x.floor===Number(floorFilter))&&(!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q)));
+  if(!visible.some(x=>x.key===selectedBoardUnitKey))selectedBoardUnitKey=visible[0]?.key||"";
+  const selected=visible.find(x=>x.key===selectedBoardUnitKey),selectedFloor=selected?.floor||Number(floorFilter)||floors[0];
+  const nav=floors.map(f=>`<button type="button" data-twin-floor="${f}" class="${f===selectedFloor?"is-active":""}" aria-label="Show floor ${f}" aria-pressed="${f===selectedFloor}">${String(f).padStart(2,"0")}</button>`).join("");
+  const levels=floors.filter(f=>floorFilter==="all"||f===Number(floorFilter)).map(f=>{
+    const fu=visible.filter(x=>x.floor===f);if(!fu.length)return"";
+    return `<div class="twin-level ${f===selectedFloor?"is-focused":""}" data-level="${f}"><span class="twin-level-tag">F${String(f).padStart(2,"0")}</span><div class="twin-modules">${fu.map(x=>`<button type="button" class="twin-module twin-status-${x.response.toLowerCase()} ${x.key===selectedBoardUnitKey?"is-selected":""}" data-unit-key="${esc(x.key)}" aria-label="Blk ${block} ${unitDisplay(x.floor,x.unit)} ${esc(statusLabel(x.response))}" title="${unitDisplay(x.floor,x.unit)} · ${esc(statusLabel(x.response))}"><span>${unitDisplay(x.floor,x.unit)}</span><b>${esc(x.response)}</b></button>`).join("")}</div></div>`;
+  }).filter(Boolean).join("");
+  const inspector=selected?`<div class="twin-inspector-kicker">UNIT INSPECTOR · FLOOR ${String(selected.floor).padStart(2,"0")}</div><h3>Blk ${block} · ${unitDisplay(selected.floor,selected.unit)}</h3><div class="twin-inspector-status twin-status-${selected.response.toLowerCase()}">${esc(statusLabel(selected.response))}</div><div class="twin-inspector-fields"><div><span>Owner</span><strong>${esc(selected.ownerName||"—")}</strong></div><div><span>Contact</span><strong>${esc(selected.contact||"—")}</strong></div><div><span>Appointment</span><strong>${selected.appointmentDate?`${safeDate(selected.appointmentDate)} · ${esc(selected.appointmentSlot||"")}`:"—"}</strong></div><div><span>Team</span><strong>${esc(selected.team||"—")}</strong></div></div><div class="twin-inspector-actions"><button type="button" data-twin-action="survey">Survey Visit</button><button type="button" data-twin-action="appointment">Appointment</button><button type="button" data-twin-action="details">Full unit details</button></div>`:`<div class="twin-inspector-kicker">UNIT INSPECTOR</div><h3>Select a unit</h3><p>Choose a unit in the model to see its current record.</p>`;
+  const board=document.getElementById("floorBoard"),oldScroll=board.querySelector(".twin-scene")?.scrollTop||0;
+  board.innerHTML=`<div class="twin-layout"><div class="twin-scene"><div class="twin-scene-glow"></div><div class="twin-floor-nav"><span>FLOORS</span>${nav}</div><div class="twin-building"><div class="twin-scene-title"><span>PR3 · ZONE ${layout.zone}</span><strong>BLOCK ${block}</strong><small>Live unit model · select a floor or unit</small></div>${levels||'<div class="twin-empty">No units match this filter.</div>'}<div class="twin-ground"></div></div></div><aside class="twin-inspector" aria-live="polite">${inspector}</aside></div>`;
+  const scene=board.querySelector(".twin-scene");if(scene)scene.scrollTop=oldScroll;
 }
-document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
+document.getElementById("floorBoard").addEventListener("click",e=>{
+  const floor=e.target.closest("[data-twin-floor]");if(floor){document.getElementById("boardFloor").value=floor.dataset.twinFloor;selectedBoardUnitKey="";renderBlockBoard();return}
+  const unit=e.target.closest("[data-unit-key]");if(unit){selectedBoardUnitKey=unit.dataset.unitKey;renderBlockBoard();return}
+  const action=e.target.closest("[data-twin-action]");if(!action||!selectedBoardUnitKey)return;
+  if(action.dataset.twinAction==="details"){openDrawer(selectedBoardUnitKey);return}
+  if(action.dataset.twinAction==="appointment"){startAppointmentForUnit(selectedBoardUnitKey);return}
+  document.getElementById("drawerUnitKey").value=selectedBoardUnitKey;jumpFromDrawer("survey");
+});
 
 function latestAppointment(key){return preferredMasterAppointment(key)||latestById(state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a)))}
 function openDrawer(key){
@@ -1682,17 +1771,18 @@ function exportManagerPDFV727(){const r=managerReportData();if(!r.rows.length){t
 function exportBlockBoardPrint(){
   rebuildAllMasters();
   renderBlockBoard();
-  const board=document.getElementById("floorBoard");
-  if(!board||!board.children.length||/No units match this filter/i.test(board.textContent||"")){
-    toast("No Block Board data to print");
-    return;
-  }
   const zone=document.getElementById("boardZone").value;
   const block=document.getElementById("boardBlock").value;
   const floor=document.getElementById("boardFloor").value;
+  const q=document.getElementById("boardSearch").value.trim().toLowerCase();
+  const classic=classicBlockBoardHtml(getBlockUnits(block),floor,q);
+  if(/No units match this filter/i.test(classic)){
+    toast("No Block Board data to print");
+    return;
+  }
   const floorLabel=floor==="all"?"All floors":`Floor ${floor}`;
   const legend=document.querySelector("#blockboard .legend").outerHTML;
-  const boardHtml=board.outerHTML;
+  const boardHtml=`<div class="floor-board">${classic}</div>`;
   const stamp=new Date().toLocaleString("en-SG",{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});
   const baseHref=location.href.replace(/[^/]*$/,"");
   const title=`ELU Block Board - Zone ${zone} Block ${block}`;
@@ -1708,7 +1798,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.47">
+<link rel="stylesheet" href="styles.css?v=7.81">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -2433,4 +2523,9 @@ function startApp(){
   photoAutoCleanup();
   autoCompleteTimer=setInterval(()=>autoCompleteAppointments(true),60000)
 }
+document.getElementById("visualThemeToggle").addEventListener("click",e=>{
+  const night=document.body.classList.toggle("theme-night");
+  e.currentTarget.textContent=night?"Day View":"Night View";
+  e.currentTarget.setAttribute("aria-pressed",String(night));
+});
 initSecurityGate();

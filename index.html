@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eef7ff">
+  <meta name="theme-color" content="#071d35">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=7.74">
+  <link rel="stylesheet" href="styles.css?v=7.82">
 </head>
-<body class="secure-locked">
+<body class="secure-locked theme-night">
   <svg class="svg-sprite" aria-hidden="true">
     <symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z"/></symbol>
     <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M8 8h2m4 0h2M8 12h2m4 0h2M8 16h2m4 0h2M2 21h20"/></symbol>
@@ -24,6 +24,7 @@
     <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 3 3-4 4 5"/></symbol>
     <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 13h7l-1 9 10-12h-7z"/></symbol>
     <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M5 19 19 5M8 5h11v11"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16m6-14v16"/><circle cx="16" cy="10" r="2"/></symbol>
   </svg>
 
 
@@ -89,8 +90,11 @@
         </div>
 
         <div class="top-actions">
+          <button class="ghost-btn top-shortcut" type="button" id="mapJumpBtn" title="Open project map"><svg><use href="#i-map"/></svg><span>Map</span></button>
+          <button class="ghost-btn top-shortcut quick-jump-trigger" type="button" id="quickJumpBtn" title="Jump to a zone, block or unit"><svg><use href="#i-search"/></svg><span>Quick Jump</span><kbd>/</kbd></button>
           <div class="user-name-chip" id="userNameChip">Secure User</div>
           <div class="today-chip" id="todayChip"></div>
+          <button class="ghost-btn" type="button" id="visualThemeToggle" aria-pressed="true">Day View</button>
           <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
         </div>
       </header>
@@ -593,6 +597,18 @@
   </div>
 
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div class="quick-jump-backdrop" id="quickJumpBackdrop" hidden>
+    <section class="quick-jump-dialog" role="dialog" aria-modal="true" aria-labelledby="quickJumpTitle">
+      <div class="quick-jump-head"><div><span>PROJECT NAVIGATOR</span><h2 id="quickJumpTitle">Find your field location</h2><p>Select the exact zone, block and unit in the live register.</p></div><button type="button" class="icon-btn" id="quickJumpClose" aria-label="Close quick jump"><svg><use href="#i-close"/></svg></button></div>
+      <div class="quick-jump-fields">
+        <label>Zone<select id="quickJumpZone"></select></label>
+        <label>Block<select id="quickJumpBlock"></select></label>
+        <label>Unit<select id="quickJumpUnit"></select></label>
+      </div>
+      <div class="quick-jump-actions"><button type="button" class="ghost-btn" id="quickJumpBlockBtn">Open Block Board</button><button type="button" class="primary-btn" id="quickJumpUnitBtn">Open Unit Details</button></div>
+      <p class="quick-jump-hint">Only units already in the project register appear here.</p>
+    </section>
+  </div>
   <aside class="unit-drawer" id="unitDrawer">
     <div class="drawer-head">
       <div><span class="section-label">UNIT DETAILS</span><h2 id="drawerUnitTitle">Unit</h2><p id="drawerUnitMeta"></p></div>
@@ -622,6 +638,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.76"></script>
+<script src="app.js?v=7.82"></script>
 </body>
 </html>
