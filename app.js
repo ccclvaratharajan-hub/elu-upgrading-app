@@ -4,8 +4,8 @@ const SECURE_STATE_KEY="elu_secure_state_v3";
 const AUTO_LOCK_MS=15*60*1000;
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const ZONE1_REQUESTED_CORRECTIONS={
-  "565-9-120":"NR","565-2-106":"NR","568-11-82":"NR",
-  "568-2-70":"NR","568-3-72":"NR","565-4-114":"A"
+  "565-9-120":"NR","566-2-106":"NR","568-11-82":"NR",
+  "569-2-70":"NR","569-3-72":"NR","565-4-114":"A"
 };
 const ZONE1_OPT_IN_REASON="Zone 1 requested Opt-In correction (status only)";
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
@@ -445,6 +445,22 @@ function currentUnitAppointmentState(key){
 function applyZone1RequestedCorrections(){
   state.zone1CorrectionsApplied=Array.isArray(state.zone1CorrectionsApplied)?state.zone1CorrectionsApplied:[];
   state.statusAudit=Array.isArray(state.statusAudit)?state.statusAudit:[];
+  // Earlier ZIPs placed three units under the wrong block. Remove only those
+  // version-generated decisions, preserving any later user edit on a unit.
+  for(const oldKey of ["565-2-106","568-2-70","568-3-72"]){
+    const oldAudit=state.statusAudit.find(e=>e.id===`zone1-requested-20260926-${oldKey}`);
+    if(!oldAudit&&!state.zone1CorrectionsApplied.includes(oldKey))continue;
+    const oldOverride=state.statusOverrides[oldKey];
+    if(oldOverride?.status==="NR"&&oldOverride.reason==="Zone 1 requested No Response correction"&&(!oldAudit||oldOverride.updatedAt===oldAudit.at)){
+      delete state.statusOverrides[oldKey]
+    }
+    state.zone1CorrectionsApplied=state.zone1CorrectionsApplied.filter(key=>key!==oldKey);
+    const undoId=`zone1-block-fix-20260926-${oldKey}`;
+    if(!state.statusAudit.some(e=>e.id===undoId))state.statusAudit.push({
+      id:undoId,unitKey:oldKey,from:"NR",to:state.units[oldKey]?currentUnitAppointmentState(oldKey).status:"",
+      action:"corrected-block-number",source:"Manual",at:new Date().toISOString()
+    })
+  }
   for(const [key,status] of Object.entries(ZONE1_REQUESTED_CORRECTIONS)){
     if(state.zone1CorrectionsApplied.includes(key))continue;
     const auditId=`zone1-requested-20260926-${key}`;
