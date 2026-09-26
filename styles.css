@@ -1554,3 +1554,96 @@ body.secure-locked .toast{visibility:hidden}
 
 /* V7.55 permanent manual status lock */
 .register-optout-note + .table-action{margin-left:6px}
+
+/* V7.58 · Deeper blue workspace and softly translucent sheets across all views */
+:root{--bg:#a8bfd6;--bg2:#bcd1e4}
+body{
+  background:
+    radial-gradient(circle at 84% 0%,rgba(83,130,174,.42) 0,transparent 34%),
+    radial-gradient(circle at 8% 78%,rgba(170,204,232,.52) 0,transparent 38%),
+    linear-gradient(155deg,#c8d9e9 0%,#b0c8dd 52%,#9ebbd4 100%);
+}
+.sidebar{
+  background:rgba(239,247,254,.87);
+  border-right-color:rgba(255,255,255,.62);
+}
+.panel,.kpi-card,.team-panel,.floor-row,.report-hero,.hero,
+.block-headline,.zone-record-group,.planner-zone-section,.today-team-panel{
+  background:rgba(242,249,255,.81);
+  border-color:rgba(255,255,255,.76);
+  box-shadow:0 13px 34px rgba(26,64,101,.13);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.attention-panel,.today-team-panel{
+  background:rgba(242,249,255,.81);
+}
+.zone-card-grid .zone-line,.premium-compact-list .compact-item,
+.compact-item,.attention-card,.team-card,.unit-card:not([class*="status-"]){
+  background:rgba(255,255,255,.70);
+}
+.table-shell{background:rgba(255,255,255,.48)}
+.table-shell th{background:rgba(226,239,250,.92)}
+
+/* V7.59 · Zone navigation over the supplied satellite map reference */
+.zone-map-panel{margin-bottom:18px;padding:20px}
+.zone-map-heading{align-items:center}
+.zone-map-key{display:inline-flex;white-space:nowrap;padding:8px 11px;border-radius:999px;background:rgba(40,95,145,.10);color:#285980;font-size:10px;font-weight:850}
+.zone-map-stage{
+  position:relative;min-height:458px;overflow:hidden;border-radius:19px;
+  border:1px solid rgba(61,105,146,.30);
+  background:
+    linear-gradient(90deg,rgba(10,39,67,.68) 0%,rgba(17,58,94,.30) 56%,rgba(16,55,88,.09) 100%),
+    url("zone-satellite-reference.png") center 52%/cover no-repeat;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 16px 30px rgba(23,57,90,.16);
+}
+.zone-map-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;width:min(690px,68%);padding:19px;align-content:center;min-height:458px}
+.zone-map-tile{
+  min-width:0;padding:12px;border-radius:15px;
+  background:rgba(13,47,78,.85);border:1px solid rgba(211,234,255,.30);
+  box-shadow:0 10px 22px rgba(7,29,53,.18);
+  backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);
+  color:#fff;transition:transform .18s,border-color .18s;
+}
+.zone-map-tile:hover,.zone-map-tile:focus-within{transform:translateY(-2px);border-color:rgba(224,246,255,.73)}
+.zone-map-main{width:100%;display:flex;align-items:center;gap:9px;text-align:left;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.zone-map-icon{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:10px;background:rgba(133,199,249,.22);border:1px solid rgba(199,233,255,.30);font-size:13px;font-weight:900}
+.zone-map-title{min-width:0;flex:1}.zone-map-title strong,.zone-map-title small{display:block}.zone-map-title strong{font-size:13px;letter-spacing:.01em}.zone-map-title small{font-size:9px;color:#c7dff2;margin-top:3px;white-space:nowrap}
+.zone-map-arrow{font-size:16px;color:#a8d5f5}.zone-map-blocks{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.zone-map-blocks button{border:1px solid rgba(194,226,249,.26);background:rgba(222,241,255,.12);border-radius:6px;padding:4px 6px;color:#ebf7ff;font-size:9px;font-weight:800;cursor:pointer}
+.zone-map-blocks button:hover,.zone-map-blocks button:focus-visible{background:#d8f0ff;color:#16466e;outline:none}
+.zone-map-main:focus-visible{outline:2px solid #d8f0ff;outline-offset:4px;border-radius:5px}
+.zone-map-meter{height:3px;margin-top:11px;background:rgba(230,245,255,.20);border-radius:9px;overflow:hidden}.zone-map-meter span{display:block;height:100%;background:#73d5e4;border-radius:9px}
+.zone-map-note{margin:9px 2px 0;color:#5b7289;font-size:10px;line-height:1.45}
+@media(max-width:1120px){.zone-map-grid{width:min(720px,83%)}}
+@media(max-width:760px){.zone-map-stage{min-height:0}.zone-map-grid{width:100%;min-height:0;grid-template-columns:repeat(2,minmax(0,1fr));padding:13px}.zone-map-title small{white-space:normal}}
+@media(max-width:520px){.zone-map-grid{grid-template-columns:1fr}.zone-map-stage{background-position:center}.zone-map-key{align-self:flex-start}}
+
+/* V7.60 · Automatic Map View and Side View from the zone/block register */
+.zone-map-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.zone-map-controls button{border:1px solid #cadbe9;background:rgba(255,255,255,.54);color:#41627d;padding:8px 11px;border-radius:9px;font-size:10px;font-weight:850;cursor:pointer}
+.zone-map-controls button[aria-pressed="true"]{background:#245980;border-color:#245980;color:#fff;box-shadow:0 6px 15px rgba(26,70,108,.18)}
+.zone-map-stage{display:flex;align-items:stretch;justify-content:space-between;gap:16px;min-height:450px}
+.zone-map-grid{width:300px;max-width:52%;min-height:450px;display:grid;grid-template-columns:1fr;gap:7px;padding:17px;align-content:center}
+.zone-map-tile{width:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;text-align:left;padding:9px 10px;cursor:pointer}
+.zone-map-tile.selected{background:rgba(16,63,101,.94);border-color:#9bd7ff;box-shadow:inset 3px 0 0 #77d0ed,0 10px 22px rgba(7,29,53,.2)}
+.zone-map-tile .zone-map-meter{flex-basis:100%;margin:0 0 1px 38px}
+.zone-map-tile:focus-visible,.zone-map-detail button:focus-visible,.zone-map-side button:focus-visible{outline:2px solid #8ed9f6;outline-offset:2px}
+.zone-map-detail{align-self:flex-end;width:min(360px,41%);margin:18px;padding:18px;border:1px solid rgba(222,242,255,.56);border-radius:18px;background:rgba(12,43,72,.88);color:#fff;box-shadow:0 15px 30px rgba(5,29,52,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.zone-map-detail-kicker{font-size:9px;letter-spacing:.13em;font-weight:900;color:#90d3f6}.zone-map-detail>strong{display:block;font-size:23px;margin-top:7px}.zone-map-detail p{font-size:11px;line-height:1.45;color:#c8e1f3;margin:5px 0 15px}
+.zone-map-detail-blocks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.zone-map-detail-blocks button{border:1px solid rgba(201,230,250,.31);background:rgba(224,244,255,.12);color:#f4fbff;padding:9px 4px;border-radius:8px;font-size:10px;font-weight:820;cursor:pointer}
+.zone-map-detail-blocks button:hover{background:#d8f0ff;color:#16466e}
+.zone-map-open{width:100%;margin-top:13px;border:0;border-radius:9px;background:#8ed9f6;color:#174666;padding:10px;font-size:10px;font-weight:900;cursor:pointer}
+.zone-map-side{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.zone-map-panel[data-mode="side"] .zone-map-stage{display:none}
+.zone-map-panel[data-mode="side"] .zone-map-side{display:grid}
+.zone-map-side-row{padding:16px;border:1px solid rgba(255,255,255,.75);border-radius:15px;background:rgba(232,243,252,.76);box-shadow:0 9px 22px rgba(25,65,101,.08)}
+.zone-map-side-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.zone-map-side-head span{display:block;font-size:9px;color:#5484aa;font-weight:900;letter-spacing:.12em}.zone-map-side-head strong{display:block;color:#193c5c;font-size:14px;margin-top:4px}
+.zone-map-side-head button{white-space:nowrap;border:0;background:#245980;color:white;border-radius:8px;padding:8px 10px;font-size:9px;font-weight:850;cursor:pointer}
+.zone-map-side-blocks{display:flex;flex-wrap:wrap;gap:7px;margin:15px 0}.zone-map-side-blocks button{border:1px solid #bed5e8;background:rgba(255,255,255,.63);color:#285a7d;border-radius:8px;padding:7px 9px;font-size:10px;font-weight:820;cursor:pointer}.zone-map-side-blocks button:hover{background:#d4edfc}
+.zone-map-side-row .zone-map-meter{background:#c4d8e8;margin-top:10px}.zone-map-side-row .zone-map-meter span{background:#328fb5}
+@media(max-width:900px){.zone-map-grid{max-width:50%;width:285px}.zone-map-detail{width:min(340px,48%)}.zone-map-side{grid-template-columns:1fr}}
+@media(max-width:650px){.zone-map-heading{align-items:stretch}.zone-map-controls{justify-content:flex-start}.zone-map-stage{display:block}.zone-map-grid{width:100%;max-width:none;min-height:0;grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}.zone-map-detail{width:auto;margin:8px 12px 12px}.zone-map-title small{font-size:8px}.zone-map-side-head strong{font-size:12px}}
+@media(max-width:430px){.zone-map-grid{grid-template-columns:1fr}.zone-map-tile .zone-map-meter{margin-left:38px}}
+.zone-map-panel[data-mode="side"] .zone-map-note{display:none}

@@ -527,6 +527,33 @@ function setView(view){
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
 document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)setView(b.dataset.go)});
+let activeMapZone="1";
+document.getElementById("zoneMapPanel").addEventListener("click",e=>{
+  const modeButton=e.target.closest("[data-zone-map-mode]");
+  if(modeButton){
+    const mode=modeButton.dataset.zoneMapMode;
+    if(mode!=="map"&&mode!=="side")return;
+    document.getElementById("zoneMapPanel").dataset.mode=mode;
+    document.querySelectorAll("[data-zone-map-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b===modeButton)));
+    return;
+  }
+  const blockButton=e.target.closest("[data-map-block]");
+  const openButton=e.target.closest("[data-open-map-zone]");
+  const zoneButton=e.target.closest("[data-map-zone]");
+  if(!blockButton&&!openButton&&!zoneButton)return;
+  const zone=blockButton?.dataset.mapZone||openButton?.dataset.openMapZone||zoneButton?.dataset.mapZone;
+  if(!ZONE_BLOCKS[zone])return;
+  if(zoneButton&&!blockButton&&!openButton){activeMapZone=zone;renderZoneMap(unitsArray());return;}
+  document.getElementById("boardZone").value=zone;
+  syncBoardBlocks();
+  if(blockButton){
+    document.getElementById("boardBlock").value=blockButton.dataset.mapBlock;
+    renderBoardFloorOptions();
+  }
+  document.getElementById("boardFloor").value="all";
+  document.getElementById("boardSearch").value="";
+  setView("blockboard");
+});
 
 function zoneOptions(includeAll=false){return(includeAll?`<option value="all">All Zones</option>`:"")+Object.keys(ZONE_BLOCKS).map(z=>`<option value="${z}">Zone ${z}</option>`).join("")}
 function blockOptions(zone){return(ZONE_BLOCKS[zone]||[]).map(b=>`<option value="${b}">Blk ${b}</option>`).join("")}
@@ -637,6 +664,33 @@ document.getElementById("plannerZone").addEventListener("change",syncPlannerBloc
 document.getElementById("plannerSlot").addEventListener("change",togglePlannerCustomTime);
 document.getElementById("appointmentSlot").addEventListener("change",toggleAppointmentCustomTime);
 
+function renderZoneMap(u){
+  const zoneStats=z=>{
+    const units=u.filter(x=>x.zone===Number(z)),completed=units.filter(x=>x.workStatus==="Completed").length;
+    return{units:units.length,completed,pct:units.length?Math.round(completed/units.length*100):0};
+  };
+  document.getElementById("zoneMap").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
+    const s=zoneStats(z),active=z===activeMapZone;
+    return `<button class="zone-map-tile ${active?"selected":""}" type="button" data-map-zone="${z}" aria-pressed="${active}">
+      <span class="zone-map-icon" aria-hidden="true">${z}</span>
+      <span class="zone-map-title"><strong>Zone ${z}</strong><small>${s.units.toLocaleString()} units · ${s.pct}% completed</small></span>
+      <span class="zone-map-arrow" aria-hidden="true">${active?"●":"›"}</span>
+      <span class="zone-map-meter" aria-hidden="true"><span style="width:${s.pct}%"></span></span>
+    </button>`;
+  }).join("");
+  const z=activeMapZone,s=zoneStats(z);
+  document.getElementById("zoneMapDetail").innerHTML=`
+    <span class="zone-map-detail-kicker">SELECTED PROJECT AREA</span>
+    <strong>Zone ${z}</strong><p>${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p>
+    <div class="zone-map-detail-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b}">Blk ${b} ↗</button>`).join("")}</div>
+    <button class="zone-map-open" type="button" data-open-map-zone="${z}">Open Zone ${z} Block Board ↗</button>`;
+  document.getElementById("zoneMapSide").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
+    const s=zoneStats(z);
+    return `<section class="zone-map-side-row"><div class="zone-map-side-head"><div><span>ZONE ${z}</span><strong>${s.units.toLocaleString()} units · ${s.pct}% completed</strong></div><button type="button" data-open-map-zone="${z}">Open Zone ↗</button></div>
+      <div class="zone-map-side-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}">Blk ${b}</button>`).join("")}</div>
+      <div class="zone-map-meter" aria-hidden="true"><span style="width:${s.pct}%"></span></div></section>`;
+  }).join("");
+}
 function renderDashboard(){
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
   const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
@@ -647,6 +701,7 @@ function renderDashboard(){
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
   document.getElementById("kpiNR").textContent=nr.toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=openFollowups.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,zp=zu.filter(x=>x.response==="P").length,pct=zu.length?Math.round(zc/zu.length*100):0;return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in · ${zp} pending</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
+  renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
   const follow=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).sort((a,b)=>a.visitDate.localeCompare(b.visitDate)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))).slice(0,6);
