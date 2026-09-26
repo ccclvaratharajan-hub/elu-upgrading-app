@@ -5,7 +5,7 @@ const AUTO_LOCK_MS=15*60*1000;
 const ZONE_BLOCKS={1:[564,565,566,567,568,569],2:[544,545,546,547,548,549,550],3:[531,532,533,534,535,536],4:[557,558,559,560,561,562],5:[537,538,539,540,541,542,543],6:[551,552,553,554,555,556]};
 const ZONE1_REQUESTED_CORRECTIONS={
   "565-9-120":"NR","566-2-106":"NR","568-11-82":"NR",
-  "569-2-70":"NR","569-3-72":"NR","565-4-114":"A"
+  "569-2-70":"NR","569-3-72":"NR","566-4-114":"A"
 };
 const ZONE1_OPT_IN_REASON="Zone 1 requested Opt-In correction (status only)";
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
@@ -404,7 +404,7 @@ function currentUnitAppointmentState(key){
   if(manual){
     // This requested A means Opt-In; it does not assert that work was completed.
     const completed=manual.status==="A"&&manual.reason!==ZONE1_OPT_IN_REASON;
-    return {appointment:null,status:manual.status,workStatus:completed?"Completed":"Pending",active:false,completed,manualOverride:manual}
+    return {appointment:null,status:manual.status,workStatus:completed?"Completed":manual.status==="A"?"Opt-In":"Pending",active:false,completed,manualOverride:manual}
   }
 
   const a=preferredMasterAppointment(key);
@@ -445,19 +445,25 @@ function currentUnitAppointmentState(key){
 function applyZone1RequestedCorrections(){
   state.zone1CorrectionsApplied=Array.isArray(state.zone1CorrectionsApplied)?state.zone1CorrectionsApplied:[];
   state.statusAudit=Array.isArray(state.statusAudit)?state.statusAudit:[];
-  // Earlier ZIPs placed three units under the wrong block. Remove only those
+  // Earlier ZIPs placed four units under the wrong block. Remove only those
   // version-generated decisions, preserving any later user edit on a unit.
-  for(const oldKey of ["565-2-106","568-2-70","568-3-72"]){
+  const misplaced=[
+    ["565-2-106","NR","Zone 1 requested No Response correction"],
+    ["568-2-70","NR","Zone 1 requested No Response correction"],
+    ["568-3-72","NR","Zone 1 requested No Response correction"],
+    ["565-4-114","A",ZONE1_OPT_IN_REASON]
+  ];
+  for(const [oldKey,oldStatus,oldReason] of misplaced){
     const oldAudit=state.statusAudit.find(e=>e.id===`zone1-requested-20260926-${oldKey}`);
     if(!oldAudit&&!state.zone1CorrectionsApplied.includes(oldKey))continue;
     const oldOverride=state.statusOverrides[oldKey];
-    if(oldOverride?.status==="NR"&&oldOverride.reason==="Zone 1 requested No Response correction"&&(!oldAudit||oldOverride.updatedAt===oldAudit.at)){
+    if(oldOverride?.status===oldStatus&&oldOverride.reason===oldReason&&(!oldAudit||oldOverride.updatedAt===oldAudit.at)){
       delete state.statusOverrides[oldKey]
     }
     state.zone1CorrectionsApplied=state.zone1CorrectionsApplied.filter(key=>key!==oldKey);
     const undoId=`zone1-block-fix-20260926-${oldKey}`;
     if(!state.statusAudit.some(e=>e.id===undoId))state.statusAudit.push({
-      id:undoId,unitKey:oldKey,from:"NR",to:state.units[oldKey]?currentUnitAppointmentState(oldKey).status:"",
+      id:undoId,unitKey:oldKey,from:oldStatus,to:state.units[oldKey]?currentUnitAppointmentState(oldKey).status:"",
       action:"corrected-block-number",source:"Manual",at:new Date().toISOString()
     })
   }
@@ -1043,8 +1049,8 @@ function appointmentDisplayForUnit(u){
   return {
     appointment:a,
     status:live.status,
-    schedule:live.active?"Active":live.completed?"Completed":live.status==="D"?"Opt-Out":live.status==="P"?"Pending Confirmation":"No Appointment",
-    scheduleClass:live.active?"confirmed":live.completed?"completed":live.status==="D"?"d":live.status==="P"?"p":"pending",
+    schedule:live.active?"Active":live.completed?"Completed":live.status==="A"?"Opt-In":live.status==="D"?"Opt-Out":live.status==="P"?"Pending Confirmation":"No Appointment",
+    scheduleClass:live.active?"confirmed":live.completed?"completed":live.status==="A"?"a":live.status==="D"?"d":live.status==="P"?"p":"pending",
     active:live.active,
     completed:live.completed
   }
@@ -1348,8 +1354,23 @@ document.getElementById("plannerTable").addEventListener("click",e=>{const b=e.t
 document.getElementById("plannerSpecialTimes").addEventListener("click",e=>{let b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
 document.getElementById("plannerUnassigned").addEventListener("click",e=>{let b=e.target.closest("[data-assign-team]");if(b){const a=state.appointments.find(x=>x.id===Number(b.dataset.apptId));if(a){a.team=b.dataset.assignTeam;save(`${a.unitDisplay} assigned to ${a.team}`)}return}b=e.target.closest("[data-planner-edit]");if(b)return editPlannerAppointment(Number(b.dataset.plannerEdit));b=e.target.closest("[data-planner-cancel]");if(b)return cancelAppointment(Number(b.dataset.plannerCancel))});
 
+function blockHasFieldActivity(block,units){
+  const keys=new Set(units.map(u=>u.key));
+  if(state.surveys.some(s=>keys.has(s.unitKey))||
+     state.appointments.some(a=>keys.has(a.unitKey))||
+     state.complaints.some(c=>keys.has(c.unitKey))||
+     Object.keys(state.statusOverrides||{}).some(key=>keys.has(key)))return true;
+  const layout=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];
+  return units.some(u=>{
+    const seed=(layout?.seed||{})[`${u.floor}-${u.unit}`]||{};
+    // A default NR label alone is not evidence that work has started.
+    return ["A","C","P","D"].includes(normalizeStatus(seed.response))||
+      Boolean(String(seed.ownerName||"").trim()||String(seed.contact||"").trim()||
+              String(seed.legacySchedule||"").trim()||String(seed.legacyRemark||"").trim()||seed.completed);
+  });
+}
 function buildReportRows(zoneFilter="all",blockFilter="all"){
-  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),total=u.length,agree=u.filter(x=>x.response==="A"||x.response==="C").length,done=u.filter(x=>x.workStatus==="Completed").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,p,pPct:total?p/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
+  const rows=[];Object.keys(ZONE_BLOCKS).forEach(z=>{if(zoneFilter!=="all"&&String(z)!==String(zoneFilter))return;ZONE_BLOCKS[z].forEach(block=>{if(blockFilter!=="all"&&String(block)!==String(blockFilter))return;const u=getBlockUnits(block),started=blockHasFieldActivity(block,u),total=started?u.length:0,agree=started?u.filter(x=>x.response==="A"||x.response==="C").length:0,done=started?u.filter(x=>x.workStatus==="Completed").length:0,p=started?u.filter(x=>x.response==="P").length:0,d=started?u.filter(x=>x.response==="D").length:0,nr=started?u.filter(x=>x.response==="NR").length:0;rows.push({zone:Number(z),block,total,agree,agreePct:total?agree/total*100:0,done,donePct:total?done/total*100:0,p,pPct:total?p/total*100:0,d,dPct:total?d/total*100:0,nr,nrPct:total?nr/total*100:0})})});return rows
 }
 function reportTotals(rows){
   const t=rows.reduce((o,r)=>{o.total+=r.total;o.agree+=r.agree;o.done+=r.done;o.p+=r.p;o.d+=r.d;o.nr+=r.nr;return o},{total:0,agree:0,done:0,p:0,d:0,nr:0});
@@ -1372,33 +1393,29 @@ function responseSummaryUnitList(units){
     .map(u=>unitDisplay(u.floor,u.unit))
     .join(", ")
 }
-function responseSummaryPendingRemark(u){
-  const latest=latestById(state.appointments.filter(a=>a.unitKey===u.key));
-  const note=String(latest?.remarks||"").trim();
-  return `${unitDisplay(u.floor,u.unit)}: ${note||"Awaiting confirmation"}`
-}
 function buildResponseSummaryRows(zoneFilter="all"){
   const rows=[];
   Object.keys(ZONE_BLOCKS).map(Number).sort((a,b)=>a-b).forEach(zone=>{
     if(zoneFilter!=="all"&&String(zoneFilter)!==String(zone))return;
     (ZONE_BLOCKS[zone]||[]).forEach(block=>{
       const units=getBlockUnits(block);
-      const total=units.length;
-      const nrUnits=units.filter(u=>u.response==="NR");
-      const dUnits=units.filter(u=>u.response==="D");
-      const pUnits=units.filter(u=>u.response==="P");
-      const optInUnits=units.filter(u=>u.response==="A"||u.response==="C");
-      const nr=nrUnits.length,d=dUnits.length,p=pUnits.length,optIn=optInUnits.length;
-      const respond=total-nr;
+      const started=blockHasFieldActivity(block,units);
+      const total=started?units.length:0;
+      // Meeting response summary only: A is Opt-In, D is Opt-Out, and all
+      // other response states (including C and P) are grouped under NR.
+      // Unit records and the operational registers keep their actual status.
+      const nrUnits=started?units.filter(u=>u.response!=="A"&&u.response!=="D"):[];
+      const dUnits=started?units.filter(u=>u.response==="D"):[];
+      const optInUnits=started?units.filter(u=>u.response==="A"):[];
+      const nr=nrUnits.length,d=dUnits.length,optIn=optInUnits.length;
+      const respond=optIn+d;
       rows.push({
         zone,block,total,respond,
         respondPct:total?respond/total*100:0,
         optIn,optInPct:total?optIn/total*100:0,
         d,dPct:total?d/total*100:0,
         dDetails:responseSummaryUnitList(dUnits),
-        nr,nrDetails:responseSummaryUnitList(nrUnits),
-        p,pDetails:responseSummaryUnitList(pUnits),
-        pRemarks:pUnits.map(responseSummaryPendingRemark).join(" · ")
+        nr,nrDetails:responseSummaryUnitList(nrUnits)
       })
     })
   });
@@ -1406,8 +1423,8 @@ function buildResponseSummaryRows(zoneFilter="all"){
 }
 function responseSummaryTotals(rows){
   const t=rows.reduce((o,r)=>{
-    o.total+=r.total;o.respond+=r.respond;o.optIn+=r.optIn;o.d+=r.d;o.nr+=r.nr;o.p+=r.p;return o
-  },{total:0,respond:0,optIn:0,d:0,nr:0,p:0});
+    o.total+=r.total;o.respond+=r.respond;o.optIn+=r.optIn;o.d+=r.d;o.nr+=r.nr;return o
+  },{total:0,respond:0,optIn:0,d:0,nr:0});
   return {
     ...t,
     respondPct:t.total?t.respond/t.total*100:0,
@@ -1428,35 +1445,31 @@ function responseSummaryTableHtml(rows,includeTotal=true){
       <td>${responseSummaryCountPct(r.optIn,r.optInPct)}</td>
       <td>${responseSummaryCountPct(r.d,r.dPct)}</td>
       <td class="response-detail-cell">${esc(r.dDetails||"")}</td>
-      <td class="response-pending-cell">${r.p?`<strong>${r.p}</strong>${r.pDetails?` · ${esc(r.pDetails)}`:""}`:"0"}</td>
       <td>${r.nr}</td>
       <td class="response-detail-cell">${esc(r.nrDetails||"")}</td>
-      <td class="response-remarks-cell">${esc(r.pRemarks||"")}</td>
     </tr>`).join("");
   const totalRow=includeTotal?`<tr class="response-summary-total">
       <td></td><td>TOTAL</td><td>${t.total}</td>
       <td>${responseSummaryCountPct(t.respond,t.respondPct)}</td>
       <td>${responseSummaryCountPct(t.optIn,t.optInPct)}</td>
       <td>${responseSummaryCountPct(t.d,t.dPct)}</td>
-      <td></td><td>${t.p}</td><td>${t.nr}</td><td></td><td></td>
+      <td></td><td>${t.nr}</td><td></td>
     </tr>`:"";
   return `<table class="response-summary-table">
     <colgroup>
       <col class="rs-sn"><col class="rs-block"><col class="rs-total"><col class="rs-respond"><col class="rs-optin">
-      <col class="rs-optout"><col class="rs-optout-details"><col class="rs-pending"><col class="rs-nr"><col class="rs-nr-details"><col class="rs-remarks">
+      <col class="rs-optout"><col class="rs-optout-details"><col class="rs-nr"><col class="rs-nr-details">
     </colgroup>
     <thead><tr>
       <th>S/N</th>
       <th>BLOCK (ZONE)</th>
       <th>Total Unit</th>
       <th>Respond Unit</th>
-      <th>Opt-In</th>
+      <th>Opt-In (A)</th>
       <th>Opt-Out</th>
       <th>Opt-Out Unit Details</th>
-      <th>Pending Confirmation</th>
       <th>Non-Respond Unit</th>
       <th>NR Unit Details</th>
-      <th>Remarks</th>
     </tr></thead>
     <tbody>${body}${totalRow}</tbody>
   </table>`
@@ -1475,13 +1488,13 @@ function exportResponseSummaryCSV(){
   const rows=buildResponseSummaryRows(zone),t=responseSummaryTotals(rows);
   if(!rows.length){toast("No response summary data");return}
   const csv=[
-    ["S/N","BLOCK","ZONE","TOTAL UNIT","RESPOND UNIT","RESPOND %","OPT-IN","OPT-IN %","OPT-OUT","OPT-OUT %","OPT-OUT UNIT DETAILS","PENDING CONFIRMATION","PENDING UNIT DETAILS","NON-RESPOND UNIT","NR UNIT DETAILS","REMARKS"],
+    ["S/N","BLOCK","ZONE","TOTAL UNIT","RESPOND UNIT","RESPOND %","OPT-IN A","OPT-IN %","OPT-OUT","OPT-OUT %","OPT-OUT UNIT DETAILS","NON-RESPOND UNIT","NR UNIT DETAILS"],
     ...rows.map((r,i)=>[
       i+1,r.block,`Zone ${r.zone}`,r.total,r.respond,`${Math.round(r.respondPct)}%`,
       r.optIn,`${Math.round(r.optInPct)}%`,r.d,`${Math.round(r.dPct)}%`,r.dDetails,
-      r.p,r.pDetails,r.nr,r.nrDetails,r.pRemarks
+      r.nr,r.nrDetails
     ]),
-    ["","TOTAL","",t.total,t.respond,`${Math.round(t.respondPct)}%`,t.optIn,`${Math.round(t.optInPct)}%`,t.d,`${Math.round(t.dPct)}%`,"",t.p,"",t.nr,"",""]
+    ["","TOTAL","",t.total,t.respond,`${Math.round(t.respondPct)}%`,t.optIn,`${Math.round(t.optInPct)}%`,t.d,`${Math.round(t.dPct)}%`,"",t.nr,""]
   ];
   download(`ELU_Response_Summary_${zone==="all"?"All_Zones":"Zone_"+zone}_${isoTodaySG()}.csv`,toCSV(csv));
   toast("Response Summary CSV downloaded")
@@ -1514,13 +1527,11 @@ function exportResponseSummaryPrint(){
   table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2px}
   th,td{border:1px solid #000;padding:4px 3px;vertical-align:top;line-height:1.3;word-break:break-word}
   th{background:#8eeff0;text-align:center;font-weight:700;vertical-align:middle}
-  td:nth-child(1),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(8),td:nth-child(9){text-align:center;vertical-align:middle}
+  td:nth-child(1),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(8){text-align:center;vertical-align:middle}
   .zone-tag{font-size:6.7px;font-weight:700;white-space:nowrap}
   .total-row td{font-weight:700;background:#f3f3f3}
-  col.sn{width:3%} col.block{width:9%} col.total{width:6%} col.respond{width:8%} col.optin{width:7%}
-  col.optout{width:7%} col.odetails{width:15%} col.pending{width:14%} col.nr{width:7%} col.nrdetails{width:11%} col.remarks{width:13%}
-  col.rs-sn{width:3%} col.rs-block{width:9%} col.rs-total{width:6%} col.rs-respond{width:8%} col.rs-optin{width:7%}
-  col.rs-optout{width:7%} col.rs-optout-details{width:15%} col.rs-pending{width:14%} col.rs-nr{width:7%} col.rs-nr-details{width:11%} col.rs-remarks{width:13%}
+  col.rs-sn{width:3%} col.rs-block{width:10%} col.rs-total{width:8%} col.rs-respond{width:10%} col.rs-optin{width:9%}
+  col.rs-optout{width:8%} col.rs-optout-details{width:22%} col.rs-nr{width:9%} col.rs-nr-details{width:21%}
   thead{display:table-header-group}
   tr{break-inside:avoid}
   .note{font-size:7px;margin:5px 0 0;color:#333}
@@ -1533,7 +1544,7 @@ function exportResponseSummaryPrint(){
   </div>
   <div class="summary-title">(Summary of Opt In, Opt Out &amp; NR Unit Details)</div>
   ${responseSummaryTableHtml(rows).replace(/response-zone-tag/g,"zone-tag").replace(/response-summary-total/g,"total-row")}
-  <div class="note">Respond Unit includes Opt-In (A+C), Opt-Out (D) and Pending Confirmation (P). NR is excluded. Pending reason uses the latest Appointment Note; when no note exists, it shows Awaiting confirmation.</div>
+  <div class="note">For this meeting summary, Opt-In includes A only. C, P and NR are grouped under NR. Unit records remain unchanged.</div>
   <script>
     window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print()},250)});
   <\/script>
