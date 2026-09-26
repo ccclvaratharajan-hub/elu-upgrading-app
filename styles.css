@@ -1702,3 +1702,39 @@ body{
 #blockboard .floor-row{background:rgba(209,229,243,.78)!important;border-color:rgba(229,244,255,.65)!important}
 .unit-register-table th{background:linear-gradient(180deg,#cfdfec,#bfd5e6)!important}
 .premium-form input,.premium-form select,.premium-form textarea,select,textarea{background-color:rgba(220,237,249,.88)}
+
+/* V7.62 · High contrast type across the blue workspace */
+:root{--ink:#102b45;--muted:#36546d;--line:#9ebbd1}
+.topbar p,.panel-head p,.hero p,.block-headline p,.report-hero p,.zone-map-note{color:#36546d;font-weight:650}
+.eyebrow,.section-label{color:#27618f;font-weight:950;font-size:11px}
+.nav-item{color:#35546f;font-size:13px;font-weight:800}.nav-item.active{color:#075fac;font-weight:900}
+.sidebar-note strong,.sidebar-note span,.brand-sub,.project-badge small{color:#3c5d76}
+.kpi-card span{color:#355c7b;font-size:11px;font-weight:900}.kpi-card small{color:#42627c;font-size:11px;font-weight:700}
+.kpi-card strong,.panel-head h3,.topbar h1,.toolbar-title{color:#102b45}
+.zone-name,.zone-pct,.zone-mini,.compact-item span,.attention-card span{color:#30506c;font-weight:750}
+.table-shell th{color:#31536f;font-size:10px;font-weight:900}.table-shell td{color:#25445d;font-size:11px}
+.premium-form label,.section-toolbar label,.mini-filter{color:#31536e;font-weight:850}
+.search-box input,.premium-form input,.premium-form textarea,.premium-form select,select{color:#183a56}
+.zone-map-key{color:#1b4b70;font-weight:900}
+
+/* Raised block buildings in the selectable site view */
+.zone-map-panel[data-mode="side"] .zone-map-side{display:block}
+.site-view-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.site-view-nav button{border:1px solid rgba(72,116,150,.28);border-radius:12px;background:rgba(183,211,231,.65);color:#214866;padding:11px 8px;display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;box-shadow:0 5px 13px rgba(23,64,96,.08)}
+.site-view-nav button span{font-size:10px;font-weight:950;letter-spacing:.07em}.site-view-nav button strong{font-size:11px}
+.site-view-nav button[aria-pressed="true"]{background:#1c5d85;color:white;border-color:#1c5d85;box-shadow:0 7px 18px rgba(19,67,104,.2)}
+.site-view-nav button:hover{transform:translateY(-1px)}
+.site-view-scene{position:relative;isolation:isolate;overflow:hidden;min-height:380px;padding:23px 26px 26px;border-radius:20px;color:#fff;background:radial-gradient(circle at 75% -15%,rgba(112,205,234,.28),transparent 43%),linear-gradient(150deg,#173c5b,#214e70 62%,#12344f);box-shadow:inset 0 0 0 1px rgba(213,241,255,.22),0 18px 35px rgba(21,62,94,.16)}
+.site-view-scene:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.65;background:url("electrical-circuit.svg") center/460px 460px repeat}
+.site-view-head{position:relative;z-index:4;display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.site-view-head span{font-size:10px;letter-spacing:.13em;color:#99d8ef;font-weight:900}.site-view-head h4{font-size:22px;margin:5px 0;letter-spacing:-.025em}.site-view-head p{font-size:11px;margin:0;color:#d2e8f6;font-weight:700}.site-view-head button{border:1px solid rgba(196,231,250,.45);border-radius:10px;background:rgba(180,223,245,.14);color:white;padding:10px 12px;font-size:10px;font-weight:850;cursor:pointer}
+.site-view-buildings{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,2vw,34px);min-height:240px;padding:30px 8px 9px;perspective:850px}
+.site-building{position:relative;flex:0 1 118px;min-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:#fff;cursor:pointer;z-index:2;transition:transform .2s,filter .2s}
+.site-building:hover,.site-building:focus-visible{transform:translateY(-12px);filter:brightness(1.22);z-index:5}.site-building:focus-visible{outline:2px solid #a8edff;outline-offset:3px;border-radius:8px}
+.site-building-art{position:relative;display:block;width:78px;height:var(--tower-height);filter:drop-shadow(12px 13px 8px rgba(0,12,28,.4))}
+.site-building-front{position:absolute;bottom:0;left:3px;width:58px;height:calc(var(--tower-height) - 7px);border:1px solid rgba(205,243,255,.55);border-radius:3px 2px 0 0;background:repeating-linear-gradient(to bottom,transparent 0 8px,rgba(171,224,239,.87) 8px 17px,transparent 17px 25px),repeating-linear-gradient(to right,#205d7d 0 11px,#317b9c 11px 20px);box-shadow:inset 0 0 13px rgba(148,219,243,.22)}
+.site-building-side{position:absolute;bottom:0;left:60px;width:17px;height:calc(var(--tower-height) - 13px);background:repeating-linear-gradient(to bottom,#174767 0 9px,#317393 9px 17px,#174767 17px 25px);clip-path:polygon(0 0,100% 8px,100% 100%,0 100%);border-right:1px solid #80bdd5}
+.site-building-roof{position:absolute;top:0;left:3px;width:72px;height:13px;background:linear-gradient(145deg,#9acddf,#4c93b2);clip-path:polygon(0 35%,82% 0,100% 55%,18% 100%);z-index:2}
+.site-building strong{font-size:11px;letter-spacing:.02em;background:rgba(11,43,68,.86);padding:4px 7px;border-radius:6px;border:1px solid rgba(179,226,245,.37);white-space:nowrap}.site-building small{font-size:9px;color:#c0e0f0;font-weight:700}
+.site-view-ground{position:absolute;z-index:1;left:-5%;right:-5%;bottom:-24px;height:82px;transform:perspective(280px) rotateX(45deg);background:repeating-linear-gradient(90deg,transparent 0 76px,rgba(141,209,231,.22) 77px 78px),linear-gradient(180deg,rgba(103,164,193,.28),rgba(21,55,82,.88));border-top:1px solid rgba(185,224,240,.36)}
+@media(max-width:900px){.site-view-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.site-view-buildings{gap:6px}.site-building{min-width:64px}.site-building-art{transform:scale(.85);transform-origin:bottom center;margin-top:-20px}}
+@media(max-width:620px){.site-view-scene{padding:18px 12px}.site-view-head{flex-wrap:wrap}.site-view-buildings{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;gap:12px;padding-bottom:15px}.site-building{flex:0 0 75px}.site-view-head h4{font-size:19px}}

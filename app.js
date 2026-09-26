@@ -708,12 +708,17 @@ function renderZoneMap(u){
     <strong>Zone ${z}</strong><p>${z==="3"?"Pasir Ris Drive 1":"Pasir Ris Street 51"} · ${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p>
     <div class="zone-map-detail-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}" aria-label="Open Block ${b}">Blk ${b} ↗</button>`).join("")}</div>
     <button class="zone-map-open" type="button" data-open-map-zone="${z}">Open Zone ${z} Block Board ↗</button>`;
-  document.getElementById("zoneMapSide").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
-    const s=zoneStats(z);
-    return `<section class="zone-map-side-row"><div class="zone-map-side-head"><div><span>ZONE ${z} · ${z==="3"?"PASIR RIS DRIVE 1":"PASIR RIS STREET 51"}</span><strong>${s.units.toLocaleString()} units · ${s.pct}% completed</strong></div><button type="button" data-open-map-zone="${z}">Open Zone ↗</button></div>
-      <div class="zone-map-side-blocks">${ZONE_BLOCKS[z].map(b=>`<button type="button" data-map-zone="${z}" data-map-block="${b}">Blk ${b}</button>`).join("")}</div>
-      <div class="zone-map-meter" aria-hidden="true"><span style="width:${s.pct}%"></span></div></section>`;
-  }).join("");
+  document.getElementById("zoneMapSide").innerHTML=`<div class="site-view-nav" aria-label="Choose a zone">${Object.keys(ZONE_BLOCKS).map(n=>{
+    const x=zoneStats(n);return `<button type="button" data-map-zone="${n}" aria-pressed="${n===z}"><span>ZONE ${n}</span><strong>${x.pct}%</strong></button>`;
+  }).join("")}</div>
+    <section class="site-view-scene" aria-label="Zone ${z} three dimensional block view">
+      <div class="site-view-head"><div><span>SITE VIEW · ${z==="3"?"PASIR RIS DRIVE 1":"PASIR RIS STREET 51"}</span><h4>Zone ${z} Buildings</h4><p>${ZONE_BLOCKS[z].length} blocks · ${s.units.toLocaleString()} units · ${s.completed.toLocaleString()} completed</p></div><button type="button" data-open-map-zone="${z}">Open Zone Board ↗</button></div>
+      <div class="site-view-buildings">${ZONE_BLOCKS[z].map(b=>{
+        const floors=Object.keys(PROJECT_LAYOUT[b]?.floors||{}).length,height=Math.max(80,Math.min(176,65+floors*8));
+        return `<button class="site-building" type="button" data-map-zone="${z}" data-map-block="${b}" style="--tower-height:${height}px" aria-label="Open Block ${b} on the Block Board"><span class="site-building-art" aria-hidden="true"><i class="site-building-roof"></i><i class="site-building-side"></i><i class="site-building-front"></i></span><strong>BLK ${b}</strong><small>${floors} floors</small></button>`;
+      }).join("")}</div>
+      <div class="site-view-ground" aria-hidden="true"></div>
+    </section>`;
 }
 let zoneMapResizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>{if(document.getElementById("zoneMapPanel").dataset.mode==="map")renderZoneMap(unitsArray())},140)});
