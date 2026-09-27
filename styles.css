@@ -2402,3 +2402,70 @@ body:not(.theme-night) #blockboard .facade-window{color:#fff;text-shadow:0 1px 3
 #blockboard .facade-profile-wide .facade-levels{background-size:118px auto,auto}
 body.theme-night #blockboard .facade-board:after{background:linear-gradient(180deg,rgba(47,132,171,.68),rgba(3,52,93,.7))}
 @media(max-width:650px){#blockboard #floorBoard{padding-right:12px}#blockboard .facade-board:after{right:-8px;width:8px}#blockboard .facade-board:before{right:-5px}#blockboard .facade-levels{border-left-width:3px;border-right-width:3px}}
+
+/* V7.92 · Return to the trusted light-blue app and full floor-wise board. */
+:root{--bg:#b2dbf5;--bg2:#dceffc;--card:#edf8ff;--ink:#103657;--muted:#3a6381;--line:#9ccce9}
+html{background:#b4dcf5}
+body:not(.theme-night){color:#123c5c;background:radial-gradient(circle at 11% 3%,rgba(255,255,255,.85),transparent 29%),radial-gradient(circle at 88% 76%,rgba(83,173,222,.18),transparent 36%),linear-gradient(145deg,#e1f4ff 0%,#bedff5 55%,#a1d1ee 100%);background-attachment:fixed}
+body:not(.theme-night) .sidebar{background:linear-gradient(180deg,rgba(243,251,255,.97),rgba(189,226,248,.96));border-right:1px solid #97c6e3;box-shadow:8px 0 27px rgba(37,103,150,.13)}
+body:not(.theme-night) .sidebar .nav-item{color:#285775}
+body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(90deg,#bde6fc,#e5f6ff);color:#0e5b91;border:1px solid #9bceed;box-shadow:inset 4px 0 #268fc8}
+body:not(.theme-night) .main{background:none}
+body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:rgba(234,248,255,.91);border:1px solid rgba(255,255,255,.94);box-shadow:0 11px 27px rgba(35,105,151,.12)}
+body:not(.theme-night) .topbar h1{color:#103f63}
+body:not(.theme-night) .topbar p{color:#3b6582}
+body:not(.theme-night) .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){background:#e7f6ff;border-color:#a3d1ec;color:#164b70;box-shadow:0 5px 14px rgba(39,110,158,.09)}
+body:not(.theme-night) .main :is(.table-shell,.planner-table-wrap){background:#e6f5fd;border-color:#afd4eb}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) th{background:#bfe2f7!important;color:#163f62!important}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) td{background:rgba(238,249,255,.95);color:#183f5d}
+body:not(.theme-night) .main :is(input,select,textarea){background:#f1fbff;border-color:#9ecde8;color:#163e5d}
+body:not(.theme-night) .security-gate{background:radial-gradient(circle at 20% 14%,rgba(255,255,255,.7),transparent 28%),linear-gradient(145deg,#e8f8ff,#b8def6)}
+body:not(.theme-night) .security-card{background:#f5fbff;border:1px solid #d3eaf8;backdrop-filter:none;box-shadow:0 22px 60px rgba(45,107,148,.2)}
+body:not(.theme-night) #dashboard .command-hero{background:radial-gradient(circle at 88% 22%,rgba(255,255,255,.7),transparent 29%),linear-gradient(105deg,#d7f2ff,#94d5f3 57%,#70bce5);border:1px solid #dff6ff;color:#0a3d60;box-shadow:0 16px 30px rgba(38,107,152,.16)}
+body:not(.theme-night) #dashboard .command-kicker,body:not(.theme-night) #dashboard .command-hero p{color:#164e71}
+body:not(.theme-night) #dashboard .hero-tags span{background:rgba(248,253,255,.67);border-color:#a1cfe9;color:#164a6c}
+body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:rgba(232,247,255,.93);border-color:#eaf9ff}
+body:not(.theme-night) #dashboard .zone-map-stage{background:#72b3d7}
+body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(1.05) brightness(1.08)}
+body:not(.theme-night) #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(205,240,255,.12),transparent 45%,rgba(24,80,120,.04))}
+body:not(.theme-night) .map-zone-nav{background:rgba(227,247,255,.94);border-color:#afd8ec;box-shadow:0 7px 20px rgba(26,91,133,.16)}
+body:not(.theme-night) .map-zone-nav button{color:#1e5a7e}
+body:not(.theme-night) .map-zone-nav button[aria-pressed="true"]{background:#86cbee;color:#073f66}
+body:not(.theme-night) #blockboard .section-toolbar,body:not(.theme-night) #blockboard .block-headline{background:linear-gradient(120deg,#e8f8ff,#bfE5f9);border:1px solid #a5d6f0;box-shadow:0 9px 23px rgba(29,102,150,.13);backdrop-filter:none}
+body:not(.theme-night) #blockboard .section-toolbar label,body:not(.theme-night) #blockboard .block-title-wrap :is(h2,p){color:#143f62}
+body:not(.theme-night) #blockboard .block-summary-grid .summary-tile{background:rgba(240,251,255,.8);border:1px solid #a5cee6}
+body:not(.theme-night) #blockboard .block-summary-grid .summary-tile :is(span,small,strong){color:#164766}
+body:not(.theme-night) #blockboard .legend{background:#e7f6ff;border-color:#a6d0e8;color:#245779;box-shadow:0 7px 16px rgba(31,101,148,.1);backdrop-filter:none}
+body:not(.theme-night) #blockboard .floor-row{background:rgba(221,242,253,.96)!important;border:1px solid #b3d9ed!important;box-shadow:0 8px 19px rgba(33,105,150,.12)!important}
+body:not(.theme-night) #blockboard .unit-grid{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important;gap:8px!important}
+body:not(.theme-night) #blockboard .unit-card.status-out{background:linear-gradient(145deg,#fff4d2,#f4deb0)!important;border-color:#d8b35b!important;box-shadow:inset 4px 0 #bd8b25,0 8px 16px rgba(146,105,25,.11)!important}
+#visualThemeToggle{display:none!important}
+
+/* V7.93 · Clear lit-photo backdrop, neutral glass sheets; classic board unchanged. */
+html{background:#1c2630}
+body:not(.theme-night){background:transparent;color:#18354a}
+body:not(.theme-night)::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("night-estate.jpg") center center/cover no-repeat;filter:brightness(1.36) saturate(1.08)}
+body:not(.theme-night) .app-shell{position:relative;z-index:1}
+body:not(.theme-night) .sidebar{background:rgba(251,253,252,.75);border-right:1px solid rgba(255,255,255,.85);backdrop-filter:blur(17px) saturate(112%);-webkit-backdrop-filter:blur(17px) saturate(112%);box-shadow:7px 0 24px rgba(0,20,33,.22)}
+body:not(.theme-night) .main{background:transparent}
+body:not(.theme-night) .topbar{padding:13px 16px;border:1px solid rgba(255,255,255,.68);border-radius:19px;background:rgba(253,254,252,.68);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 25px rgba(0,20,32,.17)}
+body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:rgba(252,253,251,.72);border:1px solid rgba(255,255,255,.82);box-shadow:0 12px 28px rgba(0,22,36,.2),inset 0 1px rgba(255,255,255,.8);backdrop-filter:blur(12px) saturate(110%);-webkit-backdrop-filter:blur(12px) saturate(110%)}
+body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:rgba(251,253,252,.69);border-color:rgba(255,255,255,.8)}
+body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(100deg,rgba(250,253,252,.78),rgba(243,250,250,.56));border-color:rgba(255,255,255,.84);color:#153e55;backdrop-filter:blur(10px);box-shadow:0 13px 30px rgba(0,22,34,.22)}
+body:not(.theme-night) #dashboard .hero-tags span{background:rgba(253,255,253,.64);border-color:rgba(201,223,229,.9);color:#164967}
+body:not(.theme-night) #blockboard .section-toolbar,body:not(.theme-night) #blockboard .block-headline{background:rgba(251,253,252,.72);border:1px solid rgba(255,255,255,.82);box-shadow:0 11px 25px rgba(0,24,38,.2);backdrop-filter:blur(12px)}
+body:not(.theme-night) #blockboard .block-summary-grid .summary-tile{background:rgba(255,255,255,.64);border-color:rgba(186,216,226,.8)}
+body:not(.theme-night) #blockboard .legend{background:rgba(252,254,252,.71);border-color:rgba(255,255,255,.8);color:#234d65;backdrop-filter:blur(10px)}
+body:not(.theme-night) #blockboard .floor-row{background:rgba(252,253,251,.72)!important;border-color:rgba(255,255,255,.84)!important;box-shadow:0 10px 23px rgba(0,22,34,.2)!important;backdrop-filter:blur(11px)}
+body:not(.theme-night) .main :is(.table-shell,.planner-table-wrap){background:rgba(249,251,250,.69);border-color:rgba(228,238,240,.8)}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) th{background:rgba(232,241,243,.86)!important;color:#23445a!important}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) td{background:rgba(253,254,252,.78);color:#223f53}
+body:not(.theme-night) .main :is(input,select,textarea){background:rgba(255,255,254,.86);border-color:#b5d0da;color:#1b4259}
+body:not(.theme-night) .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){background:rgba(255,255,254,.77);border-color:#c8dde2;color:#23506a}
+body:not(.theme-night) .security-gate{background:url("night-estate.jpg") center/cover no-repeat}
+body:not(.theme-night) .security-card{background:rgba(252,254,252,.83);border-color:rgba(255,255,255,.87);backdrop-filter:blur(15px)}
+@media(max-width:760px){body:not(.theme-night) .topbar{padding:12px}}
+/* Let the actual building and its lamps remain visible through the sheets. */
+body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:rgba(253,254,252,.65);backdrop-filter:blur(6px) saturate(108%);-webkit-backdrop-filter:blur(6px) saturate(108%)}
+body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:rgba(253,254,252,.62)}
+body:not(.theme-night) #blockboard .floor-row{background:rgba(253,254,252,.65)!important;backdrop-filter:blur(6px)}
