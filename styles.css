@@ -2275,3 +2275,50 @@ body:not(.theme-night) .security-card{background:rgba(243,252,255,.85);backdrop-
 @media(prefers-reduced-motion:reduce){#blockboard .twin-lit-window,body.theme-night .sidebar .nav-item{transition:none}}
 @media(max-width:1120px){#blockboard .twin-scene{height:590px}#blockboard .twin-focus-tag{margin-left:15%}}
 @media(max-width:650px){#blockboard .twin-scene{height:500px;min-height:470px;background-position:53% center}#blockboard .twin-floor-nav{left:7px;top:9px;bottom:9px;width:50px}#blockboard .twin-floor-nav button{min-height:29px}#blockboard .twin-building{margin-left:57px;padding:10px 9px}#blockboard .twin-scene-title{padding:7px 9px}#blockboard .twin-scene-title strong{font-size:17px}#blockboard .twin-scene-title small{display:none}#blockboard .twin-focus-tag{margin-left:32px;padding:9px 11px;max-width:calc(100% - 42px)}#blockboard .twin-focus-tag strong{font-size:14px}#blockboard .twin-focus-tag:before{left:-31px;width:31px}#blockboard .twin-focus-pin{left:-39px}#blockboard .twin-dock-heading small{display:none}#blockboard .twin-unit-dock{max-height:180px;padding:8px}#blockboard .twin-unit-dock .twin-module{min-width:77px}}
+
+/* V7.89 · Full Block Board: every floor and every registered unit stays visible. */
+#blockboard .facade-board{width:100%;overflow:visible;border:1px solid rgba(153,224,250,.58);border-radius:20px;background:radial-gradient(circle at 80% 0%,rgba(112,229,247,.25),transparent 43%),linear-gradient(140deg,rgba(6,41,70,.87),rgba(11,67,95,.76) 50%,rgba(4,39,67,.88));box-shadow:0 17px 38px rgba(0,16,37,.27),inset 0 1px rgba(233,253,255,.2);backdrop-filter:blur(16px)}
+#blockboard .facade-roof{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:13px 19px;border-bottom:3px solid rgba(162,229,253,.64);background:linear-gradient(90deg,rgba(181,238,255,.18),rgba(217,252,255,.06));color:#ebfbff}
+#blockboard .facade-roof div{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+#blockboard .facade-roof span{font-size:11px;font-weight:900;letter-spacing:.12em;color:#86e1ed}
+#blockboard .facade-roof strong{font-size:21px;letter-spacing:.02em}
+#blockboard .facade-roof small{color:#c8eaf5;font-size:11px;font-weight:700}
+#blockboard .facade-levels{display:grid;gap:0;padding:5px 11px 9px}
+#blockboard .facade-level{display:grid;grid-template-columns:62px minmax(0,1fr);align-items:stretch;gap:7px;min-height:48px;border-bottom:1px solid rgba(179,234,252,.31)}
+#blockboard .facade-level:last-child{border-bottom:0}
+#blockboard .facade-floor{display:flex;align-items:center;justify-content:center;gap:4px;padding:4px;border-right:1px solid rgba(177,230,250,.26);color:#effcff}
+#blockboard .facade-floor strong{font-size:15px;font-variant-numeric:tabular-nums}
+#blockboard .facade-floor span{font-size:8px;font-weight:850;letter-spacing:.07em;color:#a9dbea}
+#blockboard .facade-windows{display:flex;flex-wrap:wrap;align-content:center;gap:5px;padding:5px 2px}
+#blockboard .facade-window{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:87px;min-height:34px;padding:4px 8px;border:1px solid rgba(191,232,249,.7);border-radius:7px;background:linear-gradient(155deg,rgba(63,133,171,.6),rgba(14,75,115,.57));color:#f6fdff;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.19),0 4px 10px rgba(0,17,34,.2);font-family:inherit}
+#blockboard .facade-window span{font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+#blockboard .facade-window b{font-size:9px;font-weight:900;letter-spacing:.05em}
+#blockboard .facade-window.twin-status-a{background:linear-gradient(135deg,rgba(24,144,99,.94),rgba(10,94,76,.75));border-color:#9ceac4;box-shadow:inset 0 1px rgba(228,255,241,.32),0 0 13px rgba(68,225,145,.43)}
+#blockboard .facade-window.twin-status-c{background:linear-gradient(135deg,rgba(174,65,121,.92),rgba(105,49,97,.77));border-color:#f7b8db;box-shadow:inset 0 1px rgba(255,237,247,.3),0 0 12px rgba(255,125,189,.4)}
+#blockboard .facade-window.twin-status-p{background:linear-gradient(135deg,rgba(51,116,186,.93),rgba(18,69,128,.78));border-color:#abd6ff;box-shadow:inset 0 1px rgba(240,250,255,.26),0 0 12px rgba(91,162,244,.4)}
+#blockboard .facade-window.twin-status-d{background:linear-gradient(135deg,rgba(182,126,40,.96),rgba(103,75,27,.79));border-color:#ffe2a0;box-shadow:inset 0 1px rgba(255,248,213,.33),0 0 12px rgba(253,188,77,.43)}
+#blockboard .facade-window.twin-status-nr{background:linear-gradient(135deg,rgba(178,55,76,.93),rgba(102,41,61,.78));border-color:#ffb6bf;box-shadow:inset 0 1px rgba(255,238,239,.3),0 0 12px rgba(254,96,114,.42)}
+#blockboard .facade-window:is(:hover,.is-selected){position:relative;z-index:1;border-color:#edffff;outline:2px solid rgba(166,252,245,.9);outline-offset:1px;filter:brightness(1.13)}
+#blockboard .facade-foundation{display:flex;gap:6px;flex-wrap:wrap;padding:10px 17px;border-top:3px solid rgba(151,222,249,.55);background:rgba(4,31,57,.48)}
+#blockboard .facade-key{padding:4px 8px;border:1px solid rgba(170,222,246,.35);border-radius:99px;color:#d6f3ff;font-size:10px;font-weight:800}
+#blockboard .facade-key.a{color:#a5f4c8}#blockboard .facade-key.c{color:#ffd0e8}#blockboard .facade-key.p{color:#bddfff}#blockboard .facade-key.d{color:#ffe1a6}#blockboard .facade-key.nr{color:#ffc0c8}
+#blockboard .facade-inspector{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(170px,.7fr) minmax(0,2fr) minmax(200px,1.1fr);align-items:center;gap:10px;padding:12px 16px;margin-top:12px;background:linear-gradient(140deg,rgba(240,251,255,.82),rgba(193,231,249,.7));backdrop-filter:blur(16px)}
+#blockboard .facade-inspector :is(h3,.twin-inspector-kicker){margin:0}
+#blockboard .facade-inspector h3{font-size:17px;grid-column:1}
+#blockboard .facade-inspector .twin-inspector-kicker{grid-column:1;grid-row:1}
+#blockboard .facade-inspector .twin-inspector-status{grid-column:2;grid-row:1/3;text-align:center;font-size:13px;padding:9px}
+#blockboard .facade-inspector .twin-inspector-fields{grid-column:3;grid-row:1/3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border:0;gap:9px}
+#blockboard .facade-inspector .twin-inspector-fields>div{padding:2px;border:0}
+#blockboard .facade-inspector .twin-inspector-fields span{font-size:9px}
+#blockboard .facade-inspector .twin-inspector-fields strong{font-size:11px}
+#blockboard .facade-inspector .twin-inspector-actions{grid-column:4;grid-row:1/3;grid-template-columns:repeat(3,1fr);gap:5px}
+#blockboard .facade-inspector .twin-inspector-actions button{font-size:10px;min-height:38px;padding:4px}
+@media(max-width:1150px){#blockboard .facade-inspector{grid-template-columns:1fr 1fr}#blockboard .facade-inspector .twin-inspector-kicker,#blockboard .facade-inspector h3{grid-column:1}#blockboard .facade-inspector .twin-inspector-status{grid-column:2}#blockboard .facade-inspector .twin-inspector-fields{grid-column:1/-1;grid-row:3}#blockboard .facade-inspector .twin-inspector-actions{grid-column:1/-1;grid-row:4}}
+@media(max-width:650px){#blockboard .facade-roof{align-items:start;flex-direction:column}#blockboard .facade-level{grid-template-columns:45px minmax(0,1fr)}#blockboard .facade-floor{flex-direction:column}#blockboard .facade-window{min-width:73px;min-height:32px;padding:3px 5px}#blockboard .facade-window span{font-size:9px}#blockboard .facade-inspector .twin-inspector-fields{grid-template-columns:1fr 1fr}#blockboard .facade-inspector .twin-inspector-actions{grid-template-columns:1fr 1fr 1fr}}
+/* Satellite map remains legible in Night View, including labels near its lower edge. */
+body.theme-night #dashboard .zone-map-tiles{filter:saturate(1.16) brightness(1.05) contrast(1.02)}
+body.theme-night #dashboard .zone-map-stage{background:#477e9b;box-shadow:0 0 0 1px rgba(200,244,255,.65),0 12px 30px rgba(0,24,50,.27),inset 0 0 28px rgba(100,212,240,.24)}
+body.theme-night #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(135,226,251,.12),transparent 30%,rgba(17,72,113,.04) 88%,rgba(118,216,246,.12))}
+@media(min-width:1251px){#dashboard .zone-map-stage{height:430px;min-height:430px}}
+@media(min-width:761px) and (max-width:1250px){#dashboard .zone-map-stage{height:450px;min-height:450px}}
+@media(max-width:760px){#dashboard .zone-map-stage{height:470px;min-height:470px}}
