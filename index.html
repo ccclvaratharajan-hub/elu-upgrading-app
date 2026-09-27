@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.01">
+  <link rel="stylesheet" href="styles.css?v=8.02">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -106,6 +106,10 @@
             <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
             <p>Survey, appointment, unit status and weekly progress — connected to one master register across all 6 zones.</p>
             <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
+            <div class="hero-mini-actions" aria-label="Open dashboard details">
+              <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Today's plan</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
+              <button type="button" data-dashboard-detail="visits" aria-expanded="false" aria-controls="upcomingVisitsPanel"><svg aria-hidden="true"><use href="#i-survey"/></svg><span>Survey visits</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
+            </div>
           </div>
           <div class="hero-orbit-wrap">
             <div class="hero-orbit" id="heroOrbit">
@@ -113,6 +117,17 @@
             </div>
             <div class="hero-orbit-caption"><strong id="heroTotalUnits">0</strong><span>Total project units</span></div>
           </div>
+        </div>
+
+        <div class="dashboard-detail-tray" id="dashboardDetailTray" hidden>
+          <article class="panel today-team-panel" id="todayTeamPanel" hidden>
+            <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Each Zone is separated first, with Team 1 and Team 2 shown inside that Zone.</p></div><div class="dashboard-detail-actions"><button class="text-btn" data-go="teams">Open Planner</button><button class="detail-close" type="button" data-dashboard-close aria-label="Close today's plan">×</button></div></div>
+            <div id="todayTeamBoard" class="today-team-board"></div>
+          </article>
+          <article class="panel attention-panel" id="upcomingVisitsPanel" hidden>
+            <div class="panel-head"><div><span class="section-label">FIELD VISITS</span><h3>Upcoming survey visits</h3></div><div class="dashboard-detail-actions"><button class="text-btn" data-go="survey">Open Survey</button><button class="detail-close" type="button" data-dashboard-close aria-label="Close survey visits">×</button></div></div>
+            <div id="followupAttention" class="attention-grid"></div>
+          </article>
         </div>
 
         <div class="kpi-grid premium-kpis">
@@ -157,15 +172,6 @@
           </article>
         </div>
 
-        <article class="panel today-team-panel">
-          <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Each Zone is separated first, with Team 1 and Team 2 shown inside that Zone.</p></div><button class="text-btn" data-go="teams">Open Planner</button></div>
-          <div id="todayTeamBoard" class="today-team-board"></div>
-        </article>
-
-        <article class="panel attention-panel">
-          <div class="panel-head"><div><span class="section-label">FIELD VISITS</span><h3>Upcoming survey visits</h3></div><button class="text-btn" data-go="survey">Open Survey</button></div>
-          <div id="followupAttention" class="attention-grid"></div>
-        </article>
       </section>
 
       <section class="view" id="blockboard">
@@ -639,6 +645,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=7.95"></script>
+<script src="app.js?v=8.02"></script>
 </body>
 </html>

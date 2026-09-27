@@ -583,6 +583,20 @@ function setView(view){
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
 document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)setView(b.dataset.go)});
+const dashboardDetailPanels={today:document.getElementById("todayTeamPanel"),visits:document.getElementById("upcomingVisitsPanel")};
+function showDashboardDetail(key){
+  const dashboard=document.getElementById("dashboard"),tray=document.getElementById("dashboardDetailTray");
+  const selected=dashboardDetailPanels[key]?key:null;
+  tray.hidden=!selected;
+  dashboard.classList.toggle("has-open-detail",!!selected);
+  Object.entries(dashboardDetailPanels).forEach(([name,panel])=>{panel.hidden=name!==selected});
+  dashboard.querySelectorAll("[data-dashboard-detail]").forEach(button=>button.setAttribute("aria-expanded",String(button.dataset.dashboardDetail===selected)));
+}
+document.getElementById("dashboard").addEventListener("click",e=>{
+  const button=e.target.closest("[data-dashboard-detail]");
+  if(button){showDashboardDetail(button.getAttribute("aria-expanded")==="true"?null:button.dataset.dashboardDetail);return}
+  if(e.target.closest("[data-dashboard-close]"))showDashboardDetail(null);
+});
 let activeMapZone="all";
 document.getElementById("zoneMapPanel").addEventListener("click",e=>{
   const blockButton=e.target.closest("[data-map-block]");
