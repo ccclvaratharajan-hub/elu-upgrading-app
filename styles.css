@@ -2469,3 +2469,33 @@ body:not(.theme-night) .security-card{background:rgba(252,254,252,.83);border-co
 body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:rgba(253,254,252,.65);backdrop-filter:blur(6px) saturate(108%);-webkit-backdrop-filter:blur(6px) saturate(108%)}
 body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:rgba(253,254,252,.62)}
 body:not(.theme-night) #blockboard .floor-row{background:rgba(253,254,252,.65)!important;backdrop-filter:blur(6px)}
+
+/* V7.94 · Match the clear building lights with restrained warm glass. */
+body:not(.theme-night) .sidebar{background:linear-gradient(155deg,rgba(255,253,248,.76),rgba(251,249,244,.67));border-right:1px solid rgba(255,242,217,.78);box-shadow:7px 0 25px rgba(24,18,15,.24);backdrop-filter:blur(12px) saturate(108%)}
+body:not(.theme-night) .topbar{background:linear-gradient(115deg,rgba(255,254,250,.76),rgba(251,249,243,.64));border-color:rgba(255,244,226,.84);box-shadow:0 10px 27px rgba(25,23,20,.21),inset 0 1px rgba(255,255,255,.84);backdrop-filter:blur(9px)}
+body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:radial-gradient(circle at 0 0,rgba(255,249,228,.23),transparent 45%),rgba(254,252,247,.65);border-color:rgba(255,245,225,.79);box-shadow:0 12px 30px rgba(22,24,21,.2),inset 0 1px rgba(255,255,255,.76);backdrop-filter:blur(6px) saturate(108%)}
+body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:radial-gradient(circle at 0 0,rgba(255,244,211,.17),transparent 46%),rgba(253,251,246,.63);border-color:rgba(255,244,223,.78)}
+body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(105deg,rgba(254,252,246,.74),rgba(250,248,239,.57));border-color:rgba(255,241,215,.79);box-shadow:0 13px 30px rgba(23,24,20,.22)}
+body:not(.theme-night) #blockboard .section-toolbar,body:not(.theme-night) #blockboard .block-headline{background:linear-gradient(110deg,rgba(254,252,247,.77),rgba(248,246,239,.65));border-color:rgba(255,242,218,.83);box-shadow:0 10px 25px rgba(24,23,19,.21);backdrop-filter:blur(8px)}
+body:not(.theme-night) #blockboard .block-summary-grid .summary-tile{background:rgba(255,253,248,.64);border-color:rgba(226,218,200,.77)}
+body:not(.theme-night) #blockboard .legend{background:rgba(254,252,247,.68);border-color:rgba(255,241,217,.79);box-shadow:0 9px 22px rgba(24,23,19,.18)}
+body:not(.theme-night) #blockboard .floor-row{background:rgba(253,251,246,.65)!important;border-color:rgba(255,242,219,.8)!important;box-shadow:0 10px 24px rgba(23,22,18,.21)!important}
+body:not(.theme-night) .main :is(.table-shell,.planner-table-wrap){background:rgba(251,250,246,.71);border-color:rgba(236,226,209,.81)}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) th{background:rgba(242,237,225,.89)!important;color:#284653!important}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) td{background:rgba(255,253,249,.78)}
+body:not(.theme-night) .main :is(input,select,textarea),body:not(.theme-night) .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){background:rgba(255,253,249,.82);border-color:rgba(215,216,205,.83)}
+
+/* V7.95 · Keep the lit scene legible in daily use; offer a temporary clear view. */
+body:not(.theme-night) .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:rgba(254,252,247,.46);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:rgba(255,244,225,.75);text-shadow:0 1px rgba(255,255,255,.67)}
+body:not(.theme-night) #dashboard>.panel,body:not(.theme-night) #dashboard .dashboard-grid-wow>.panel{background:rgba(253,251,246,.45)}
+body:not(.theme-night) #blockboard .section-toolbar,body:not(.theme-night) #blockboard .block-headline,body:not(.theme-night) #blockboard .legend{background:rgba(255,253,248,.53);backdrop-filter:none}
+body:not(.theme-night) #blockboard .floor-row{background:rgba(254,252,247,.46)!important;backdrop-filter:none}
+body:not(.theme-night) .main :is(.table-shell,.planner-table-wrap){background:rgba(255,253,249,.57)}
+body:not(.theme-night) #dashboard .command-hero{background:rgba(254,252,247,.53);backdrop-filter:none}
+body:not(.theme-night) .topbar{background:rgba(255,253,248,.7)}
+body:not(.theme-night) .scene-peek-btn{border-color:#bfac84!important;background:rgba(255,245,218,.89)!important;color:#57451d!important;white-space:nowrap}
+.scene-peek-btn svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.scene-peek .main .view.active>*{opacity:.07;transform:translateY(12px);pointer-events:none;transition:opacity .55s ease,transform .55s ease}
+.scene-peek .main .topbar{position:relative;z-index:2}
+.scene-peek .main .topbar .scene-peek-btn{box-shadow:0 0 0 2px rgba(255,243,210,.9),0 0 24px rgba(255,226,155,.63)}
+@media(prefers-reduced-motion:reduce){.scene-peek .main .view.active>*{transition:none;transform:none}}

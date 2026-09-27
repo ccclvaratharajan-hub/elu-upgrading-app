@@ -2503,6 +2503,23 @@ function startApp(){
   photoAutoCleanup();
   autoCompleteTimer=setInterval(()=>autoCompleteAppointments(true),60000)
 }
+let scenePeekTimer;
+const scenePeekBtn=document.getElementById("scenePeekBtn");
+function closeScenePeek(){
+  clearTimeout(scenePeekTimer);
+  document.body.classList.remove("scene-peek");
+  scenePeekBtn.setAttribute("aria-pressed","false");
+  scenePeekBtn.querySelector("span").textContent="View Lighting";
+}
+scenePeekBtn.addEventListener("click",()=>{
+  if(document.body.classList.contains("scene-peek")){closeScenePeek();return}
+  document.body.classList.add("scene-peek");
+  scenePeekBtn.setAttribute("aria-pressed","true");
+  scenePeekBtn.querySelector("span").textContent="Return to Workspace";
+  scenePeekTimer=setTimeout(closeScenePeek,12000);
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeScenePeek()});
+document.getElementById("nav").addEventListener("click",closeScenePeek);
 document.getElementById("visualThemeToggle").addEventListener("click",e=>{
   const night=document.body.classList.toggle("theme-night");
   e.currentTarget.textContent=night?"Day View":"Night View";
