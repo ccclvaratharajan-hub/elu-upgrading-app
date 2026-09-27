@@ -885,14 +885,12 @@ function renderBlockBoard(){
   if(!visible.some(x=>x.key===selectedBoardUnitKey))selectedBoardUnitKey=visible[0]?.key||"";
   const selected=visible.find(x=>x.key===selectedBoardUnitKey),selectedFloor=selected?.floor||Number(floorFilter)||floors[0];
   const nav=floors.map(f=>`<button type="button" data-twin-floor="${f}" class="${f===selectedFloor?"is-active":""}" aria-label="Show floor ${f}" aria-pressed="${f===selectedFloor}">${String(f).padStart(2,"0")}</button>`).join("");
-  const levels=floors.filter(f=>floorFilter==="all"||f===Number(floorFilter)).map(f=>{
-    const fu=visible.filter(x=>x.floor===f);if(!fu.length)return"";
-    return `<div class="twin-level ${f===selectedFloor?"is-focused":""}" data-level="${f}"><span class="twin-level-tag">F${String(f).padStart(2,"0")}</span><div class="twin-modules">${fu.map(x=>`<button type="button" class="twin-module twin-status-${x.response.toLowerCase()} ${x.key===selectedBoardUnitKey?"is-selected":""}" data-unit-key="${esc(x.key)}" aria-label="Blk ${block} ${unitDisplay(x.floor,x.unit)} ${esc(statusLabel(x.response))}" title="${unitDisplay(x.floor,x.unit)} · ${esc(statusLabel(x.response))}"><span>${unitDisplay(x.floor,x.unit)}</span><b>${esc(x.response)}</b></button>`).join("")}</div></div>`;
-  }).filter(Boolean).join("");
+  const floorUnits=visible.filter(x=>x.floor===selectedFloor);
+  const unitDock=floorUnits.map(x=>`<button type="button" class="twin-module twin-status-${x.response.toLowerCase()} ${x.key===selectedBoardUnitKey?"is-selected":""}" data-unit-key="${esc(x.key)}" aria-label="Blk ${block} ${unitDisplay(x.floor,x.unit)} ${esc(statusLabel(x.response))}" title="${unitDisplay(x.floor,x.unit)} · ${esc(statusLabel(x.response))}"><span>${unitDisplay(x.floor,x.unit)}</span><b>${esc(x.response)}</b></button>`).join("");
+  const litWindows=floorUnits.map(x=>`<button type="button" class="twin-lit-window twin-status-${x.response.toLowerCase()} ${x.key===selectedBoardUnitKey?"is-selected":""}" data-unit-key="${esc(x.key)}" title="${unitDisplay(x.floor,x.unit)} · ${esc(statusLabel(x.response))}" aria-label="Select Blk ${block} ${unitDisplay(x.floor,x.unit)} ${esc(statusLabel(x.response))}"><span>${unitDisplay(x.floor,x.unit)}</span><b>${esc(x.response)}</b></button>`).join("");
   const inspector=selected?`<div class="twin-inspector-kicker">UNIT INSPECTOR · FLOOR ${String(selected.floor).padStart(2,"0")}</div><h3>Blk ${block} · ${unitDisplay(selected.floor,selected.unit)}</h3><div class="twin-inspector-status twin-status-${selected.response.toLowerCase()}">${esc(statusLabel(selected.response))}</div><div class="twin-inspector-fields"><div><span>Owner</span><strong>${esc(selected.ownerName||"—")}</strong></div><div><span>Contact</span><strong>${esc(selected.contact||"—")}</strong></div><div><span>Appointment</span><strong>${selected.appointmentDate?`${safeDate(selected.appointmentDate)} · ${esc(selected.appointmentSlot||"")}`:"—"}</strong></div><div><span>Team</span><strong>${esc(selected.team||"—")}</strong></div></div><div class="twin-inspector-actions"><button type="button" data-twin-action="survey">Survey Visit</button><button type="button" data-twin-action="appointment">Appointment</button><button type="button" data-twin-action="details">Full unit details</button></div>`:`<div class="twin-inspector-kicker">UNIT INSPECTOR</div><h3>Select a unit</h3><p>Choose a unit in the model to see its current record.</p>`;
-  const board=document.getElementById("floorBoard"),oldScroll=board.querySelector(".twin-scene")?.scrollTop||0;
-  board.innerHTML=`<div class="twin-layout"><div class="twin-scene"><div class="twin-scene-glow"></div><div class="twin-floor-nav"><span>FLOORS</span>${nav}</div><div class="twin-building"><div class="twin-scene-title"><span>PR3 · ZONE ${layout.zone}</span><strong>BLOCK ${block}</strong><small>Live unit model · select a floor or unit</small></div>${levels||'<div class="twin-empty">No units match this filter.</div>'}<div class="twin-ground"></div></div></div><aside class="twin-inspector" aria-live="polite">${inspector}</aside></div>`;
-  const scene=board.querySelector(".twin-scene");if(scene)scene.scrollTop=oldScroll;
+  const board=document.getElementById("floorBoard");
+  board.innerHTML=`<div class="twin-layout"><div class="twin-scene"><div class="twin-scene-glow"></div><div class="twin-floor-nav"><span>FLOORS</span>${nav}</div><div class="twin-building"><div class="twin-scene-title"><span>PR3 · ZONE ${layout.zone}</span><strong>BLOCK ${block}</strong><small>Live unit lights · floor ${String(selectedFloor||0).padStart(2,"0")}</small></div><div class="twin-lit-bank" aria-label="Floor ${selectedFloor} units shown as lit windows">${litWindows||'<div class="twin-empty">No matching units</div>'}</div>${selected?`<div class="twin-focus-tag"><span class="twin-focus-pin"></span><small>SELECTED UNIT · FLOOR ${String(selected.floor).padStart(2,"0")}</small><strong>Blk ${block} · ${unitDisplay(selected.floor,selected.unit)}</strong><em class="twin-focus-status twin-status-${selected.response.toLowerCase()}">${esc(statusLabel(selected.response))}</em></div>`:""}<div class="twin-unit-dock"><div class="twin-dock-heading"><div><span>FLOOR ${String(selectedFloor||0).padStart(2,"0")}</span><strong>${floorUnits.length} unit${floorUnits.length===1?"":"s"} · choose a unit</strong></div><small>Illustrative building · exact register units</small></div><div class="twin-modules">${unitDock||'<div class="twin-empty">No units match this filter.</div>'}</div></div></div></div><aside class="twin-inspector" aria-live="polite"><div class="twin-inspector-cover" aria-hidden="true"></div>${inspector}</aside></div>`;
 }
 document.getElementById("floorBoard").addEventListener("click",e=>{
   const floor=e.target.closest("[data-twin-floor]");if(floor){document.getElementById("boardFloor").value=floor.dataset.twinFloor;selectedBoardUnitKey="";renderBlockBoard();return}
@@ -1466,30 +1464,10 @@ function reportTotals(rows){
   return{...t,agreePct:t.total?t.agree/t.total*100:0,donePct:t.total?t.done/t.total*100:0,pPct:t.total?t.p/t.total*100:0,dPct:t.total?t.d/t.total*100:0,nrPct:t.total?t.nr/t.total*100:0}
 }
 function pct(v){return`${v.toFixed(1)}%`}
-function renderBlockStatusChart(rows){
-  if(!rows.length)return`<div class="empty-state">No blocks for this filter.</div>`;
-  const metrics=[
-    ["agree","Opt-In A+C","agreePct"],
-    ["done","Completed","donePct"],
-    ["p","Pending P","pPct"],
-    ["d","Opt-Out D","dPct"],
-    ["nr","NR","nrPct"]
-  ];
-  return rows.map(r=>`<article class="block-chart-card">
-    <div class="block-chart-identity"><span>ZONE ${r.zone}</span><strong>Block ${r.block}</strong><small>${r.total} units</small></div>
-    <div class="block-chart-metrics">${metrics.map(([key,label,pctKey])=>{
-      const value=Math.max(0,Math.min(100,r[pctKey]));
-      return `<div class="block-chart-metric metric-${key}" aria-label="Block ${r.block}, ${label}: ${r[key]} units, ${value.toFixed(1)} percent">
-        <div class="block-chart-metric-head"><span>${label}</span><strong>${r[key]} <small>${value.toFixed(1)}%</small></strong></div>
-        <div class="block-chart-track"><i style="width:${value.toFixed(1)}%"></i></div>
-      </div>`
-    }).join("")}</div>
-  </article>`).join("");
-}
 function renderReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
   document.getElementById("reportSummaryCards").innerHTML=`<div class="report-mini-card"><span>Total Units</span><strong>${t.total}</strong></div><div class="report-mini-card"><span>Opt-In A+C</span><strong>${t.agree}</strong></div><div class="report-mini-card"><span>Completed</span><strong>${t.done}</strong></div><div class="report-mini-card pending-card"><span>Pending P</span><strong>${t.p}</strong></div><div class="report-mini-card"><span>Opt-Out D</span><strong>${t.d}</strong></div><div class="report-mini-card"><span>No Response NR</span><strong>${t.nr}</strong></div>`;
-  document.getElementById("reportBlockChart").innerHTML=renderBlockStatusChart(rows);
+  document.getElementById("reportBlockChart").innerHTML=rows.length?`<div class="report-cluster-yaxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="report-cluster-scroll"><div class="report-cluster-grid">${rows.map(r=>{const vals=[["agree",r.agreePct],["done",r.donePct],["p",r.pPct],["d",r.dPct],["nr",r.nrPct]];return`<div class="report-cluster-group"><div class="report-cluster-bars">${vals.map(v=>`<div class="report-cluster-bar-wrap"><b style="bottom:calc(${Math.max(0,Math.min(100,v[1])).toFixed(1)}% + 2px)">${v[1].toFixed(1)}</b><i class="report-cluster-bar ${v[0]}" style="height:${Math.max(0,Math.min(100,v[1])).toFixed(1)}%"></i></div>`).join("")}</div><strong>Blk ${r.block}</strong></div>`}).join("")}</div></div>`:`<div class="empty-state">No blocks for this filter.</div>`;
   document.getElementById("reportTable").innerHTML=`<table class="weekly-table"><thead><tr><th>S/N</th><th>BLK</th><th>TOTAL</th><th>A+C</th><th>A+C %</th><th>DONE</th><th>DONE %</th><th>P</th><th>P %</th><th>D</th><th>D %</th><th>NR</th><th>NR %</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.block}</strong></td><td>${r.total}</td><td>${r.agree}</td><td>${pct(r.agreePct)}</td><td>${r.done}</td><td>${pct(r.donePct)}</td><td>${r.p}</td><td>${pct(r.pPct)}</td><td>${r.d}</td><td>${pct(r.dPct)}</td><td>${r.nr}</td><td>${pct(r.nrPct)}</td></tr>`).join("")}<tr class="total-row"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${pct(t.agreePct)}</td><td>${t.done}</td><td>${pct(t.donePct)}</td><td>${t.p}</td><td>${pct(t.pPct)}</td><td>${t.d}</td><td>${pct(t.dPct)}</td><td>${t.nr}</td><td>${pct(t.nrPct)}</td></tr></tbody></table>`;
   renderResponseSummary();
 }
