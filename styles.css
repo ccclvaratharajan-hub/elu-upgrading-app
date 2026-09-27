@@ -2499,3 +2499,68 @@ body:not(.theme-night) .scene-peek-btn{border-color:#bfac84!important;background
 .scene-peek .main .topbar{position:relative;z-index:2}
 .scene-peek .main .topbar .scene-peek-btn{box-shadow:0 0 0 2px rgba(255,243,210,.9),0 0 24px rgba(255,226,155,.63)}
 @media(prefers-reduced-motion:reduce){.scene-peek .main .view.active>*{transition:none;transform:none}}
+
+/* V7.96 · Crisp ink over the clear scene; keep sheet transparency and status colours. */
+body:not(.theme-night){--readable-ink:#102f43;--readable-muted:#284c62}
+body:not(.theme-night) .main{color:var(--readable-ink)}
+body:not(.theme-night) .topbar :is(h1,p,.eyebrow){color:var(--readable-ink);font-weight:800;text-shadow:0 1px 2px rgba(255,255,255,.96),0 0 7px rgba(255,255,255,.82)}
+body:not(.theme-night) .topbar h1{font-weight:900}
+body:not(.theme-night) .sidebar :is(.brand-name,.brand-sub,.project-badge strong,.project-badge small,.nav-item,.sidebar-note strong,.sidebar-note span){color:var(--readable-ink);font-weight:800;text-shadow:0 1px 2px rgba(255,255,255,.94)}
+body:not(.theme-night) .sidebar .nav-item{font-size:14px}
+body:not(.theme-night) .main :is(.panel-head h3,.toolbar-title,.planner-hero h2,.planner-sheet-title h3,.report-hero h2,.block-title-wrap h2){color:#0a2f48;font-weight:900;text-shadow:0 1px 2px rgba(255,255,255,.96),0 0 7px rgba(255,255,255,.8)}
+body:not(.theme-night) .main :is(.panel-head p,.zone-map-note,.planner-hero p,.report-hero p,.block-title-wrap p,.empty-state){color:var(--readable-muted);font-size:13px;font-weight:750;text-shadow:0 1px 2px rgba(255,255,255,.95),0 0 6px rgba(255,255,255,.8)}
+body:not(.theme-night) .main :is(.eyebrow,.section-label,.security-kicker){color:#164b64;font-size:11px;font-weight:900;text-shadow:0 1px 2px #fff}
+body:not(.theme-night) .main :is(.premium-form label,.planner-form label,.planner-date-nav label,.section-toolbar label,.mini-filter,.register-tools label,.filter-group label){color:#143a51;font-size:12px;font-weight:850;text-shadow:0 1px 2px rgba(255,255,255,.94)}
+body:not(.theme-night) .main :is(input,select,textarea){font-weight:750;font-size:13px}
+body:not(.theme-night) .main :is(input,textarea)::placeholder{color:#3e5a6a;opacity:1;font-weight:650}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) th{color:#12384e!important;font-weight:900!important;font-size:12px;text-shadow:none}
+body:not(.theme-night) .main :is(.table-shell,.planner-table) td{color:#193c51;font-weight:700;font-size:12px;text-shadow:none}
+body:not(.theme-night) .main :is(.kpi-card span,.kpi-card small,.zone-mini,.compact-item span,.compact-item small,.attention-card span,.today-team-head span,.today-slot-time,.today-appt-chip,.planner-team-entry small){color:#234b60;font-size:11px;font-weight:750;text-shadow:0 1px rgba(255,255,255,.9)}
+body:not(.theme-night) .main :is(.kpi-card strong,.zone-name,.compact-item strong,.attention-card strong,.today-team-head strong,.planner-team-entry strong){color:#103b53;font-weight:900;text-shadow:0 1px rgba(255,255,255,.9)}
+body:not(.theme-night) #blockboard :is(.block-title-wrap p,.block-summary-grid .summary-tile span,.block-summary-grid .summary-tile small,.floor-label span,.legend){color:#183d53;font-weight:850;text-shadow:0 1px 2px rgba(255,255,255,.98)}
+body:not(.theme-night) #blockboard .block-summary-grid .summary-tile strong{color:#0d344d;font-weight:950;text-shadow:0 1px 2px #fff}
+body:not(.theme-night) #blockboard .floor-label strong{color:#103c55!important;font-weight:950!important;text-shadow:0 1px 2px #fff}
+body:not(.theme-night) .main :is(.ghost-btn,.primary-btn,.text-btn,.planner-mini-action){font-weight:850}
+body:not(.theme-night) .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){color:#153b51;font-weight:850;text-shadow:0 1px rgba(255,255,255,.88)}
+@media(max-width:650px){body:not(.theme-night) .main :is(.panel-head p,.zone-map-note,.planner-hero p,.report-hero p,.block-title-wrap p){font-size:12px}}
+
+/* V7.97 · Crisp, luminous navigation matching the clear-photo workspace. */
+body:not(.theme-night) .sidebar{isolation:isolate;overflow:hidden;padding:20px 13px 15px;background:linear-gradient(165deg,rgba(255,253,247,.73),rgba(250,250,246,.59));border-right:1px solid rgba(255,244,224,.85);box-shadow:9px 0 30px rgba(16,26,30,.27),inset -1px 0 rgba(255,255,255,.67);backdrop-filter:blur(9px) saturate(112%)}
+body:not(.theme-night) .sidebar:before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:3px;border-radius:0 6px 6px 0;background:linear-gradient(180deg,transparent,#88ddef 26%,#e9e6b2 65%,transparent);box-shadow:0 0 16px rgba(116,221,238,.58);pointer-events:none}
+body:not(.theme-night) .brand{align-items:center;gap:11px;margin:0 3px 14px;padding:3px 5px 17px;border-bottom:1px solid rgba(85,136,153,.22)}
+body:not(.theme-night) .brand-mark{width:49px;height:49px;flex:0 0 49px;border:1px solid rgba(227,255,255,.91);border-radius:15px;background:linear-gradient(145deg,#3bacc9,#1282ab 55%,#2e7697);color:#fff;font-size:13px;letter-spacing:.035em;box-shadow:0 0 0 3px rgba(114,220,236,.19),0 8px 20px rgba(15,111,152,.28),inset 0 1px rgba(255,255,255,.49);text-shadow:0 1px 5px rgba(0,50,80,.58)}
+body:not(.theme-night) .brand-name{color:#0b334b;font-size:19px;font-weight:950;line-height:1.08;letter-spacing:-.04em;text-shadow:0 1px rgba(255,255,255,.88)}
+body:not(.theme-night) .brand-sub{color:#396273;font-size:11px;font-weight:800;letter-spacing:.02em;margin-top:5px}
+body:not(.theme-night) .project-badge{margin:0 3px 14px;padding:11px 12px;border:1px solid rgba(143,195,206,.59);border-radius:14px;background:rgba(255,254,249,.65);box-shadow:inset 0 1px rgba(255,255,255,.9),0 7px 18px rgba(28,69,83,.1)}
+body:not(.theme-night) .project-badge strong{color:#12394d;font-size:12px;font-weight:900}
+body:not(.theme-night) .project-badge small{color:#41687a;font-size:10px;font-weight:750}
+body:not(.theme-night) .project-dot{background:#2fbb99;box-shadow:0 0 0 4px rgba(47,187,153,.13),0 0 13px rgba(47,187,153,.47)}
+body:not(.theme-night) .nav{gap:4px;padding:2px 3px 5px;scrollbar-width:thin;scrollbar-color:rgba(95,166,188,.5) transparent}
+body:not(.theme-night) .sidebar .nav-item{position:relative;min-height:46px;padding:7px 10px;border:1px solid transparent;border-radius:12px;color:#254b5c;font-size:13px;font-weight:850;line-height:1.2;text-shadow:0 1px rgba(255,255,255,.83);transition:background .18s,border-color .18s,box-shadow .18s,transform .18s}
+body:not(.theme-night) .sidebar .nav-item svg{width:31px;height:31px;flex:0 0 31px;padding:6px;border:1px solid rgba(104,166,184,.42);border-radius:9px;background:rgba(247,254,252,.7);color:#27627a;box-shadow:inset 0 1px rgba(255,255,255,.93),0 3px 7px rgba(37,97,119,.08)}
+body:not(.theme-night) .sidebar .nav-item:hover{background:rgba(239,254,251,.79);border-color:rgba(118,197,203,.55);color:#0e4f66;transform:translateX(2px)}
+body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(95deg,rgba(211,250,248,.93),rgba(238,254,250,.8));border-color:rgba(84,183,189,.74);color:#0c4b61;box-shadow:inset 3px 0 #26a9b6,0 7px 18px rgba(21,101,126,.16),inset 0 1px rgba(255,255,255,.91)}
+body:not(.theme-night) .sidebar .nav-item.active svg{background:linear-gradient(145deg,#35a5be,#1d7c9b);border-color:#54b5ca;color:#fff;box-shadow:0 5px 12px rgba(23,124,151,.29),inset 0 1px rgba(255,255,255,.27)}
+body:not(.theme-night) .sidebar .nav-item:focus-visible{outline:3px solid #49bed0;outline-offset:2px}
+body:not(.theme-night) .sidebar-note{margin-top:auto;padding:13px 7px 2px;border-top:1px solid rgba(86,141,155,.27);background:none}
+body:not(.theme-night) .sidebar-note strong{color:#255367;font-size:11px;font-weight:900}
+body:not(.theme-night) .sidebar-note span{color:#527386;font-size:10px;font-weight:700;line-height:1.4}
+@media(max-width:760px){body:not(.theme-night) .sidebar{overflow:visible;padding:12px}body:not(.theme-night) .brand{margin-bottom:9px;padding-bottom:10px}body:not(.theme-night) .project-badge{margin-bottom:9px}body:not(.theme-night) .sidebar .nav-item{min-height:43px;padding:6px 7px;font-size:12px}body:not(.theme-night) .sidebar .nav-item svg{width:27px;height:27px;flex-basis:27px;padding:5px}}
+@media(prefers-reduced-motion:reduce){body:not(.theme-night) .sidebar .nav-item{transition:none}}
+
+/* V7.98 · Dark, readable navigation only; clear content and photo stay unchanged. */
+body:not(.theme-night) .sidebar{background:linear-gradient(165deg,rgba(7,25,36,.94),rgba(10,43,56,.91) 57%,rgba(7,28,40,.95));border-right:1px solid rgba(128,219,231,.53);box-shadow:10px 0 31px rgba(0,13,24,.38),inset -1px 0 rgba(225,254,255,.09);backdrop-filter:blur(13px) saturate(115%)}
+body:not(.theme-night) .sidebar:before{background:linear-gradient(180deg,transparent,#78e7e7 27%,#f1d494 66%,transparent);box-shadow:0 0 16px rgba(121,231,229,.75)}
+body:not(.theme-night) .brand{border-bottom-color:rgba(176,232,239,.24)}
+body:not(.theme-night) .brand-mark{background:linear-gradient(145deg,#4ed2dd,#167e9f 66%,#0f5779);border-color:rgba(202,252,254,.72);box-shadow:0 0 0 3px rgba(86,213,222,.16),0 0 23px rgba(85,219,226,.32),inset 0 1px rgba(255,255,255,.39)}
+body:not(.theme-night) .sidebar :is(.brand-name,.project-badge strong,.sidebar-note strong){color:#f5fcff;font-weight:900;text-shadow:0 1px 8px rgba(81,196,213,.2)}
+body:not(.theme-night) .sidebar :is(.brand-sub,.project-badge small,.sidebar-note span){color:#c4e4eb;font-weight:750;text-shadow:0 1px 4px rgba(0,16,26,.55)}
+body:not(.theme-night) .project-badge{background:linear-gradient(130deg,rgba(158,232,240,.15),rgba(141,205,222,.08));border-color:rgba(151,224,235,.38);box-shadow:inset 0 1px rgba(229,254,255,.13),0 8px 18px rgba(0,14,26,.19)}
+body:not(.theme-night) .sidebar .nav-item{color:#e4f4f7;text-shadow:0 1px 4px rgba(0,19,30,.73)}
+body:not(.theme-night) .sidebar .nav-item svg{background:linear-gradient(145deg,rgba(160,232,242,.19),rgba(44,122,153,.22));border-color:rgba(139,216,233,.35);color:#b7ecf5;box-shadow:inset 0 1px rgba(237,255,255,.15),0 4px 9px rgba(0,13,24,.19)}
+body:not(.theme-night) .sidebar .nav-item:hover{background:rgba(75,173,188,.19);border-color:rgba(135,229,231,.42);color:#fff}
+body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(100deg,rgba(38,153,174,.56),rgba(43,123,153,.38));border-color:rgba(117,233,232,.65);color:#fff;box-shadow:inset 3px 0 #94f4e8,0 8px 21px rgba(0,14,28,.28),inset 0 1px rgba(224,255,255,.19);text-shadow:0 1px 5px rgba(0,25,36,.65)}
+body:not(.theme-night) .sidebar .nav-item.active svg{background:linear-gradient(145deg,#59d9dd,#1b8eaa);border-color:#8ee8ee;color:#fff;box-shadow:0 0 0 1px rgba(153,241,241,.27),0 0 17px rgba(88,224,225,.48)}
+body:not(.theme-night) .sidebar-note{border-top-color:rgba(156,225,232,.26)}
+body:not(.theme-night) .nav{scrollbar-color:rgba(143,228,230,.42) transparent}
+@media(max-width:760px){body:not(.theme-night) .sidebar{background:linear-gradient(140deg,rgba(7,27,39,.96),rgba(13,53,68,.92))}}
