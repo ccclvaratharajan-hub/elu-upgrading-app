@@ -96,7 +96,7 @@
           <div class="user-name-chip" id="userNameChip">Secure User</div>
           <div class="today-chip" id="todayChip"></div>
           <button class="ghost-btn" type="button" id="visualThemeToggle" aria-pressed="false">Night View</button>
-          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
+          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn" id="fullBackupBtn">Full Backup</button><button class="ghost-btn" id="restoreBackupBtn">Restore</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
         </div>
       </header>
 
@@ -618,7 +618,7 @@
   </div>
   <aside class="unit-drawer" id="unitDrawer">
     <div class="drawer-head">
-      <div><span class="section-label">UNIT DETAILS</span><h2 id="drawerUnitTitle">Unit</h2><p id="drawerUnitMeta"></p></div>
+      <div><span class="section-label">UNIT 360 · LIVE REGISTER</span><h2 id="drawerUnitTitle">Unit</h2><p id="drawerUnitMeta"></p></div>
       <button class="icon-btn" id="drawerClose"><svg><use href="#i-close"/></svg></button>
     </div>
     <div class="master-readonly">
@@ -634,6 +634,13 @@
         <div><span>Team</span><strong id="drawerTeamText">—</strong></div>
       </div>
       <div class="legacy-box" id="drawerLegacy"></div>
+      <div class="unit360-sections">
+        <section><h3>Appointment history</h3><div id="drawerAppointmentsHistory" class="unit360-list"></div></section>
+        <section><h3>Survey visits</h3><div id="drawerSurveysHistory" class="unit360-list"></div></section>
+        <section><h3>Complaints</h3><div id="drawerComplaintsHistory" class="unit360-list"></div></section>
+        <section><h3>Photo register</h3><div id="drawerPhotoSummary" class="unit360-list">Loading photos…</div></section>
+        <section><h3>Status decisions</h3><div id="drawerStatusHistory" class="unit360-list"></div></section>
+      </div>
       <div class="drawer-shortcuts">
         <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey Visit</button>
         <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>
@@ -641,10 +648,21 @@
     </div>
   </aside>
 
+  <div class="backup-backdrop" id="backupBackdrop" hidden>
+    <section class="backup-dialog" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+      <div class="backup-dialog-head"><div><span class="section-label">FULL RESTORE</span><h2 id="backupTitle">Restore a saved workspace</h2></div><button type="button" class="icon-btn" id="backupClose" aria-label="Close restore"><svg><use href="#i-close"/></svg></button></div>
+      <p>Choose an ELU full backup ZIP. Check the record and photo counts before restoring. The selected backup will replace this browser's current workspace.</p>
+      <input type="file" id="backupFile" accept=".zip,application/zip">
+      <div id="backupPreview" class="backup-preview" aria-live="polite">No backup selected.</div>
+      <div class="backup-actions"><button type="button" class="ghost-btn" id="backupSafetyBtn">Download current safety copy</button><button type="button" class="primary-btn" id="backupCommitBtn" disabled>Restore selected backup</button></div>
+      <p class="backup-note">The ZIP contains resident records and photos. Store it privately.</p>
+    </section>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.02"></script>
+<script src="app.js?v=8.03"></script>
 </body>
 </html>

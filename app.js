@@ -212,7 +212,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -898,16 +898,40 @@ function renderBlockBoard(){
 document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
 
 function latestAppointment(key){return preferredMasterAppointment(key)||latestById(state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a)))}
+let unit360PhotoUrls=[];
+let unit360RenderToken=0;
+function clearUnit360Photos(){unit360PhotoUrls.forEach(URL.revokeObjectURL);unit360PhotoUrls=[]}
 function openDrawer(key){
   const u=getUnit(key);if(!u)return;const a=latestAppointment(key);
+  ++unit360RenderToken;clearUnit360Photos();
   document.getElementById("drawerUnitKey").value=key;document.getElementById("drawerUnitTitle").textContent=`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;document.getElementById("drawerUnitMeta").textContent=`Zone ${u.zone} · Floor ${u.floor}`;
   const survey=latestById(state.surveys.filter(s=>s.unitKey===key));
   const surveyVisit=survey?.visitDate?`${safeDate(survey.visitDate)}${survey.visitTime?` · ${survey.visitTime}`:""}`:"—";
   document.getElementById("drawerStatusText").textContent=statusLabel(u.response);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
   const legacy=document.getElementById("drawerLegacy"),txt=[u.legacySchedule&&`Imported schedule: ${u.legacySchedule}`,u.legacyRemark&&`Imported Excel remark: ${u.legacyRemark}`].filter(Boolean).join("<br>");legacy.innerHTML=txt;legacy.classList.toggle("show",!!txt);
+  renderUnit360(key);
   document.getElementById("drawerBackdrop").classList.add("open");document.getElementById("unitDrawer").classList.add("open");
 }
-function closeDrawer(){document.getElementById("drawerBackdrop").classList.remove("open");document.getElementById("unitDrawer").classList.remove("open")}
+function unit360Rows(target,rows,format){
+  document.getElementById(target).innerHTML=rows.length?rows.slice(0,12).map(format).join(""):'<p class="unit360-empty">No record for this unit.</p>'
+}
+function renderUnit360(key){
+  const token=unit360RenderToken;
+  const date=v=>esc(safeDate(v)||v||"—"),line=(title,detail)=>`<div class="unit360-row"><strong>${esc(title)}</strong><span>${esc(detail||"—")}</span></div>`;
+  unit360Rows("drawerAppointmentsHistory",state.appointments.filter(x=>x.unitKey===key).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||Number(b.id)-Number(a.id)),x=>line(`${safeDate(x.date)||x.date||"—"} · ${x.slot||"—"}`,`${x.team||"Team —"} · ${x.scheduleState||"Active"} · ${x.workStatus||"Pending"}`));
+  unit360Rows("drawerSurveysHistory",state.surveys.filter(x=>x.unitKey===key).sort((a,b)=>Number(b.id)-Number(a.id)),x=>line(`${safeDate(x.visitDate||x.followUpDate)||"—"} · ${x.visitTime||"—"}`,x.remarks||"Survey visit"));
+  unit360Rows("drawerComplaintsHistory",state.complaints.filter(x=>x.unitKey===key).sort((a,b)=>Number(b.id)-Number(a.id)),x=>line(`${safeDate(x.date)||"—"} · ${x.status||"—"}`,x.complaint||x.remarks||"Complaint"));
+  unit360Rows("drawerStatusHistory",(state.statusAudit||[]).filter(x=>x.unitKey===key).slice().reverse(),x=>line(`${x.to?statusLabel(x.to):x.action||"Decision"} · ${x.at?new Date(x.at).toLocaleDateString("en-SG"):"—"}`,x.detail||x.action||x.source||"—"));
+  const el=document.getElementById("drawerPhotoSummary");el.textContent="Loading photos…";
+  Promise.all([photoDbAll("photos"),photoDbAll("schedule")]).then(([photos,schedule])=>{
+    if(token!==unit360RenderToken||document.getElementById("drawerUnitKey").value!==key||!document.getElementById("unitDrawer").classList.contains("open"))return;
+    const items=photos.filter(p=>p.unitKey===key),visits=schedule.filter(s=>s.unitKey===key);
+    const latest=items.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||Number(b.order||0)-Number(a.order||0)).slice(0,3);
+    const thumbnails=latest.filter(p=>p.blob instanceof Blob).map(p=>{const url=URL.createObjectURL(p.blob);unit360PhotoUrls.push(url);return `<img src="${url}" alt="Stored unit photo from ${esc(safeDate(p.date)||p.date||"unknown date")}" loading="lazy">`}).join("");
+    el.innerHTML=`<div class="unit360-row"><strong>${items.length} stored photo${items.length===1?"":"s"}</strong><span>${visits.length} photo register date${visits.length===1?"":"s"}${items.length?` · Latest ${date(items.map(p=>p.date).sort().at(-1))}`:""}</span></div>${thumbnails?`<div class="unit360-photos">${thumbnails}</div>`:""}`
+  }).catch(()=>{if(token===unit360RenderToken&&document.getElementById("drawerUnitKey").value===key)el.textContent="Photo register unavailable on this browser."})
+}
+function closeDrawer(){++unit360RenderToken;document.getElementById("drawerBackdrop").classList.remove("open");document.getElementById("unitDrawer").classList.remove("open");clearUnit360Photos()}
 document.getElementById("drawerClose").addEventListener("click",closeDrawer);document.getElementById("drawerBackdrop").addEventListener("click",closeDrawer);
 function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerUnitKey").value);if(!u)return;closeDrawer();setView(target);if(target==="survey"){document.getElementById("surveyZone").value=String(u.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(u.block);syncSurveyUnits();document.getElementById("surveyUnit").value=u.key;autofillSurvey()}else{document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment")}}
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));
@@ -2050,6 +2074,104 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
+const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=1;
+let selectedFullBackup=null,safetyCopyDownloaded=false,backupBusy=false;
+async function fullBackupBlob(){
+  await securePersistChain;
+  const [photos,schedule,meta]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta")]);
+  const zip=new JSZip(),entries=[];
+  for(const [index,photo] of photos.entries()){
+    const {blob,...details}=photo;
+    if(!(blob instanceof Blob))throw new Error("A stored photo is missing its image data. Backup stopped.");
+    const path=`images/${String(index).padStart(6,"0")}.bin`;
+    zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});entries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
+  }
+  const snapshot=secureSnapshot();
+  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}}));
+  zip.file("records.json",JSON.stringify(snapshot));
+  zip.file("photos.json",JSON.stringify(entries));
+  zip.file("photo-schedule.json",JSON.stringify(schedule));
+  zip.file("photo-meta.json",JSON.stringify(meta));
+  return zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:4}})
+}
+async function downloadFullBackup(){
+  const blob=await fullBackupBlob();
+  downloadBlob(`ELU_Full_Backup_${isoTodaySG()}.zip`,blob);
+  toast("Full backup downloaded · records and photos")
+}
+function showBackupError(error){console.error("Full backup / restore failed",error);document.getElementById("backupPreview").textContent=error?.message||"Backup operation failed.";toast("Backup operation failed — current data unchanged")}
+async function runFullBackup(button,markSafety=false){
+  if(backupBusy)return;backupBusy=true;button.disabled=true;
+  const label=button.textContent;button.textContent="Preparing ZIP…";
+  try{await downloadFullBackup();if(markSafety){safetyCopyDownloaded=true;document.getElementById("backupCommitBtn").disabled=!selectedFullBackup}}
+  catch(error){showBackupError(error)}finally{button.textContent=label;button.disabled=false;backupBusy=false}
+}
+document.getElementById("fullBackupBtn").addEventListener("click",e=>runFullBackup(e.currentTarget));
+function closeBackupDialog(){document.getElementById("backupBackdrop").hidden=true;selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupFile").value="";document.getElementById("backupCommitBtn").disabled=true}
+document.getElementById("restoreBackupBtn").addEventListener("click",()=>{document.getElementById("backupBackdrop").hidden=false;document.getElementById("backupPreview").textContent="No backup selected."});
+document.getElementById("backupClose").addEventListener("click",closeBackupDialog);
+document.getElementById("backupSafetyBtn").addEventListener("click",e=>runFullBackup(e.currentTarget,true));
+function validateBackupRecords(records,manifest,photos,schedule,meta){
+  if(!records||typeof records!=="object"||Array.isArray(records))throw new Error("Invalid records in backup.");
+  for(const k of ["surveys","appointments","complaints","statusAudit","zone1CorrectionsApplied"])if(!Array.isArray(records[k]))throw new Error(`Missing ${k} records.`);
+  if(!records.statusOverrides||typeof records.statusOverrides!=="object"||Array.isArray(records.statusOverrides))throw new Error("Invalid status decisions.");
+  if(![photos,schedule,meta].every(Array.isArray))throw new Error("Invalid photo register.");
+  const counts=manifest.counts||{};
+  for(const [key,actual] of Object.entries({surveys:records.surveys.length,appointments:records.appointments.length,complaints:records.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}))if(counts[key]!==actual)throw new Error(`Backup count mismatch: ${key}.`);
+  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"]]){
+    const ids=new Set();for(const row of items){if(!row||typeof row!=="object"||row[key]==null||ids.has(row[key]))throw new Error(`Invalid or duplicate photo ${key}.`);ids.add(row[key])}
+  }
+  if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
+}
+async function readFullBackup(file,withImages=false){
+  if(typeof JSZip==="function"&&file.size>2*1024*1024*1024)throw new Error("Backup is too large for this browser.");
+  const zip=await JSZip.loadAsync(await file.arrayBuffer());
+  const required=["manifest.json","records.json","photos.json","photo-schedule.json","photo-meta.json"];
+  if(required.some(name=>!zip.file(name)))throw new Error("This is not an ELU full backup ZIP.");
+  const [manifest,records,photos,schedule,meta]=await Promise.all(required.map(async name=>JSON.parse(await zip.file(name).async("string"))));
+  if(manifest.format!==FULL_BACKUP_FORMAT||manifest.version!==FULL_BACKUP_VERSION)throw new Error("Unsupported backup version.");
+  validateBackupRecords(records,manifest,photos,schedule,meta);
+  if(photos.some(p=>!zip.file(p.blobPath)))throw new Error("A photo image is missing from the backup.");
+  if(withImages){
+    for(const row of photos){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Photo image size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
+  }
+  return {manifest,records,photos,schedule,meta}
+}
+document.getElementById("backupFile").addEventListener("change",async e=>{
+  selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
+  const file=e.target.files[0],preview=document.getElementById("backupPreview");if(!file){preview.textContent="No backup selected.";return}
+  preview.textContent="Checking backup…";
+  try{const result=await readFullBackup(file);selectedFullBackup=file;const c=result.manifest.counts;preview.textContent=`Saved ${new Date(result.manifest.createdAt).toLocaleString("en-SG")} · ${c.surveys} surveys · ${c.appointments} appointments · ${c.complaints} complaints · ${c.photos} photos · ${c.schedule} photo register entries. Download the current safety copy to enable restore.`}
+  catch(error){preview.textContent=error?.message||"Could not read backup."}
+});
+async function replacePhotoStores(data){
+  const db=await photoDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(["photos","schedule","meta"],"readwrite");
+    for(const name of ["photos","schedule","meta"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
+    tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>{db.close();reject(tx.error||new Error("Photo restore transaction failed."))};tx.onerror=()=>{}
+  })
+}
+document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
+  if(backupBusy||!selectedFullBackup||!safetyCopyDownloaded||!secureSessionKey)return;
+  backupBusy=true;const button=e.currentTarget;button.disabled=true;button.textContent="Validating images…";
+  let original=null;
+  try{
+    const imported=await readFullBackup(selectedFullBackup,true);
+    // Validate against the loaded project register before changing browser storage.
+    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
+    for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
+    await securePersistChain;
+    const encrypted=await encryptPayload(imported.records,secureSessionKey);
+    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta")};
+    button.textContent="Restoring…";
+    await replacePhotoStores(imported);
+    try{localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(encrypted))}
+    catch(error){await replacePhotoStores(original);throw error}
+    appStarted=false;location.reload()
+  }catch(error){showBackupError(error);button.disabled=false;button.textContent="Restore selected backup"}
+  finally{backupBusy=false}
+});
 function photoScheduleRowId(date,unitKey){return `${date}|${unitKey}`}
 
 async function photoSchedule(date,zone){
