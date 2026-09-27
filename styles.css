@@ -2564,3 +2564,41 @@ body:not(.theme-night) .sidebar .nav-item.active svg{background:linear-gradient(
 body:not(.theme-night) .sidebar-note{border-top-color:rgba(156,225,232,.26)}
 body:not(.theme-night) .nav{scrollbar-color:rgba(143,228,230,.42) transparent}
 @media(max-width:760px){body:not(.theme-night) .sidebar{background:linear-gradient(140deg,rgba(7,27,39,.96),rgba(13,53,68,.92))}}
+
+/* V7.99 · Focus the Dashboard on live operations and its project map. */
+#dashboard>.attention-panel{display:none!important}
+body:not(.theme-night) #dashboard .zone-map-panel{border:1px solid rgba(255,244,222,.86);box-shadow:0 17px 37px rgba(0,18,31,.27),inset 0 1px rgba(255,255,255,.82)}
+body:not(.theme-night) #dashboard .zone-map-stage{overflow:hidden;border:2px solid rgba(237,251,251,.88);border-radius:17px;background:#6b9dae;box-shadow:0 13px 29px rgba(0,20,35,.29),inset 0 0 0 1px rgba(255,255,255,.49)}
+body:not(.theme-night) #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(4,27,38,.16),transparent 19%,transparent 75%,rgba(7,37,52,.11));pointer-events:none}
+body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(1.14) brightness(1.06) contrast(1.08)}
+body:not(.theme-night) #dashboard .map-zone-nav{top:13px;padding:6px;gap:4px;border:1px solid rgba(255,255,255,.9);border-radius:12px;background:rgba(251,253,249,.83);backdrop-filter:blur(9px);box-shadow:0 8px 22px rgba(0,20,31,.27)}
+body:not(.theme-night) #dashboard .map-zone-nav button{color:#173d51;font-size:12px;font-weight:900}
+body:not(.theme-night) #dashboard .map-zone-nav button[aria-pressed="true"]{background:linear-gradient(120deg,#b8eced,#70c8d8);color:#083d50;box-shadow:0 3px 9px rgba(12,103,125,.25)}
+body:not(.theme-night) #dashboard .map-zone-pin{border:2px solid #f8ffff;border-radius:12px;background:linear-gradient(140deg,rgba(246,255,254,.96),rgba(191,234,238,.93));color:#07384c;box-shadow:0 5px 0 rgba(35,117,133,.87),0 12px 23px rgba(0,17,27,.47)}
+body:not(.theme-night) #dashboard .map-zone-pin span{color:#073b50;font-weight:950;text-shadow:0 1px #fff}
+body:not(.theme-night) #dashboard .map-zone-pin small{color:#254f61;font-size:10px;font-weight:850;text-shadow:0 1px #fff}
+body:not(.theme-night) #dashboard .map-building-pin{border-color:#e9ffff;background:rgba(244,254,250,.95);color:#103d52;box-shadow:0 5px 0 #469bad,0 11px 20px rgba(0,26,39,.39)}
+body:not(.theme-night) #dashboard .map-building-pin span{color:#0b3b50;font-weight:950}
+body:not(.theme-night) #dashboard .zone-map-attribution{background:rgba(12,34,44,.72);color:#f2ffff;font-weight:700}
+body:not(.theme-night) #dashboard .zone-map-note{color:#12394f;font-weight:850;font-size:12px;text-shadow:0 1px 3px rgba(255,255,255,.98)}
+@media(min-width:1251px){#dashboard .zone-map-stage{height:505px;min-height:505px}}
+@media(min-width:761px) and (max-width:1250px){#dashboard .zone-map-stage{height:490px;min-height:490px}}
+@media(max-width:760px){#dashboard .zone-map-stage{height:490px;min-height:490px}}
+/* Dark, strong lettering on transparent operational sheets. */
+body:not(.theme-night) #dashboard :is(.zone-panel,.appointment-panel,.today-team-panel) :is(h3,strong,.zone-name,.today-zone-head strong){color:#082d41;font-weight:950;text-shadow:0 1px 3px rgba(255,255,255,.98),0 0 5px rgba(255,255,255,.88)}
+body:not(.theme-night) #dashboard :is(.zone-panel,.appointment-panel,.today-team-panel) :is(p,small,.zone-mini,.zone-pct,.today-zone-head em,.today-team-head span,.today-slot-time,.today-empty){color:#19485c;font-weight:800;text-shadow:0 1px 2px rgba(255,255,255,.98)}
+body:not(.theme-night) #dashboard .today-appt-chip{color:#143a4f;font-weight:850}
+body:not(.theme-night) #dashboard .today-appt-chip strong{color:#0d3348}
+body:not(.theme-night) .main :is(.premium-form label,.planner-form label,.section-toolbar label,.table-shell td,.planner-table td){font-weight:800}
+
+/* V8.01 · Hide only the two dashboard panels shown beneath the map. */
+#dashboard>.today-team-panel,
+#dashboard>.attention-panel{display:none!important}
+
+/* A compact, clearer title treatment across the working screens. */
+body:not(.theme-night) .topbar>div:first-child{position:relative;min-width:0;padding-left:17px}
+body:not(.theme-night) .topbar>div:first-child:before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:5px;background:linear-gradient(180deg,#28b9c9,#167cb1 65%,#ecc783);box-shadow:0 0 12px rgba(37,167,196,.42)}
+body:not(.theme-night) .topbar .eyebrow{display:inline-block;margin-bottom:2px;color:#19556a;font-size:10px;font-weight:950;letter-spacing:.15em;text-shadow:0 1px rgba(255,255,255,.8)}
+body:not(.theme-night) .topbar h1{margin:2px 0 3px;color:#092f45;font-size:clamp(26px,2.25vw,34px);font-weight:950;letter-spacing:-.04em;line-height:1.08;text-shadow:0 1px 2px rgba(255,255,255,.9)}
+body:not(.theme-night) .topbar p{color:#244a5d;font-size:12px;font-weight:800;line-height:1.35;text-shadow:0 1px rgba(255,255,255,.9)}
+@media(max-width:760px){body:not(.theme-night) .topbar>div:first-child{padding-left:13px}body:not(.theme-night) .topbar h1{font-size:27px}}
