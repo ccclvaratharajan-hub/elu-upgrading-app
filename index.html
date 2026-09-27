@@ -556,7 +556,12 @@
             </div>
           </div>
         </div>
-        <article class="panel">
+        <div class="report-view-tabs" role="tablist" aria-label="Report views">
+          <button type="button" role="tab" class="active" data-report-view="chart" aria-selected="true">3D Block Chart</button>
+          <button type="button" role="tab" data-report-view="sheet" aria-selected="false">Meeting Sheet</button>
+          <button type="button" role="tab" data-report-view="response" aria-selected="false">Response Summary</button>
+        </div>
+        <article class="panel" id="weeklyReportPanel">
           <div class="panel-head register-head">
             <div><h3>Weekly Progress Summary</h3><p>Aligned to the Progress Summary structure from your source workbooks.</p></div>
             <div class="register-tools">
@@ -566,7 +571,7 @@
           </div>
           <div class="manager-export-note"><strong>Manager Report</strong><span>PDF / PPT includes a colour-coded block percentage chart, zone progress and weekly meeting table. Unit Summary exports exclude Owner Name, Contact and free-text Remarks.</span></div>
           <div id="reportSummaryCards" class="report-summary-cards"></div>
-          <div class="report-chart-panel">
+          <div class="report-chart-panel" id="reportChartPanel">
             <div class="report-chart-head"><div><span class="section-label">BLOCK VIEW</span><h3>Block Status % Comparison</h3><p>Side-by-side percentage columns for Opt-In, Completed, Pending Confirmation, Opt-Out and NR.</p></div><span class="panel-badge">NO PERSONAL DATA</span></div>
             <div class="report-chart-legend">
               <span><i class="legend-agree"></i>Opt-In A+C</span>
@@ -577,7 +582,12 @@
             </div>
             <div id="reportBlockChart" class="report-block-chart"></div>
           </div>
-          <div id="reportTable" class="table-shell"></div>
+          <div class="meeting-sheet-panel" id="meetingSheetPanel">
+            <div class="meeting-sheet-head"><div><span>WEEKLY PROGRESS MEETING</span><h3>Electrical Load Upgrading · Block Progress Summary</h3><p id="meetingSheetScope">All Zones</p></div><button type="button" class="ghost-btn" id="meetingSheetPrintBtn">Print / Save PDF</button></div>
+            <div id="meetingSheetTable" class="meeting-sheet-scroll"></div>
+            <p class="meeting-sheet-note">Meeting view: Pending Confirmation (P) is shown together with No Response. Detailed status remains unchanged in the Unit Register.</p>
+          </div>
+          <div id="reportTable" class="table-shell" hidden></div>
         </article>
 
         <article class="panel response-summary-panel">
@@ -663,6 +673,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.03"></script>
+<script src="app.js?v=8.04"></script>
 </body>
 </html>
