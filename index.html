@@ -95,7 +95,10 @@
           <button class="ghost-btn top-shortcut quick-jump-trigger" type="button" id="quickJumpBtn" title="Jump to a zone, block or unit"><svg><use href="#i-search"/></svg><span>Quick Jump</span><kbd>/</kbd></button>
           <div class="user-name-chip" id="userNameChip">Secure User</div>
           <div class="today-chip" id="todayChip"></div>
-          <button class="ghost-btn" type="button" id="visualThemeToggle" aria-pressed="false">Night View</button>
+          <div class="lighting-mode-control" role="group" aria-label="App lighting theme">
+            <button type="button" class="lighting-mode-btn" data-lighting-mode="light" aria-pressed="true">☀ Light</button>
+            <button type="button" class="lighting-mode-btn" data-lighting-mode="dark" aria-pressed="false">☾ Dark</button>
+          </div>
           <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn" id="fullBackupBtn">Full Backup</button><button class="ghost-btn" id="restoreBackupBtn">Restore</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
         </div>
       </header>
@@ -673,6 +676,6 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.05"></script>
+<script src="app.js?v=8.06"></script>
 </body>
 </html>

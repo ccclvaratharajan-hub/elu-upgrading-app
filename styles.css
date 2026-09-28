@@ -2683,3 +2683,16 @@ body:not(.theme-night):has(#dashboard.view.active) .topbar .top-actions .ghost-b
 #reports .report-cluster-group>strong{font-size:18px;color:#0b334d}
 #reports .report-chart-legend{color:#143d53;font-size:12px}
 @media(max-width:720px){#reports .report-cluster-bar-wrap{width:19px}#reports .report-cluster-bar-wrap b{font-size:10px}}
+
+/* V8.06 — one persistent lighting choice throughout the workspace */
+.lighting-mode-control{display:inline-flex;align-items:center;gap:3px;padding:3px;border-radius:12px;border:1px solid rgba(117,184,209,.65);background:rgba(227,248,251,.72);box-shadow:inset 0 1px rgba(255,255,255,.65);white-space:nowrap}
+.lighting-mode-btn{border:0;border-radius:9px;background:transparent;color:#24536d;font-family:inherit;font-size:12px;font-weight:850;padding:7px 10px;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
+.lighting-mode-btn.selected{background:#effdff;color:#0d4961;box-shadow:0 2px 8px rgba(17,92,123,.17),inset 0 1px #fff}
+.lighting-mode-btn:focus-visible{outline:2px solid #55c9df;outline-offset:2px}
+body.theme-night{background-color:#102638;background-image:radial-gradient(circle at 77% 14%,rgba(122,210,229,.16),transparent 36%),linear-gradient(115deg,rgba(3,19,35,.72),rgba(7,39,61,.56) 54%,rgba(3,21,39,.73)),url("night-estate.jpg");background-position:center center;background-size:cover;background-attachment:fixed}
+body.theme-night .lighting-mode-control{background:rgba(9,42,62,.78);border-color:rgba(139,222,236,.55);box-shadow:inset 0 1px rgba(233,253,255,.15),0 0 16px rgba(65,173,194,.12)}
+body.theme-night .lighting-mode-btn{color:#b4dbe8}
+body.theme-night .lighting-mode-btn.selected{background:linear-gradient(135deg,#31839d,#155771);color:#fff;box-shadow:0 0 15px rgba(74,209,226,.35),inset 0 1px rgba(232,254,255,.3)}
+body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(3,25,45,.78),rgba(6,42,70,.65) 51%,rgba(8,53,77,.3)),url("night-estate.jpg")}
+@media(max-width:620px){.lighting-mode-control{order:0}.lighting-mode-btn{padding:7px 8px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){.lighting-mode-btn{transition:none}}

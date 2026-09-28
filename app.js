@@ -2677,9 +2677,18 @@ scenePeekBtn.addEventListener("click",()=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeScenePeek()});
 document.getElementById("nav").addEventListener("click",closeScenePeek);
-document.getElementById("visualThemeToggle").addEventListener("click",e=>{
-  const night=document.body.classList.toggle("theme-night");
-  e.currentTarget.textContent=night?"Day View":"Night View";
-  e.currentTarget.setAttribute("aria-pressed",String(night));
-});
+const LIGHTING_MODE_KEY="elu_visual_lighting_v1";
+function applyLightingMode(mode,remember=true){
+  const night=mode==="dark";
+  document.body.classList.toggle("theme-night",night);
+  document.querySelectorAll("[data-lighting-mode]").forEach(button=>{
+    const selected=button.dataset.lightingMode===(night?"dark":"light");
+    button.classList.toggle("selected",selected);
+    button.setAttribute("aria-pressed",String(selected))
+  });
+  if(remember)try{localStorage.setItem(LIGHTING_MODE_KEY,night?"dark":"light")}catch{}
+}
+document.querySelectorAll("[data-lighting-mode]").forEach(button=>button.addEventListener("click",()=>applyLightingMode(button.dataset.lightingMode)));
+let initialLighting="light";try{initialLighting=localStorage.getItem(LIGHTING_MODE_KEY)==="dark"?"dark":"light"}catch{}
+applyLightingMode(initialLighting,false);
 initSecurityGate();
