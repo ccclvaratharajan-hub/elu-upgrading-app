@@ -1770,23 +1770,55 @@ function pdfScoreRail(top,label,value,total,color=[0.08,0.40,0.62]){
   [0,25,50,75,100].forEach(t=>{const xx=x+w*t/100;s+=pdfLine(xx,top-4,xx,top+h+8,[0.72,0.79,0.84],.5);s+=pdfText(xx-(t===100?18:7),top+h+12,7,`${t}%`,false,muted)});
   const mx=x+w*p/100;s+=pdfRect(Math.max(x,Math.min(x+w-3,mx-2)),top-5,4,h+10,[0.05,0.26,0.43]);s+=pdfText(668,top-25,17,`${p.toFixed(1)}%`,true,color);s+=pdfText(668,top-4,8,`${value} / ${total}`,true,ink);return s
 }
+function compactBlockChartPdf(rows,scope,top){
+  const ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],grid=[0.82,0.88,0.91];
+  const series=[["A+C","agreePct",[0.15,0.57,0.35]],["Done","donePct",[0.08,0.40,0.62]],["P","pPct",[0.25,0.50,0.82]],["D","dPct",[0.90,0.66,0.10]],["NR","nrPct",[0.78,0.12,0.19]]];
+  let p=pdfText(38,top,14,"Block Status % Chart",true,ink)+pdfText(38,top+21,8,`${scope} | 5 status measures for each block`,false,muted);
+  let lx=444;series.forEach(s=>{p+=pdfRect(lx,top+5,10,10,s[2]);p+=pdfText(lx+14,top+5,8,s[0],true,ink);lx+=s[0]==="Done"?71:57});
+  const x0=73,x1=804,plotTop=top+58,bottom=top+193,h=bottom-plotTop,w=x1-x0;
+  [0,50,100].forEach(value=>{const y=bottom-h*value/100;p+=pdfLine(x0,y,x1,y,grid,value===0?.8:.35);p+=pdfText(39,y-5,8,`${value}%`,false,muted)});
+  const groupW=w/rows.length,barW=Math.min(19,groupW*.135),gap=Math.min(4,groupW*.03);
+  rows.forEach((row,gi)=>{
+    const start=x0+gi*groupW+(groupW-(barW*5+gap*4))/2;
+    series.forEach((s,si)=>{const v=Math.max(0,Math.min(100,Number(row[s[1]])||0)),height=h*v/100,x=start+si*(barW+gap);if(height>0){p+=pdfRect(x,bottom-height,barW,height,s[2]);p+=pdfText(x-3,Math.max(plotTop-13,bottom-height-13),7.4,v.toFixed(1),true,ink)}});
+    p+=pdfText(x0+gi*groupW+groupW/2-21,bottom+10,10,`Blk ${row.block}`,true,ink)
+  });
+  return p
+}
+function responseSummaryPdfPages(r){
+  const selected=buildResponseSummaryRows(r.zone).filter(x=>r.block==="all"||String(x.block)===String(r.block));
+  const total=responseSummaryTotals(selected),pages=[],ink=[0.09,0.21,0.30],muted=[0.32,0.43,0.51],head=[0.87,0.95,0.97],line=[0.57,0.69,0.75];
+  const widths=[30,55,55,72,70,66,150,54,220],xs=[30];widths.forEach(w=>xs.push(xs.at(-1)+w));
+  const wrap=(value,limit)=>{const words=String(value||"").split(/,\s*/).filter(Boolean),result=[];let current="";words.forEach(word=>{if(current&&`${current}, ${word}`.length>limit){result.push(current);current=word}else current+=(current?", ":"")+word});if(current)result.push(current);return result.length?result:["-"]};
+  const header=(index)=>{let p=pdfText(30,25,16,`Response Summary Sheet${index?` - ${index+1}`:""}`,true,ink);p+=pdfText(30,48,9,`${r.scope} | Opt-In A only; C and P included with NR`,false,muted);p+=pdfRect(30,72,772,26,[0.88,0.96,0.95]);p+=pdfText(206,77,10,"Summary of Opt In, Opt Out & NR Unit Details",true,ink);
+    const labels=["S/N","BLK","TOTAL","RESPOND","OPT-IN A","OPT-OUT","OPT-OUT UNITS","NR","NR UNITS"];
+    labels.forEach((label,i)=>{p+=pdfRect(xs[i],101,widths[i],32,head,line);p+=pdfText(xs[i]+3,112,7.1,label,true,ink)});return p};
+  let page=header(0),y=133;
+  selected.forEach((row,i)=>{const dLines=wrap(row.dDetails,36),nrLines=wrap(row.nrDetails,54),height=Math.max(37,Math.max(dLines.length,nrLines.length)*10+12);
+    if(y+height>535){pages.push(page);page=header(pages.length);y=133}
+    const values=[i+1,row.block,row.total,responseSummaryCountPct(row.respond,row.respondPct),responseSummaryCountPct(row.optIn,row.optInPct),responseSummaryCountPct(row.d,row.dPct),null,row.nr,null];
+    values.forEach((value,j)=>{page+=pdfRect(xs[j],y,widths[j],height,i%2?[0.97,0.985,0.99]:[1,1,1],line);if(value!==null)page+=pdfText(xs[j]+4,y+10,j===1?8:7.2,String(value),j===1,ink)});
+    dLines.forEach((text,k)=>page+=pdfText(xs[6]+4,y+7+k*10,6.9,text,false,ink));nrLines.forEach((text,k)=>page+=pdfText(xs[8]+4,y+7+k*10,6.9,text,false,ink));y+=height
+  });
+  if(y+38>535){pages.push(page);page=header(pages.length);y=133}
+  const totals=["", "TOTAL",total.total,responseSummaryCountPct(total.respond,total.respondPct),responseSummaryCountPct(total.optIn,total.optInPct),responseSummaryCountPct(total.d,total.dPct),"",total.nr,""];
+  totals.forEach((v,i)=>{page+=pdfRect(xs[i],y,widths[i],38,[0.88,0.94,0.97],line);page+=pdfText(xs[i]+4,y+12,7.4,String(v),true,ink)});
+  page+=pdfText(30,555,8,"Meeting summary only. Unit Register and appointment statuses remain unchanged.",false,muted);pages.push(page);return pages
+}
 function managerPdfPagesV727(r){
   const pages=[],blue=[0.08,0.40,0.62],pending=[0.25,0.50,0.82],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
   let c="";
-  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(625,28,9,"NO RESIDENT PERSONAL DATA",true,blue);
+  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(641,28,9,"NO OWNER / CONTACT DETAILS",true,blue);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Pending P',r.totals.p,pending],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*128;c+=pdfRect(xx,94,118,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+9,108,7.4,x[0],true,muted);c+=pdfText(xx+9,128,18,String(x[1]),true,x[2])});
-  c+=pdfText(38,181,14,"Overall Status %",true,ink);
-  const overall=[["A+C",r.totals.agreePct,green],["Completed",r.totals.donePct,blue],["P",r.totals.pPct,pending],["D",r.totals.dPct,yellow],["NR",r.totals.nrPct,red]];
-  const obottom=350,otop=215,oh=obottom-otop;
-  [0,25,50,75,100].forEach(v=>{const yy=obottom-oh*v/100;c+=pdfLine(70,yy,580,yy,grid,.4);c+=pdfText(38,yy-4,7,`${v}%`,false,muted)});
-  overall.forEach((s,i)=>{const x=105+i*92,val=Math.max(0,Math.min(100,s[1])),bh=oh*val/100;c+=pdfRect(x,obottom-bh,38,bh,s[2]);c+=pdfText(x+3,Math.max(196,obottom-bh-13),7,val.toFixed(1),true,ink);c+=pdfText(x,365,7,s[0],true,ink)});
-  c+=pdfText(615,204,12,"Colour Code",true,ink);overall.forEach((s,i)=>{c+=pdfRect(618,230+i*25,11,11,s[2]);c+=pdfText(637,230+i*25,7.5,s[0],true,ink)});
-  c+=pdfText(38,405,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],430,7.3,h,true,muted));c+=pdfLine(38,447,804,447);
-  r.zones.slice(0,6).forEach((z,i)=>{const top=462+i*18;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
-  pages.push(c);pages.push(...blockChartPdfPages(r,false));
+  c+=compactBlockChartPdf(r.rows.slice(0,6),r.scope,178);
+  c+=pdfText(38,435,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],457,7.3,h,true,muted));c+=pdfLine(38,473,804,473);
+  r.zones.slice(0,6).forEach((z,i)=>{const top=484+i*17;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
+  pages.push(c);
+  for(let i=6;i<r.rows.length;i+=12){let extra="";extra+=compactBlockChartPdf(r.rows.slice(i,i+6),r.scope,26);if(i+6<r.rows.length)extra+=compactBlockChartPdf(r.rows.slice(i+6,i+12),r.scope,297);pages.push(extra)}
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=13)tableChunks.push(r.rows.slice(i,i+13));
-  tableChunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);const xs=[34,72,118,172,226,284,338,396,448,500,552,604,664],heads=['S/N','Blk','Total','A+C','A+C%','Done','Done%','P','P%','D','D%','NR','NR%'];p+=pdfRect(30,72,780,30,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],84,6.2,h,true,ink));chunk.forEach((x,i)=>{const top=112+i*30;if(i%2===1)p+=pdfRect(30,top-7,780,25,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,6.3,String(v),j===1,ink));p+=pdfLine(30,top+12,810,top+12)});if(ci===tableChunks.length-1){const top=112+chunk.length*30+4;p+=pdfRect(30,top-8,780,27,[0.90,0.95,0.99]);p+=pdfText(72,top,7.4,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,6.3,String(v),true,ink))}pages.push(p)});
+  tableChunks.forEach((chunk,ci)=>{let p="";const rowH=chunk.length<=7?42:30,font=chunk.length<=7?8.2:6.5;p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);const xs=[34,72,118,172,226,284,338,396,448,500,552,604,664],heads=['S/N','Blk','Total','A+C','A+C%','Done','Done%','P','P%','D','D%','NR','NR%'];p+=pdfRect(30,72,780,34,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],85,7.2,h,true,ink));chunk.forEach((x,i)=>{const top=119+i*rowH;if(i%2===1)p+=pdfRect(30,top-9,780,rowH-4,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,font,String(v),j===1,ink));p+=pdfLine(30,top+rowH-14,810,top+rowH-14)});if(ci===tableChunks.length-1){const top=119+chunk.length*rowH+3;p+=pdfRect(30,top-8,780,30,[0.90,0.95,0.99]);p+=pdfText(72,top,8.2,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,font,String(v),true,ink))}pages.push(p)});
+  pages.push(...responseSummaryPdfPages(r));
   return pages
 }
 function blockChartPdfPages(r,standalone=true){
