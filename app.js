@@ -563,7 +563,8 @@ complaints:["Complaint Register","Separate complaint records with unit lookup."]
 teams:["Appointment Planner","Simple read-only daily view of appointments entered in Appointment Schedule."],
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
 photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
-reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."]
+reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."],
+sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
 function setView(view){
   rebuildAllMasters();
