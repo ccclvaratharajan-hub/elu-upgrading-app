@@ -2696,3 +2696,8 @@ body.theme-night .lighting-mode-btn.selected{background:linear-gradient(135deg,#
 body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(3,25,45,.78),rgba(6,42,70,.65) 51%,rgba(8,53,77,.3)),url("night-estate.jpg")}
 @media(max-width:620px){.lighting-mode-control{order:0}.lighting-mode-btn{padding:7px 8px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){.lighting-mode-btn{transition:none}}
+/* Separate Excel deliverables use the existing report panel language. */
+.exact-excel-panel .panel-head{align-items:center;gap:18px}
+.exact-excel-panel .register-tools{display:flex;align-items:end;flex-wrap:wrap;gap:9px}
+.exact-excel-panel .register-tools button{white-space:nowrap}
+@media(max-width:900px){.exact-excel-panel .panel-head{display:block}.exact-excel-panel .register-tools{margin-top:14px}}
