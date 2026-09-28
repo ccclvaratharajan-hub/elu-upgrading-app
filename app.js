@@ -1740,10 +1740,7 @@ function reportSafeFileScope(r){return r.zone==="all"?"All_Zones":`Zone_${r.zone
 function pdfAscii(v){return String(v??"").replace(/[–—]/g,"-").replace(/[•·]/g,"-").replace(/[^\x20-\x7E]/g,"")}
 function pdfEsc(v){return pdfAscii(v).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")}
 function pdfText(x,top,size,text,bold=false,color=[0.10,0.22,0.31]){const y=595-top-size;return `${color.map(n=>n.toFixed(3)).join(" ")} rg BT /${bold?"F2":"F1"} ${size} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfEsc(text)}) Tj ET\n`}
-function pdfZoneBadge(r,top=18){
-  const title=r.zone==="all"?"ALL ZONES":`ZONE ${r.zone}`;
-  return pdfRect(668,top,139,37,[0.07,0.23,0.36])+pdfText(682,top+9,15,title,true,[1,1,1]);
-}
+function pdfScopeText(r,x=38,top=51){return pdfText(x,top,15,r.scope,true,[0.09,0.21,0.30])}
 function pdfRect(x,top,w,h,fill=[1,1,1],stroke=null){const y=595-top-h;let s=`${fill.map(n=>n.toFixed(3)).join(" ")} rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f\n`;if(stroke)s+=`${stroke.map(n=>n.toFixed(3)).join(" ")} RG ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S\n`;return s}
 function pdfLine(x1,t1,x2,t2,color=[0.84,0.89,0.93],width=.7){return`${color.map(n=>n.toFixed(3)).join(" ")} RG ${width} w ${x1.toFixed(1)} ${(595-t1).toFixed(1)} m ${x2.toFixed(1)} ${(595-t2).toFixed(1)} l S\n`}
 function buildPdfBlob(pageContents){
@@ -1758,7 +1755,7 @@ function buildPdfBlob(pageContents){
 }
 function managerPdfPages(r){
   const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],pink=[0.83,0.11,0.51],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19];
-  let c="";c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfZoneBadge(r);
+  let c="";c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfScopeText(r);c+=pdfText(300,54,9,`Generated ${r.stamp}`,false,muted);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,green],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*154;c+=pdfRect(xx,94,142,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+12,108,8,x[0],true,muted);c+=pdfText(xx+12,128,19,String(x[1]),true,x[2])});
   c+=pdfText(38,181,14,"Status & Completion Snapshot",true,ink);
@@ -1807,24 +1804,36 @@ async function exportManagerPPT(){
   try{
     if(typeof PptxGenJS!=="function")throw new Error("PowerPoint generator unavailable");
     const pptx=new PptxGenJS();pptx.layout="LAYOUT_WIDE";
-    pptx.author="ELU Upgrading";pptx.subject="ELU Manager Progress Report";
-    pptx.title=`ELU Manager Report · ${r.scope}`;pptx.lang="en-SG";
+    pptx.author="ELU Upgrading";pptx.subject="ELU Site Progress Report";
+    pptx.title=`ELU Site Progress Report · ${r.scope}`;pptx.lang="en-SG";
     const C={ink:"17384E",blue:"1474AD",green:"278F5E",pending:"3F7FD1",yellow:"C79012",red:"C42131",muted:"60798A",pale:"E7F3FC",white:"FFFFFF",line:"DCE9F2"};
     const shape=(slide,x,y,w,h,fill=C.white,line=C.line)=>slide.addShape(pptx.ShapeType.rect,{x,y,w,h,line:{color:line},fill:{color:fill}});
     const label=(slide,t,x,y,w,h,size=12,color=C.ink,bold=false,extra={})=>slide.addText(String(t),{x,y,w,h,fontFace:"Arial",fontSize:size,color,bold,margin:0,breakLine:false,...extra});
-    const shell=(title,subtitle,page)=>{const slide=pptx.addSlide();slide.background={color:"F6FAFD"};shape(slide,.38,.35,.07,.63,C.blue,C.blue);label(slide,title,.58,.35,12.1,.48,23,C.ink,true);label(slide,subtitle,.59,.91,12,.27,10,C.muted);shape(slide,.55,1.31,12.18,.015,C.line,C.line);label(slide,`ELU Upgrading · Manager Report · ${page}`,.55,7.12,12.1,.18,8,"8AA0AE",false,{align:"right"});return slide};
+    const shell=(title,subtitle)=>{const slide=pptx.addSlide();slide.background={color:"F6FAFD"};shape(slide,.38,.35,.07,.63,C.blue,C.blue);label(slide,title,.58,.35,12.1,.48,23,C.ink,true);label(slide,subtitle,.59,.91,12,.27,10,C.muted);shape(slide,.55,1.31,12.18,.015,C.line,C.line);label(slide,`ELU Upgrading · Site Progress · ${pptx._slides.length}`,.55,7.12,12.1,.18,8,"8AA0AE",false,{align:"right"});return slide};
     const percent=v=>`${Number(v||0).toFixed(1)}%`;
-    {const s=pptx.addSlide();s.background={color:"F5FAFE"};shape(s,.62,.78,1.06,1.06,C.blue,C.blue);label(s,"ELU",.68,1.05,.94,.42,24,C.white,true,{align:"center"});label(s,"ELU UPGRADING",.65,2.03,11.8,.65,34,C.ink,true);label(s,"Manager Progress Report",.66,2.85,11.7,.5,22,C.blue,true);label(s,`${r.scope} · Generated ${r.stamp}`,.68,3.6,11.7,.32,11,C.muted);label(s,"Zone progress · Block chart · Weekly meeting summary",.68,4.42,11.7,.35,13,C.ink);label(s,"Resident names and contact numbers are excluded",.68,5.24,10,.32,11,C.blue,true)}
-    {const s=shell("Executive Summary",`${r.scope} · No personal data`,2);const cards=[["TOTAL",r.totals.total,C.blue],["OPT-IN A+C",r.totals.agree,C.green],["COMPLETED",r.totals.done,C.blue],["PENDING P",r.totals.p,C.pending],["OPT-OUT D",r.totals.d,C.yellow],["NO RESPONSE",r.totals.nr,C.red]];cards.forEach(([name,value,color],i)=>{const x=.52+i*2.12;shape(s,x,1.62,1.95,1.12);label(s,name,x+.11,1.78,1.73,.22,8,C.muted,true);label(s,value,x+.11,2.12,1.72,.38,23,color,true)});label(s,"OVERALL STATUS",.62,3.12,4,.3,13,C.ink,true);[["Opt-In A+C",r.totals.agreePct,C.green],["Completed",r.totals.donePct,C.blue],["Pending P",r.totals.pPct,C.pending],["Opt-Out D",r.totals.dPct,C.yellow],["No Response",r.totals.nrPct,C.red]].forEach(([name,val,color],i)=>{const y=3.62+i*.58;label(s,name,.72,y,2.2,.26,11);shape(s,3.02,y+.03,8.55,.20,"E4EDF3","E4EDF3");if(val>0)shape(s,3.02,y+.03,8.55*Math.min(100,val)/100,.20,color,color);label(s,percent(val),11.78,y,1,.26,11,color,true,{align:"right"})})}
-    {const s=shell("Zone Progress",`${r.scope} · work completed by zone`,3);const heads=["ZONE","BLOCKS","UNITS","A+C","DONE","P","D","NR","DONE %"],widths=[1.35,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.2];let xs=[.58];for(let i=1;i<widths.length;i++)xs.push(xs[i-1]+widths[i-1]);heads.forEach((h,i)=>{shape(s,xs[i],1.65,widths[i],.42,C.pale);label(s,h,xs[i]+.06,1.77,widths[i]-.12,.17,9,C.ink,true,{align:"center"})});r.zones.forEach((z,j)=>{const y=2.14+j*.63,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,percent(z.donePct)];vals.forEach((v,i)=>{shape(s,xs[i],y,widths[i],.43,j%2?"F7FAFC":C.white);label(s,v,xs[i]+.06,y+.12,widths[i]-.12,.19,10,C.ink,i===0,{align:"center"})})})}
+    {const s=shell("ELU Site Progress Report",`${r.scope} · Generated ${r.stamp}`);const cards=[["TOTAL",r.totals.total,C.blue],["OPT-IN A+C",r.totals.agree,C.green],["COMPLETED",r.totals.done,C.blue],["PENDING P",r.totals.p,C.pending],["OPT-OUT D",r.totals.d,C.yellow],["NO RESPONSE",r.totals.nr,C.red]];cards.forEach(([name,value,color],i)=>{const x=.52+i*2.12;shape(s,x,1.62,1.95,1.12);label(s,name,x+.11,1.78,1.73,.22,8,C.muted,true);label(s,value,x+.11,2.12,1.72,.38,23,color,true)});label(s,"OVERALL STATUS",.62,3.12,4,.3,13,C.ink,true);[["Opt-In A+C",r.totals.agreePct,C.green],["Completed",r.totals.donePct,C.blue],["Pending P",r.totals.pPct,C.pending],["Opt-Out D",r.totals.dPct,C.yellow],["No Response",r.totals.nrPct,C.red]].forEach(([name,val,color],i)=>{const y=3.62+i*.58;label(s,name,.72,y,2.2,.26,11);shape(s,3.02,y+.03,8.55,.20,"E4EDF3","E4EDF3");if(val>0)shape(s,3.02,y+.03,8.55*Math.min(100,val)/100,.20,color,color);label(s,percent(val),11.78,y,1,.26,11,color,true,{align:"right"})})}
+    {const s=shell("Zone Progress",`${r.scope} · work completed by zone`);const heads=["ZONE","BLOCKS","UNITS","A+C","DONE","P","D","NR","DONE %"],widths=[1.52,1.33,1.33,1.33,1.33,1.33,1.33,1.33,1.35];let xs=[.58];for(let i=1;i<widths.length;i++)xs.push(xs[i-1]+widths[i-1]);heads.forEach((h,i)=>{shape(s,xs[i],1.65,widths[i],.46,C.pale);label(s,h,xs[i]+.06,1.76,widths[i]-.12,.22,10,C.ink,true,{align:"center"})});r.zones.forEach((z,j)=>{const y=2.16+j*.65,vals=[`Zone ${z.zone}`,z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,percent(z.donePct)];vals.forEach((v,i)=>{shape(s,xs[i],y,widths[i],.46,j%2?"F7FAFC":C.white);label(s,v,xs[i]+.06,y+.12,widths[i]-.12,.22,11,C.ink,i===0,{align:"center"})})})}
     const series=[["Opt-In", "agreePct",C.green],["Completed","donePct",C.blue],["Pending P","pPct",C.pending],["Opt-Out D","dPct",C.yellow],["NR","nrPct",C.red]];
     for(let offset=0;offset<r.rows.length;offset+=7){const chunk=r.rows.slice(offset,offset+7),s=shell("Block Status % Comparison",`${r.scope} · Blocks ${offset+1}–${offset+chunk.length}`,4+Math.floor(offset/7));series.forEach(([name,,color],i)=>{shape(s,.65+i*2.32,1.52,.16,.16,color,color);label(s,name,.88+i*2.32,1.5,1.8,.2,9,C.ink,true)});chunk.forEach((row,i)=>{const y=2.02+i*.64;label(s,`Blk ${row.block}`,.62,y,1.03,.24,11,C.ink,true);series.forEach(([,field,color],j)=>{const x=1.75+j*2.22;shape(s,x,y+.02,1.46,.16,"E4EDF3","E4EDF3");const val=Math.max(0,Math.min(100,Number(row[field])||0));if(val)shape(s,x,y+.02,1.46*val/100,.16,color,color);label(s,percent(val),x+1.5,y, .58,.2,8,C.ink,true,{align:"right"})})})}
     const heads=["S/N","BLK","TOTAL","A+C","A+C %","DONE","DONE %","P","P %","D","D %","NR","NR %"];
     const widths=[.48,.58,.72,.72,.78,.72,.78,.58,.69,.58,.69,.58,.72].map(w=>w*1.39);let colX=[.42];for(let i=1;i<widths.length;i++)colX.push(colX[i-1]+widths[i-1]);
     for(let offset=0;offset<r.rows.length;offset+=12){const chunk=r.rows.slice(offset,offset+12),s=shell("Weekly Meeting Summary",`${r.scope} · P = Pending Confirmation`,4+Math.ceil(r.rows.length/7)+Math.floor(offset/12));heads.forEach((h,i)=>{shape(s,colX[i],1.54,widths[i],.38,C.pale);label(s,h,colX[i]+.02,1.64,widths[i]-.04,.17,8.5,C.ink,true,{align:"center"})});chunk.forEach((x,j)=>{const vals=[offset+j+1,x.block,x.total,x.agree,percent(x.agreePct),x.done,percent(x.donePct),x.p,percent(x.pPct),x.d,percent(x.dPct),x.nr,percent(x.nrPct)],y=1.98+j*.36;vals.forEach((v,i)=>{shape(s,colX[i],y,widths[i],.34,j%2?"F7FAFC":C.white);label(s,v,colX[i]+.02,y+.08,widths[i]-.04,.17,9,C.ink,i===1,{align:"center"})})});if(offset+chunk.length===r.rows.length){const y=2.03+chunk.length*.36,vals=["TOTAL DU","",r.totals.total,r.totals.agree,percent(r.totals.agreePct),r.totals.done,percent(r.totals.donePct),r.totals.p,percent(r.totals.pPct),r.totals.d,percent(r.totals.dPct),r.totals.nr,percent(r.totals.nrPct)];vals.forEach((v,i)=>{if(i===1)return;const w=i===0?widths[0]+widths[1]:widths[i];shape(s,colX[i],y,w,.37,"DDECF5");label(s,v,colX[i]+.02,y+.1,w-.04,.17,8.5,C.ink,true,{align:"center"})})}}
+    const summaryRows=buildResponseSummaryRows(r.zone).filter(x=>r.block==="all"||String(x.block)===String(r.block));
+    const summaryTotals=responseSummaryTotals(summaryRows);
+    const summaryHeads=["S/N","BLK","TOTAL","RESPOND","OPT-IN A","OPT-OUT","OPT-OUT UNITS","NR","NR UNITS"];
+    const summaryWidths=[.45,.55,.75,1.15,1.15,1,3,.65,3.48],summaryX=[.58];
+    for(let i=1;i<summaryWidths.length;i++)summaryX.push(summaryX[i-1]+summaryWidths[i-1]);
+    const summaryCell=(s,value,i,y,h,fill,bold=false)=>{shape(s,summaryX[i],y,summaryWidths[i],h,fill);label(s,value,summaryX[i]+.06,y+.06,summaryWidths[i]-.12,h-.12,i===6||i===8?9:10,C.ink,bold,{align:i===6||i===8?"left":"center",valign:"mid",breakLine:false,fit:"shrink"})};
+    for(let offset=0;offset<summaryRows.length;offset+=3){const chunk=summaryRows.slice(offset,offset+3),s=shell(`Summary Details (NR and Opt-Out)${summaryRows.length>3?` · ${Math.floor(offset/3)+1}`:""}`,r.scope);
+      summaryHeads.forEach((h,i)=>summaryCell(s,h,i,1.53,.54,C.pale,true));
+      chunk.forEach((x,j)=>{const y=2.11+j*1.28,vals=[offset+j+1,x.block,x.total,responseSummaryCountPct(x.respond,x.respondPct),responseSummaryCountPct(x.optIn,x.optInPct),responseSummaryCountPct(x.d,x.dPct),x.dDetails||"-",x.nr,x.nrDetails||"-"];
+        vals.forEach((v,i)=>summaryCell(s,v,i,y,1.22,j%2?"F7FAFC":C.white,i===1))});
+      if(offset+chunk.length===summaryRows.length){const y=2.16+chunk.length*1.28,vals=[summaryTotals.total,responseSummaryCountPct(summaryTotals.respond,summaryTotals.respondPct),responseSummaryCountPct(summaryTotals.optIn,summaryTotals.optInPct),responseSummaryCountPct(summaryTotals.d,summaryTotals.dPct),"",summaryTotals.nr,""];
+        shape(s,summaryX[0],y,summaryWidths[0]+summaryWidths[1],.43,"DDECF5");label(s,"TOTAL",summaryX[0]+.06,y+.1,summaryWidths[0]+summaryWidths[1]-.12,.23,9,C.ink,true,{align:"center"});vals.forEach((v,i)=>summaryCell(s,v,i+2,y,.43,"DDECF5",true))}
+    }
     const blob=await pptx.write({outputType:"blob",compression:true});
-    downloadBlob(`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pptx`,blob);
-    toast("Manager PPT downloaded");
+    downloadBlob(`ELU_Site_Progress_${reportSafeFileScope(r)}_${isoTodaySG()}.pptx`,blob);
+    toast("Site progress PPT downloaded");
   }catch(err){console.error(err);toast("PPT export failed: "+(err?.message||"Unknown error"))}
 }
 
@@ -1861,7 +1870,7 @@ function responseSummaryPdfPages(r){
   const total=responseSummaryTotals(selected),pages=[],ink=[0.09,0.21,0.30],muted=[0.32,0.43,0.51],head=[0.87,0.95,0.97],line=[0.57,0.69,0.75];
   const widths=[30,55,55,72,70,66,150,54,220],xs=[30];widths.forEach(w=>xs.push(xs.at(-1)+w));
   const wrap=(value,limit)=>{const words=String(value||"").split(/,\s*/).filter(Boolean),result=[];let current="";words.forEach(word=>{if(current&&`${current}, ${word}`.length>limit){result.push(current);current=word}else current+=(current?", ":"")+word});if(current)result.push(current);return result.length?result:["-"]};
-  const header=(index)=>{let p=pdfText(30,25,16,`Summary Details (NR and Opt-Out)${index?` - ${index+1}`:""}`,true,ink)+pdfZoneBadge(r);p+=pdfText(30,48,9,`${r.scope} | Opt-In A only; C and P included with NR`,false,muted);p+=pdfRect(30,72,772,26,[0.88,0.96,0.95]);p+=pdfText(206,77,10,"Summary of Opt In, Opt Out & NR Unit Details",true,ink);
+  const header=(index)=>{let p=pdfText(30,25,16,`Summary Details (NR and Opt-Out)${index?` - ${index+1}`:""}`,true,ink);p+=pdfScopeText(r,30,48);p+=pdfText(210,52,9,"Opt-In A only; C and P included with NR",false,muted);p+=pdfRect(30,72,772,26,[0.88,0.96,0.95]);p+=pdfText(206,77,10,"Summary of Opt In, Opt Out & NR Unit Details",true,ink);
     const labels=["S/N","BLK","TOTAL","RESPOND","OPT-IN A","OPT-OUT","OPT-OUT UNITS","NR","NR UNITS"];
     labels.forEach((label,i)=>{p+=pdfRect(xs[i],101,widths[i],32,head,line);p+=pdfText(xs[i]+3,112,7.1,label,true,ink)});return p};
   let page=header(0),y=133;
@@ -1879,7 +1888,7 @@ function responseSummaryPdfPages(r){
 function managerPdfPagesV727(r){
   const pages=[],blue=[0.08,0.40,0.62],pending=[0.25,0.50,0.82],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
   let c="";
-  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfZoneBadge(r);
+  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfScopeText(r);c+=pdfText(300,54,9,`Generated ${r.stamp}`,false,muted);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Pending P',r.totals.p,pending],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*128;c+=pdfRect(xx,94,118,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+9,108,7.4,x[0],true,muted);c+=pdfText(xx+9,128,18,String(x[1]),true,x[2])});
   const chartGroups=balancedChartGroups(r.rows);
@@ -1887,7 +1896,7 @@ function managerPdfPagesV727(r){
   c+=pdfText(38,435,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],457,7.3,h,true,muted));c+=pdfLine(38,473,804,473);
   r.zones.slice(0,6).forEach((z,i)=>{const top=484+i*17;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
   pages.push(c);
-  for(let i=1;i<chartGroups.length;i+=2){let extra=pdfZoneBadge(r);extra+=compactBlockChartPdf(chartGroups[i],r.scope,26);if(chartGroups[i+1])extra+=compactBlockChartPdf(chartGroups[i+1],r.scope,297);pages.push(extra)}
+  for(let i=1;i<chartGroups.length;i+=2){let extra=compactBlockChartPdf(chartGroups[i],r.scope,26);if(chartGroups[i+1])extra+=compactBlockChartPdf(chartGroups[i+1],r.scope,297);pages.push(extra)}
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=9)tableChunks.push(r.rows.slice(i,i+9));
   tableChunks.forEach((chunk,ci)=>{
     let p="";
@@ -1897,7 +1906,7 @@ function managerPdfPagesV727(r){
     const cell=(x,y,w,h,fill)=>pdfRect(x,y,w,h,fill,border);
     const center=(value,x,y,w,size=10,color=ink,bold=true)=>pdfText(x+Math.max(3,(w-String(value).length*size*.53)/2),y,size,String(value),bold,color);
     p+=pdfText(30,25,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);
-    p+=pdfText(30,51,9,r.scope,false,[0.32,0.45,0.53]);p+=pdfZoneBadge(r);
+    p+=pdfScopeText(r,30,51);
     const head=[0.87,0.94,0.98],sub=[0.94,0.97,0.99];
     [[0,"ESS Details"],[1,"S/N"],[2,"BLK NO."],[3,"TOTAL UNITS"]].forEach(([i,name])=>{p+=cell(xs[i],top,widths[i],80,head);p+=center(name,xs[i],top+34,widths[i],i===0?8:9)});
     const groups=[[4,"UNITS OPT-IN","(Agree)"],[6,"UNITS OPT-IN","(10mmsq Work Completed at site)"],[8,"UNITS OPT-OUT","(Disagree)"],[10,"UNITS NO RESPONSE",""]];
