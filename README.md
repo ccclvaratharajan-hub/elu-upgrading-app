@@ -631,9 +631,3 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 
 ### Example
 `Blk 537 #08-54`: if the last user action is **Opt-Out**, it stays D after reload. If the user later creates a new appointment, the newer appointment becomes the current status. If Opt-Out is selected again after that, D becomes current again.
-
-## V8.16 Report Export Corrections
-
-- PowerPoint starts with ELU Site Progress Report; the Manager cover is removed. Zone Progress spans the slide width, and the NR / Opt-Out unit detail summary is included after the weekly meeting slide.
-- Site Progress PDF displays the existing Zone scope in large, bold text without a shaded Zone badge.
-- Report source data and unit statuses are unchanged.
