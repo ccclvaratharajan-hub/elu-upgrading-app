@@ -1740,6 +1740,10 @@ function reportSafeFileScope(r){return r.zone==="all"?"All_Zones":`Zone_${r.zone
 function pdfAscii(v){return String(v??"").replace(/[–—]/g,"-").replace(/[•·]/g,"-").replace(/[^\x20-\x7E]/g,"")}
 function pdfEsc(v){return pdfAscii(v).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")}
 function pdfText(x,top,size,text,bold=false,color=[0.10,0.22,0.31]){const y=595-top-size;return `${color.map(n=>n.toFixed(3)).join(" ")} rg BT /${bold?"F2":"F1"} ${size} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfEsc(text)}) Tj ET\n`}
+function pdfZoneBadge(r,top=18){
+  const title=r.zone==="all"?"ALL ZONES":`ZONE ${r.zone}`;
+  return pdfRect(668,top,139,37,[0.07,0.23,0.36])+pdfText(682,top+9,15,title,true,[1,1,1]);
+}
 function pdfRect(x,top,w,h,fill=[1,1,1],stroke=null){const y=595-top-h;let s=`${fill.map(n=>n.toFixed(3)).join(" ")} rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f\n`;if(stroke)s+=`${stroke.map(n=>n.toFixed(3)).join(" ")} RG ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S\n`;return s}
 function pdfLine(x1,t1,x2,t2,color=[0.84,0.89,0.93],width=.7){return`${color.map(n=>n.toFixed(3)).join(" ")} RG ${width} w ${x1.toFixed(1)} ${(595-t1).toFixed(1)} m ${x2.toFixed(1)} ${(595-t2).toFixed(1)} l S\n`}
 function buildPdfBlob(pageContents){
@@ -1754,7 +1758,7 @@ function buildPdfBlob(pageContents){
 }
 function managerPdfPages(r){
   const pages=[],blue=[0.08,0.40,0.62],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],pink=[0.83,0.11,0.51],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19];
-  let c="";c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(625,28,9,"NO RESIDENT PERSONAL DATA",true,blue);
+  let c="";c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfZoneBadge(r);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,green],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*154;c+=pdfRect(xx,94,142,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+12,108,8,x[0],true,muted);c+=pdfText(xx+12,128,19,String(x[1]),true,x[2])});
   c+=pdfText(38,181,14,"Status & Completion Snapshot",true,ink);
@@ -1771,7 +1775,7 @@ function managerPdfPages(r){
   tableChunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | A+C = Opt-In Agree`,false,muted);const xs=[38,84,145,220,296,374,456,530,606,680,758],heads=['S/N','Block','Total','A+C','A+C %','Done','Done %','D','D %','NR','NR %'];p+=pdfRect(34,72,774,30,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],84,7,h,true,ink));chunk.forEach((x,i)=>{const top=112+i*30;if(i%2===1)p+=pdfRect(34,top-7,774,25,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,7,String(v),j===1,ink));p+=pdfLine(34,top+12,808,top+12)});if(ci===tableChunks.length-1){const top=112+chunk.length*30+4;p+=pdfRect(34,top-8,774,27,[0.90,0.95,0.99]);p+=pdfText(84,top,8,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,7,String(v),true,ink))}pages.push(p)});
   return pages
 }
-function exportManagerPDF(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}const blob=buildPdfBlob(managerPdfPages(r));downloadBlob(`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,blob);toast("Manager PDF downloaded")}
+function exportManagerPDF(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}const blob=buildPdfBlob(managerPdfPages(r));downloadBlob(`ELU_Site_Progress_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,blob);toast("Manager PDF downloaded")}
 
 /* ---------- Native PPTX generator: OOXML + uncompressed ZIP, no external library ---------- */
 function xmlEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;")}
@@ -1857,7 +1861,7 @@ function responseSummaryPdfPages(r){
   const total=responseSummaryTotals(selected),pages=[],ink=[0.09,0.21,0.30],muted=[0.32,0.43,0.51],head=[0.87,0.95,0.97],line=[0.57,0.69,0.75];
   const widths=[30,55,55,72,70,66,150,54,220],xs=[30];widths.forEach(w=>xs.push(xs.at(-1)+w));
   const wrap=(value,limit)=>{const words=String(value||"").split(/,\s*/).filter(Boolean),result=[];let current="";words.forEach(word=>{if(current&&`${current}, ${word}`.length>limit){result.push(current);current=word}else current+=(current?", ":"")+word});if(current)result.push(current);return result.length?result:["-"]};
-  const header=(index)=>{let p=pdfText(30,25,16,`Response Summary Sheet${index?` - ${index+1}`:""}`,true,ink);p+=pdfText(30,48,9,`${r.scope} | Opt-In A only; C and P included with NR`,false,muted);p+=pdfRect(30,72,772,26,[0.88,0.96,0.95]);p+=pdfText(206,77,10,"Summary of Opt In, Opt Out & NR Unit Details",true,ink);
+  const header=(index)=>{let p=pdfText(30,25,16,`Summary Details (NR and Opt-Out)${index?` - ${index+1}`:""}`,true,ink)+pdfZoneBadge(r);p+=pdfText(30,48,9,`${r.scope} | Opt-In A only; C and P included with NR`,false,muted);p+=pdfRect(30,72,772,26,[0.88,0.96,0.95]);p+=pdfText(206,77,10,"Summary of Opt In, Opt Out & NR Unit Details",true,ink);
     const labels=["S/N","BLK","TOTAL","RESPOND","OPT-IN A","OPT-OUT","OPT-OUT UNITS","NR","NR UNITS"];
     labels.forEach((label,i)=>{p+=pdfRect(xs[i],101,widths[i],32,head,line);p+=pdfText(xs[i]+3,112,7.1,label,true,ink)});return p};
   let page=header(0),y=133;
@@ -1875,7 +1879,7 @@ function responseSummaryPdfPages(r){
 function managerPdfPagesV727(r){
   const pages=[],blue=[0.08,0.40,0.62],pending=[0.25,0.50,0.82],ink=[0.09,0.21,0.30],muted=[0.39,0.49,0.57],soft=[0.94,0.97,0.99],green=[0.15,0.57,0.35],yellow=[0.90,0.66,0.10],red=[0.78,0.12,0.19],grid=[0.87,0.91,0.94];
   let c="";
-  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(641,28,9,"NO OWNER / CONTACT DETAILS",true,blue);
+  c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU SITE PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfZoneBadge(r);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Pending P',r.totals.p,pending],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*128;c+=pdfRect(xx,94,118,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+9,108,7.4,x[0],true,muted);c+=pdfText(xx+9,128,18,String(x[1]),true,x[2])});
   const chartGroups=balancedChartGroups(r.rows);
@@ -1883,9 +1887,33 @@ function managerPdfPagesV727(r){
   c+=pdfText(38,435,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],457,7.3,h,true,muted));c+=pdfLine(38,473,804,473);
   r.zones.slice(0,6).forEach((z,i)=>{const top=484+i*17;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
   pages.push(c);
-  for(let i=1;i<chartGroups.length;i+=2){let extra="";extra+=compactBlockChartPdf(chartGroups[i],r.scope,26);if(chartGroups[i+1])extra+=compactBlockChartPdf(chartGroups[i+1],r.scope,297);pages.push(extra)}
-  const tableChunks=[];for(let i=0;i<r.rows.length;i+=13)tableChunks.push(r.rows.slice(i,i+13));
-  tableChunks.forEach((chunk,ci)=>{let p="";const rowH=chunk.length<=7?42:30,font=chunk.length<=7?8.2:6.5;p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);const xs=[34,72,118,172,226,284,338,396,448,500,552,604,664],heads=['S/N','Blk','Total','A+C','A+C%','Done','Done%','P','P%','D','D%','NR','NR%'];p+=pdfRect(30,72,780,34,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],85,7.2,h,true,ink));chunk.forEach((x,i)=>{const top=119+i*rowH;if(i%2===1)p+=pdfRect(30,top-9,780,rowH-4,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,font,String(v),j===1,ink));p+=pdfLine(30,top+rowH-14,810,top+rowH-14)});if(ci===tableChunks.length-1){const top=119+chunk.length*rowH+3;p+=pdfRect(30,top-8,780,30,[0.90,0.95,0.99]);p+=pdfText(72,top,8.2,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,font,String(v),true,ink))}pages.push(p)});
+  for(let i=1;i<chartGroups.length;i+=2){let extra=pdfZoneBadge(r);extra+=compactBlockChartPdf(chartGroups[i],r.scope,26);if(chartGroups[i+1])extra+=compactBlockChartPdf(chartGroups[i+1],r.scope,297);pages.push(extra)}
+  const tableChunks=[];for(let i=0;i<r.rows.length;i+=9)tableChunks.push(r.rows.slice(i,i+9));
+  tableChunks.forEach((chunk,ci)=>{
+    let p="";
+    const left=30,top=82,rowH=chunk.length<=7?47:38,widths=[66,38,58,70,74,60,74,60,74,60,74,60],xs=[left];
+    widths.forEach(w=>xs.push(xs.at(-1)+w));
+    const border=[0.39,0.48,0.54],ink=[0.08,0.24,0.34],blue=[0.08,0.24,0.76],green=[0.02,0.52,0.28],brown=[0.54,0.29,0.05],red=[0.77,0.10,0.18];
+    const cell=(x,y,w,h,fill)=>pdfRect(x,y,w,h,fill,border);
+    const center=(value,x,y,w,size=10,color=ink,bold=true)=>pdfText(x+Math.max(3,(w-String(value).length*size*.53)/2),y,size,String(value),bold,color);
+    p+=pdfText(30,25,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);
+    p+=pdfText(30,51,9,r.scope,false,[0.32,0.45,0.53]);p+=pdfZoneBadge(r);
+    const head=[0.87,0.94,0.98],sub=[0.94,0.97,0.99];
+    [[0,"ESS Details"],[1,"S/N"],[2,"BLK NO."],[3,"TOTAL UNITS"]].forEach(([i,name])=>{p+=cell(xs[i],top,widths[i],80,head);p+=center(name,xs[i],top+34,widths[i],i===0?8:9)});
+    const groups=[[4,"UNITS OPT-IN","(Agree)"],[6,"UNITS OPT-IN","(10mmsq Work Completed at site)"],[8,"UNITS OPT-OUT","(Disagree)"],[10,"UNITS NO RESPONSE",""]];
+    groups.forEach(([i,title,subTitle])=>{const w=widths[i]+widths[i+1];p+=cell(xs[i],top,w,50,head);p+=center(title,xs[i],top+12,w,9);if(subTitle)p+=center(subTitle,xs[i],top+29,w,subTitle.length>20?7:8);for(let j=i;j<i+2;j++){p+=cell(xs[j],top+50,widths[j],30,sub);p+=center(j===i?"Number":"%",xs[j],top+59,widths[j],9)}});
+    chunk.forEach((x,j)=>{
+      const y=top+80+j*rowH,values=[`ZONE ${x.zone}`,ci*9+j+1,x.block,x.total,x.agree,`${Math.round(x.agreePct)}%`,x.done,`${Math.round(x.donePct)}%`,x.d,`${Math.round(x.dPct)}%`,x.nr+x.p,`${x.total?Math.round((x.nr+x.p)/x.total*100):0}%`];
+      values.forEach((v,k)=>{p+=cell(xs[k],y,widths[k],rowH,j%2?[0.97,0.985,0.995]:[1,1,1]);p+=center(v,xs[k],y+rowH/2-6,widths[k],k===2?13:10,k===4||k===5?blue:k===6||k===7?green:k===8||k===9?brown:k>=10?red:ink)})
+    });
+    if(ci===tableChunks.length-1){const y=top+80+chunk.length*rowH,t=r.totals;
+      p+=cell(xs[0],y,widths[0]+widths[1]+widths[2],44,[0.85,0.93,0.97]);p+=center("TOTAL DU",xs[0],y+15,widths[0]+widths[1]+widths[2],11);
+      const values=[t.total,t.agree,`${Math.round(t.agreePct)}%`,t.done,`${Math.round(t.donePct)}%`,t.d,`${Math.round(t.dPct)}%`,t.nr+t.p,`${t.total?Math.round((t.nr+t.p)/t.total*100):0}%`];
+      values.forEach((v,k)=>{const c=k+3;p+=cell(xs[c],y,widths[c],44,[0.85,0.93,0.97]);p+=center(v,xs[c],y+15,widths[c],11)})
+    }
+    p+=pdfText(30,565,8,"Meeting view: Pending Confirmation (P) is shown with No Response. Unit Register statuses remain unchanged.",false,[0.32,0.45,0.53]);
+    pages.push(p)
+  });
   pages.push(...responseSummaryPdfPages(r));
   return pages
 }
@@ -1905,7 +1933,7 @@ function unitSummaryPdfPages(){
   const chunks=[];for(let i=0;i<units.length;i+=20)chunks.push(units.slice(i,i+20));
   chunks.forEach((chunk,ci)=>{let p="";p+=pdfText(38,28,18,`Unit Summary - No Personal Data${chunks.length>1?` - ${ci+1}/${chunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,"Owner Name, Contact and free-text Remarks are excluded",false,muted);const xs=[38,83,132,205,305,430,548,658,752],heads=['Zone','Block','Unit','Status','Work','Appt Date','Slot','Team','Source'];p+=pdfRect(34,72,774,28,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],83,7,h,true,ink));chunk.forEach((u,i)=>{const top=110+i*23;if(i%2===1)p+=pdfRect(34,top-6,774,20,soft);const a=preferredMasterAppointment(u.key),source=a?String(a.source||'Manual'):'-';const vals=[u.zone,u.block,unitDisplay(u.floor,u.unit),statusLabel(u.response),u.workStatus||'-',u.appointmentDate?safeDate(u.appointmentDate):'-',u.appointmentSlot||'-',u.team||'-',source.includes('Excel')?'Imported':'Manual'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,6.7,String(v),j===2,ink))});pages.push(p)});return pages
 }
-function exportManagerPDFV727(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}downloadBlob(`ELU_Manager_Report_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(managerPdfPagesV727(r)));toast("Manager PDF downloaded")}
+function exportManagerPDFV727(){const r=managerReportData();if(!r.rows.length){toast("No report data for this filter");return}downloadBlob(`ELU_Site_Progress_${reportSafeFileScope(r)}_${isoTodaySG()}.pdf`,buildPdfBlob(managerPdfPagesV727(r)));toast("Manager PDF downloaded")}
 
 function exportBlockBoardPrint(){
   rebuildAllMasters();
