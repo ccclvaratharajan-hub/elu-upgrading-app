@@ -1521,20 +1521,33 @@ function responseSummaryUnitList(units){
     .map(u=>unitDisplay(u.floor,u.unit))
     .join(", ")
 }
+// Field-confirmed sites whose imported baseline must not turn untouched units
+// into No Response on the Response Summary. New user work activates a site.
+const RESPONSE_SUMMARY_NOT_STARTED=new Set([557,558,559,560,561,562,538,539,540,541,542,543,555,556]);
+const RESPONSE_SUMMARY_STARTED=new Set([537,554]);
+function responseSummaryStarted(block,units){
+  if(RESPONSE_SUMMARY_STARTED.has(block))return true;
+  if(!RESPONSE_SUMMARY_NOT_STARTED.has(block))return blockHasFieldActivity(block,units);
+  const keys=new Set(units.map(u=>u.key));
+  return state.surveys.some(s=>keys.has(s.unitKey))||
+    state.complaints.some(c=>keys.has(c.unitKey))||
+    state.appointments.some(a=>keys.has(a.unitKey)&&Number(a.id)>1000000000000)||
+    Object.keys(state.statusOverrides||{}).some(key=>keys.has(key));
+}
 function buildResponseSummaryRows(zoneFilter="all"){
   const rows=[];
   Object.keys(ZONE_BLOCKS).map(Number).sort((a,b)=>a-b).forEach(zone=>{
     if(zoneFilter!=="all"&&String(zoneFilter)!==String(zone))return;
     (ZONE_BLOCKS[zone]||[]).forEach(block=>{
       const units=getBlockUnits(block);
-      const started=blockHasFieldActivity(block,units);
+      const started=responseSummaryStarted(block,units);
       const total=started?units.length:0;
-      // Meeting response summary only: A is Opt-In, D is Opt-Out, and all
-      // other response states (including C and P) are grouped under NR.
+      // Meeting response summary only: a confirmed dated appointment (C)
+      // counts with A under Opt-In. Unconfirmed P remains with NR.
       // Unit records and the operational registers keep their actual status.
-      const nrUnits=started?units.filter(u=>u.response!=="A"&&u.response!=="D"):[];
+      const nrUnits=started?units.filter(u=>!(["A","C","D"].includes(u.response))):[];
       const dUnits=started?units.filter(u=>u.response==="D"):[];
-      const optInUnits=started?units.filter(u=>u.response==="A"):[];
+      const optInUnits=started?units.filter(u=>u.response==="A"||u.response==="C"):[];
       const nr=nrUnits.length,d=dUnits.length,optIn=optInUnits.length;
       const respond=optIn+d;
       rows.push({
@@ -1777,13 +1790,18 @@ function compactBlockChartPdf(rows,scope,top){
   let lx=444;series.forEach(s=>{p+=pdfRect(lx,top+5,10,10,s[2]);p+=pdfText(lx+14,top+5,8,s[0],true,ink);lx+=s[0]==="Done"?71:57});
   const x0=73,x1=804,plotTop=top+58,bottom=top+193,h=bottom-plotTop,w=x1-x0;
   [0,50,100].forEach(value=>{const y=bottom-h*value/100;p+=pdfLine(x0,y,x1,y,grid,value===0?.8:.35);p+=pdfText(39,y-5,8,`${value}%`,false,muted)});
-  const groupW=w/rows.length,barW=Math.min(19,groupW*.135),gap=Math.min(4,groupW*.03);
+  const groupW=w/rows.length,gap=Math.min(7,groupW*.065),barW=Math.min(18,(groupW-gap*4-12)/5);
   rows.forEach((row,gi)=>{
     const start=x0+gi*groupW+(groupW-(barW*5+gap*4))/2;
-    series.forEach((s,si)=>{const v=Math.max(0,Math.min(100,Number(row[s[1]])||0)),height=h*v/100,x=start+si*(barW+gap);if(height>0){p+=pdfRect(x,bottom-height,barW,height,s[2]);p+=pdfText(x-3,Math.max(plotTop-13,bottom-height-13),7.4,v.toFixed(1),true,ink)}});
+    series.forEach((s,si)=>{const v=Math.max(0,Math.min(100,Number(row[s[1]])||0)),height=h*v/100,x=start+si*(barW+gap);if(height>0){p+=pdfRect(x,bottom-height,barW,height,s[2]);p+=pdfText(x-3,Math.max(plotTop-(si===1?25:13),bottom-height-(si===1?25:13)),7.4,v.toFixed(1),true,ink)}});
     p+=pdfText(x0+gi*groupW+groupW/2-21,bottom+10,10,`Blk ${row.block}`,true,ink)
   });
   return p
+}
+function balancedChartGroups(rows,maxPerChart=8){
+  const count=Math.ceil(rows.length/maxPerChart),base=Math.floor(rows.length/count),extra=rows.length%count,groups=[];
+  let at=0;for(let i=0;i<count;i++){const size=base+(i<extra?1:0);groups.push(rows.slice(at,at+size));at+=size}
+  return groups
 }
 function responseSummaryPdfPages(r){
   const selected=buildResponseSummaryRows(r.zone).filter(x=>r.block==="all"||String(x.block)===String(r.block));
@@ -1811,11 +1829,12 @@ function managerPdfPagesV727(r){
   c+=pdfRect(0,0,842,74,[0.92,0.97,1]);c+=pdfText(38,24,22,"ELU UPGRADING - MANAGER PROGRESS REPORT",true,ink);c+=pdfText(38,53,9,`${r.scope} | Generated ${r.stamp}`,false,muted);c+=pdfText(641,28,9,"NO OWNER / CONTACT DETAILS",true,blue);
   const cards=[['Total Units',r.totals.total,blue],['Opt-In A+C',r.totals.agree,green],['Completed',r.totals.done,blue],['Pending P',r.totals.p,pending],['Opt-Out D',r.totals.d,yellow],['No Response NR',r.totals.nr,red]];
   cards.forEach((x,i)=>{const xx=38+i*128;c+=pdfRect(xx,94,118,58,soft,[0.85,0.91,0.95]);c+=pdfText(xx+9,108,7.4,x[0],true,muted);c+=pdfText(xx+9,128,18,String(x[1]),true,x[2])});
-  c+=compactBlockChartPdf(r.rows.slice(0,6),r.scope,178);
+  const chartGroups=balancedChartGroups(r.rows);
+  c+=compactBlockChartPdf(chartGroups[0],r.scope,178);
   c+=pdfText(38,435,13,"Zone Progress",true,ink);const cols=[38,102,178,260,342,424,506,588,674],heads=['Zone','Blocks','Units','A+C','Done','P','D','NR','Done %'];heads.forEach((h,i)=>c+=pdfText(cols[i],457,7.3,h,true,muted));c+=pdfLine(38,473,804,473);
   r.zones.slice(0,6).forEach((z,i)=>{const top=484+i*17;c+=pdfText(cols[0],top,7.2,`Zone ${z.zone}`,true,ink);[z.blocks,z.total,z.agree,z.done,z.p,z.d,z.nr,`${z.donePct.toFixed(1)}%`].forEach((v,j)=>c+=pdfText(cols[j+1],top,7.2,String(v),false,ink))});
   pages.push(c);
-  for(let i=6;i<r.rows.length;i+=12){let extra="";extra+=compactBlockChartPdf(r.rows.slice(i,i+6),r.scope,26);if(i+6<r.rows.length)extra+=compactBlockChartPdf(r.rows.slice(i+6,i+12),r.scope,297);pages.push(extra)}
+  for(let i=1;i<chartGroups.length;i+=2){let extra="";extra+=compactBlockChartPdf(chartGroups[i],r.scope,26);if(chartGroups[i+1])extra+=compactBlockChartPdf(chartGroups[i+1],r.scope,297);pages.push(extra)}
   const tableChunks=[];for(let i=0;i<r.rows.length;i+=13)tableChunks.push(r.rows.slice(i,i+13));
   tableChunks.forEach((chunk,ci)=>{let p="";const rowH=chunk.length<=7?42:30,font=chunk.length<=7?8.2:6.5;p+=pdfText(38,28,18,`Weekly Meeting Progress Summary${tableChunks.length>1?` - ${ci+1}/${tableChunks.length}`:""}`,true,ink);p+=pdfText(38,51,9,`${r.scope} | P = Pending Confirmation`,false,muted);const xs=[34,72,118,172,226,284,338,396,448,500,552,604,664],heads=['S/N','Blk','Total','A+C','A+C%','Done','Done%','P','P%','D','D%','NR','NR%'];p+=pdfRect(30,72,780,34,[0.90,0.95,0.99]);heads.forEach((h,i)=>p+=pdfText(xs[i],85,7.2,h,true,ink));chunk.forEach((x,i)=>{const top=119+i*rowH;if(i%2===1)p+=pdfRect(30,top-9,780,rowH-4,[0.97,0.98,0.99]);const vals=[ci*13+i+1,x.block,x.total,x.agree,x.agreePct.toFixed(1)+'%',x.done,x.donePct.toFixed(1)+'%',x.p,x.pPct.toFixed(1)+'%',x.d,x.dPct.toFixed(1)+'%',x.nr,x.nrPct.toFixed(1)+'%'];vals.forEach((v,j)=>p+=pdfText(xs[j],top,font,String(v),j===1,ink));p+=pdfLine(30,top+rowH-14,810,top+rowH-14)});if(ci===tableChunks.length-1){const top=119+chunk.length*rowH+3;p+=pdfRect(30,top-8,780,30,[0.90,0.95,0.99]);p+=pdfText(72,top,8.2,'TOTAL DU',true,ink);[r.totals.total,r.totals.agree,r.totals.agreePct.toFixed(1)+'%',r.totals.done,r.totals.donePct.toFixed(1)+'%',r.totals.p,r.totals.pPct.toFixed(1)+'%',r.totals.d,r.totals.dPct.toFixed(1)+'%',r.totals.nr,r.totals.nrPct.toFixed(1)+'%'].forEach((v,j)=>p+=pdfText(xs[j+2],top,font,String(v),true,ink))}pages.push(p)});
   pages.push(...responseSummaryPdfPages(r));
