@@ -100,7 +100,13 @@
       c(`F${tot}`,t.out,51,`SUM(F5:F${end})`),c(`G${tot}`,t.total?t.out/t.total:0,16,`IF(C${tot}=0,0,F${tot}/C${tot})`),
       c(`H${tot}`,0,51,`SUM(H5:H${end})`),c(`I${tot}`,t.nr,51,`SUM(I5:I${end})`)]));
     const note=tot+2,section=tot+7,header=section+1,values=section+2;
-    summary.push(row(note,[c(`A${note}`,"* For units that remained uncontactable, the contractor shall provide details of attempts or letters issued to reach residents.",0)]));
+    const instruction=[
+      "* For units that remained uncontractable, Town Council's electrical upgrading contractor shall provide the details of attempts",
+      " made or letters issued to reach out to the residents. After attempts are made, contractor shall issue final letter to the resident",
+      "to confirm the attempts made earlier, and that upgrading of submains will have to be carried out by the resident in furture if",
+      "required by them."
+    ];
+    instruction.forEach((line,i)=>summary.push(row(note+i,[c(`A${note+i}`,line,0)],18)));
     summary.push(row(section,[c(`A${section}`,"Summary of Data",59)]));
     summary.push(row(header,[c(`A${header}`,"Total nos. of unit",22),c(`B${header}`,"Nos. of units upgraded",55),c(`C${header}`,"Nos. of units that opted not to upgrade",55),c(`E${header}`,"Nos. of units with no response",55),c(`G${header}`,"Unit Locked",55),c(`I${header}`,"% of total units upgraded",55)],32));
     summary.push(row(values,[c(`A${values}`,t.total,17,`C${tot}`),c(`B${values}`,t.agreed,54,`D${tot}`),c(`C${values}`,t.out,54,`F${tot}`),c(`E${values}`,t.nr,54,`I${tot}`),c(`G${values}`,0,54,`H${tot}`),c(`I${values}`,t.total?t.agreed/t.total:0,57,`IF(A${values}=0,0,B${values}/A${values})`)]));
@@ -108,7 +114,7 @@
     summary.push(row(values+3,[c(`A${values+3}`,"Name & Designation:"),c(`E${values+3}`,"Name & Designation:")]));
     summary.push(row(values+4,[c(`A${values+4}`,"Signature:"),c(`E${values+4}`,"Signature:")]));
     summary.push(row(values+5,[c(`A${values+5}`,"Date:"),c(`E${values+5}`,"Date:")]));
-    const merge=["D3:G3","F4:G4",`A${section}:I${section}`,`C${header}:D${header}`,`E${header}:F${header}`,`G${header}:H${header}`,`I${header}:J${header}`,`C${values}:D${values}`,`E${values}:F${values}`,`G${values}:H${values}`,`I${values}:J${values}`];
+    const merge=["D3:G3","F4:G4",...instruction.map((_,i)=>`A${note+i}:J${note+i}`),`A${section}:I${section}`,`C${header}:D${header}`,`E${header}:F${header}`,`G${header}:H${header}`,`I${header}:J${header}`,`C${values}:D${values}`,`E${values}:F${values}`,`G${values}:H${values}`,`I${values}:J${values}`];
     const result=[{name:"Summary",content:sheet(summary,[10,21,17,11,11,13,11,12,12,8],merge)}];
     blocks.forEach(b=>{
       const floors=[...new Set(b.units.map(u=>Number(u.floor)))].sort((a,z)=>z-a),numbers=[...new Set(b.units.map(u=>Number(u.unit)))].sort((a,z)=>a-z),lastCol=col(Math.max(numbers.length+1,8));
