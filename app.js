@@ -59,14 +59,24 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],statusDecisionSchema:2,createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:new Date().toISOString()};
+}
+function applyZone6ImportSeed(records){
+  for(const [key,entry] of Object.entries(records||{})){
+    const [b,f,u]=key.split("-").map(Number);
+    if(!ZONE_BLOCKS[6].includes(b)||!PROJECT_LAYOUT[b]?.floors?.[f]?.includes(u))continue;
+    const seed=PROJECT_LAYOUT[b].seed||(PROJECT_LAYOUT[b].seed={});
+    seed[`${f}-${u}`]={...(seed[`${f}-${u}`]||{}),response:entry.status,ownerName:entry.ownerName||seed[`${f}-${u}`]?.ownerName||"",contact:entry.contact||seed[`${f}-${u}`]?.contact||"",completed:entry.completed,legacySchedule:entry.legacySchedule||seed[`${f}-${u}`]?.legacySchedule||"",legacyRemark:seed[`${f}-${u}`]?.legacyRemark||""};
+  }
 }
 function isUserAppointment(a){
-  return ["Planner","Manual","Planner History"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
+  return ["Planner","Manual","Planner History","Zone6 Survey Import"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
 }
 function mergeSavedIntoFresh(saved){
+  if(saved?.zone6ImportData)applyZone6ImportSeed(saved.zone6ImportData);
   const fresh=makeInitialState();
   if(!saved)return fresh;
+  fresh.zone6ImportData=saved.zone6ImportData||null;
 
   fresh.surveys=(saved.surveys||[]).map(s=>({
     ...s,
@@ -145,7 +155,7 @@ function mergeSavedIntoFresh(saved){
       if(!status)return;
       fresh.statusOverrides[key]={
         status,
-        source:"Manual",
+        source:o?.source==="Zone6 Survey Import"?"Zone6 Survey Import":"Manual",
         reason:o?.reason||"Manual latest status",
         updatedAt:o?.updatedAt||new Date().toISOString(),
         decisionId:o?.decisionId||null
@@ -184,7 +194,7 @@ function loadLegacyPlainState(){
   }
   return null
 }
-let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],statusDecisionSchema:2,createdAt:""};
+let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:""};
 let secureSessionKey=null;
 let securePersistChain=Promise.resolve();
 let appStarted=false;
@@ -213,7 +223,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -341,6 +351,7 @@ function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
 function getBlockUnits(block){return unitsArray().filter(u=>u.block===Number(block)).sort((a,b)=>b.floor-a.floor||a.unit-b.unit)}
 function appointmentHasEnded(a){
+  if(a?.requiresExplicitCompletion)return false;
   if(!a?.date||!a?.slot)return false;
   const now=sgClock();if(a.date<now.date)return true;if(a.date>now.date)return false;
   const end=SLOT_END_MINUTES[a.slot]??slotEndMinutes(a.slot);return end==null?false:now.minutes>=Number(end);
@@ -404,7 +415,7 @@ function currentUnitAppointmentState(key){
   const manual=manualStatusOverride(key);
   if(manual){
     // This requested A means Opt-In; it does not assert that work was completed.
-    const completed=manual.status==="A"&&manual.reason!==ZONE1_OPT_IN_REASON;
+    const completed=manual.status==="A"&&manual.reason!==ZONE1_OPT_IN_REASON&&manual.reason!=="Zone 6 survey Opt-In (status only)";
     return {appointment:null,status:manual.status,workStatus:completed?"Completed":manual.status==="A"?"Opt-In":"Pending",active:false,completed,manualOverride:manual}
   }
 
@@ -1999,7 +2010,7 @@ document.getElementById("exportBlockChartPdfBtn").addEventListener("click",expor
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","PENDING P","P %","OPT-OUT D","D %","NO RESPONSE NR","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.p,pct(x.pPct),x.d,pct(x.dPct),x.nr,pct(x.nrPct)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.p,pct(t.pPct),t.d,pct(t.dPct),t.nr,pct(t.nrPct)] ]))});
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
-document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],statusDecisionSchema:2},null,2),"application/json")});
+document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,statusDecisionSchema:2},null,2),"application/json")});
 
 
 /* V7.45 — Master Schedule + integrated Photo Inbox */

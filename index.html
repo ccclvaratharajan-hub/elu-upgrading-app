@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.02">
+  <link rel="stylesheet" href="styles.css?v=8.23">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -315,6 +315,7 @@
               <select id="unitBlockFilter"></select>
             </div>
           </div>
+          <div class="zone6-import-bar"><label for="zone6SurveyFile">Zone 6 survey Excel (Blk 551–556)</label><input type="file" id="zone6SurveyFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><div id="zone6ImportPreview" aria-live="polite">Select the survey Excel to review the changes.</div><button type="button" class="primary-btn" id="zone6ApplyImport" disabled>Update Zone 6 from Excel</button><button type="button" class="ghost-btn" id="zone6UndoImport" hidden>Undo last import</button></div>
           <div id="unitTable" class="table-shell"></div>
         </article>
       </section>
@@ -707,7 +708,8 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.22"></script>
-<script src="exact-excel-reports.js?v=8.22"></script>
+<script src="app.js?v=8.23"></script>
+<script src="exact-excel-reports.js?v=8.23"></script>
+<script src="zone6-import.js?v=8.23"></script>
 </body>
 </html>

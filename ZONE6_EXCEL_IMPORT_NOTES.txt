@@ -1,27 +1,7 @@
-ELU V7.49 — Zone 6 Excel Import Notes
+ELU V8.23 — Zone 6 survey update
 
-Source:
-PR3 551-556 Unit Survey Report.xlsx
+After login, open Unit Register, choose the supplied PR3 551-556 Unit Survey Report(1).xlsx, review the block counts, and select Update Zone 6 from Excel. Do not upload that resident workbook to a public GitHub repository.
 
-Detailed units processed: 459
-Block 551: 87
-Block 552: 72
-Block 553: 72
-Block 554: 84
-Block 555: 72
-Block 556: 72
+The import reads 315 unit rows for Blk 551-554. CNR is treated as NR. Blk 555-556 are blank in the supplied workbook, so they are left unchanged. Existing manual unit decisions and manually entered appointments stay in place. Colleague comments and extra notes are not imported.
 
-Imported baseline classification from detailed unit rows:
-A / Completed baseline: 188
-C / Responded or appointment baseline: 71
-D / Opt-Out: 3
-NR / No Response: 197
-
-Parseable dated appointment rows: 211
-Exact existing imported appointments reused: 209
-Genuinely new appointment seed rows: 2
-
-Important:
-- Detailed block/unit sheets are treated as authoritative for this import.
-- Existing browser-side manual appointments, cancellations, permanent deletes and reschedules are preserved by the merge logic.
-- The workbook Progress Summary contains totals that do not fully match detailed rows; no attempt was made to silently reconcile them.
+A local encrypted safety snapshot is made before applying the import. Undo last import restores the prior saved records. The workbook file and its resident details are not bundled in the public app source.
