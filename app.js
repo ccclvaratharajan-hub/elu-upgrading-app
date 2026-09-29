@@ -351,6 +351,7 @@ function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
 function getBlockUnits(block){return unitsArray().filter(u=>u.block===Number(block)).sort((a,b)=>b.floor-a.floor||a.unit-b.unit)}
 function appointmentHasEnded(a){
+  if(a?.source==="Zone6 Survey Import")return Boolean(a.date&&a.date<isoTodaySG());
   if(a?.requiresExplicitCompletion)return false;
   if(!a?.date||!a?.slot)return false;
   const now=sgClock();if(a.date<now.date)return true;if(a.date>now.date)return false;

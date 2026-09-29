@@ -1,7 +1,7 @@
-ELU V8.23 — Zone 6 survey update
+ELU V8.25 — Zone 6 survey update
 
 After login, open Unit Register, choose the supplied PR3 551-556 Unit Survey Report(1).xlsx, review the block counts, and select Update Zone 6 from Excel. Do not upload that resident workbook to a public GitHub repository.
 
-The import reads 315 unit rows for Blk 551-554. CNR is treated as NR. Blk 555-556 are blank in the supplied workbook, so they are left unchanged. Existing manual unit decisions and manually entered appointments stay in place. Colleague comments and extra notes are not imported.
+The import reads 315 unit rows for Blk 551-554. CNR is treated as NR. Blk 555-556 are blank in the supplied workbook, so they are left unchanged. The selected Excel replaces the 315 Zone 6 records for Blk 551-554. An encrypted snapshot supports Undo last import. Colleague comments and extra notes are not imported.
 
 A local encrypted safety snapshot is made before applying the import. Undo last import restores the prior saved records. The workbook file and its resident details are not bundled in the public app source.

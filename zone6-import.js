@@ -61,13 +61,17 @@
         if(entries[key])throw Error(`Duplicate unit in Excel: Blk ${block} #${floor}-${unit}`);
         const mark=chartStatus.get(`${floor}-${unit}`)||'';
         const work=String(r.J||'').trim(),rawDate=String(r.I||'').trim(),date=legacyDateISO(rawDate);
-        const completed=/rewiring completed/i.test(work),confirmed=/appointment confirmed/i.test(work);
+        const explicitCompleted=/^rewiring completed$/i.test(work),confirmed=/^appointment confirmed$/i.test(work);
         const optOut=String(r.F||'').trim()==='1',optIn=String(r.E||'').trim()==='1';
-        let status=optOut||mark==='D'?'D':mark==='NR'||mark==='CNR'?'NR':completed?'A':confirmed&&date?'C':optIn?'A':'NR';
-        if((completed||confirmed)&&!date)throw Error(`Missing date for ${work}: Blk ${block} #${floor}-${unit}`);
+        const completed=explicitCompleted||Boolean(date&&date<isoTodaySG()&&optIn&&!optOut&&mark!=='D'&&mark!=='NR'&&mark!=='CNR');
+        let status=optOut||mark==='D'?'D':mark==='NR'||mark==='CNR'?'NR':completed?'A':(confirmed||optIn)&&date?'C':optIn?'A':'NR';
+        if((explicitCompleted||confirmed)&&!date)throw Error(`Missing date for ${work}: Blk ${block} #${floor}-${unit}`);
         if(mark==='D'&&optIn||mark==='CNR'&&optIn)throw Error(`Conflicting status: Blk ${block} #${floor}-${unit}`);
         const name=String(r.H||'').trim(),contact=String(r.G||'').trim();
-        entries[key]={status,ownerName:name,contact,completed,appointmentDate:date,appointmentSlot:legacySlot(rawDate),legacySchedule:rawDate,legacyRemark:''};
+        const normalizedSchedule=rawDate.replace(/(\d{1,2}(?::\d{2})?(?:am|pm))(\d{1,2}(?::\d{2})?(?:am|pm))/i,'$1–$2');
+        const slot=legacySlot(normalizedSchedule);
+        if(status==='C'&&!slot)throw Error(`Confirmed appointment time missing: Blk ${block} #${floor}-${unit}`);
+        entries[key]={status,ownerName:name,contact,completed,appointmentDate:date,appointmentSlot:slot,legacySchedule:rawDate,legacyRemark:''};
         count++;
       }
       if(count&&count!==Object.values(PROJECT_LAYOUT[block].floors).reduce((n,a)=>n+a.length,0))throw Error(`Blk ${block}: ${count} Excel units do not match the app's full unit list`);
@@ -83,7 +87,7 @@
     preview.textContent='Reading Zone 6 survey Excel…';
     try{
       candidate=await parse(file);
-      preview.textContent=`Ready: ${Object.keys(candidate.entries).length} units in Blk 551–554. CNR → NR. Blk 555–556 are blank in this Excel and will remain untouched. `+Object.entries(candidate.stats).map(([b,v])=>`Blk ${b}: ${v.total} units, ${v.A+v.C} Opt-In, ${v.D} Opt-Out, ${v.NR} NR, ${v.completed} completed`).join(' · ');
+      preview.textContent=`Ready: ${Object.keys(candidate.entries).length} units in Blk 551–554. DONE stays Opt-In; dates before today count as completed; CNR → NR. Blk 555–556 are blank in this Excel and will remain untouched. `+Object.entries(candidate.stats).map(([b,v])=>`Blk ${b}: ${v.total} units, ${v.A+v.C} Opt-In, ${v.D} Opt-Out, ${v.NR} NR, ${v.completed} completed`).join(' · ');
       applyBtn.disabled=false;
     }catch(e){console.error(e);preview.textContent=`Cannot import: ${e.message}`}
   });
@@ -93,8 +97,7 @@
     try{
       const old=await encryptPayload(secureSnapshot(),secureSessionKey);
       localStorage.setItem(BACKUP_KEY,JSON.stringify(old));
-      const skip=new Set(Object.keys(candidate.entries).filter(key=>state.statusOverrides[key]?.source==='Manual'||state.appointments.some(a=>a.unitKey===key&&['Manual','Planner'].includes(a.source))));
-      const imported=Object.fromEntries(Object.entries(candidate.entries).filter(([key])=>!skip.has(key)));
+      const imported=candidate.entries;
       const keys=new Set(Object.keys(imported));
       state.appointments=state.appointments.filter(a=>!keys.has(a.unitKey));
       state.appointmentTombstones=[...new Set([...(state.appointmentTombstones||[]),...SOURCE_APPOINTMENTS.filter(a=>keys.has(a.unitKey)).map(a=>String(a.id))])];
@@ -105,7 +108,7 @@
         const u=state.units[key],status=e.status;
         if(!u)throw Error(`App unit missing: ${key}`);
         if(status==='C'||e.completed){
-          state.appointments.push({id:now+offset++,unitKey:key,zone:6,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:e.ownerName,contact:e.contact,date:e.appointmentDate,slot:e.appointmentSlot||'9am–11am',team:'',remarks:'',source:'Zone6 Survey Import',scheduleState:'Active',workStatus:e.completed?'Completed':'Pending',requiresExplicitCompletion:!e.completed});
+          state.appointments.push({id:now+offset++,unitKey:key,zone:6,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:e.ownerName,contact:e.contact,date:e.appointmentDate,slot:e.appointmentSlot||'',team:'',remarks:'',source:'Zone6 Survey Import',scheduleState:'Active',workStatus:e.completed?'Completed':'Pending'});
           delete state.statusOverrides[key];
         }else{
           state.statusOverrides[key]={status,source:'Zone6 Survey Import',reason:status==='A'?'Zone 6 survey Opt-In (status only)':'Zone 6 survey Excel',updatedAt:new Date().toISOString()};
@@ -113,7 +116,7 @@
         state.statusAudit.push({id:`zone6-import-${now}-${key}`,unitKey:key,from:u.response,to:status,action:'zone6-survey-import',source:'Zone6 Survey Import',at:new Date().toISOString()});
       }
       rebuildAllMasters();await securePersistNow();renderAll();
-      preview.textContent=`Zone 6 updated: ${keys.size} units. ${skip.size} existing manual records preserved. Blk 555–556 and all other zones stayed unchanged.`;
+      preview.textContent=`Zone 6 updated: ${keys.size} units from the selected Excel. Blk 555–556 and all other zones stayed unchanged.`;
       undoBtn.hidden=false;toast('Zone 6 survey imported');
     }catch(e){console.error(e);preview.textContent=`Import failed: ${e.message}. Use Undo last import to restore.`;undoBtn.hidden=false}
   });
