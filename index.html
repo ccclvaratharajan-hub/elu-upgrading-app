@@ -616,17 +616,28 @@
       </section>
       <section class="view" id="sitefiles">
         <div class="report-hero">
-          <div><span class="section-label">SITE EXCEL REPORTS</span><h2>Site Report Files</h2><p>Select a zone, then download one of the three separate Excel sheets.</p></div>
+          <div><span class="section-label">SITE EXCEL REPORTS</span><h2>Site Report Files</h2><p>Select a zone and open any report below. Download its Excel file when needed.</p></div>
         </div>
         <article class="panel exact-excel-panel">
           <div class="panel-head register-head">
-            <div><span class="section-label">EXCEL REPORTS</span><h3>Site Report Files</h3><p>Three separate Excel files in the supplied block-chart, response-detail and NR-tracking formats.</p></div>
+            <div><span class="section-label">SELECT ZONE</span><h3>Three live report sheets</h3><p>Preview the sheet here before downloading.</p></div>
             <div class="register-tools">
               <label class="mini-filter">Zone<select id="exactExcelZone"></select></label>
-              <button class="ghost-btn" id="exactBlockExcelBtn" type="button">Block Chart Excel</button>
-              <button class="ghost-btn" id="exactResponseExcelBtn" type="button">Response Details Excel</button>
-              <button class="ghost-btn" id="exactTrackingExcelBtn" type="button">NR Tracking Excel</button>
             </div>
+          </div>
+          <div class="site-sheet-tabs" role="tablist" aria-label="Site report sheets">
+            <button type="button" class="active" data-site-sheet="block" aria-selected="true">Block Chart</button>
+            <button type="button" data-site-sheet="response" aria-selected="false">Response Details</button>
+            <button type="button" data-site-sheet="tracking" aria-selected="false">NR Tracking</button>
+          </div>
+          <div id="siteSheetPreview" class="site-sheet-preview" aria-live="polite"></div>
+          <div class="site-sheet-downloads">
+            <button class="ghost-btn" id="exactBlockExcelBtn" type="button">Download Block Chart Excel</button>
+            <button class="ghost-btn" id="exactBlockPdfBtn" type="button">Download Block Chart PDF</button>
+            <button class="ghost-btn" id="exactResponseExcelBtn" type="button">Download Response Details Excel</button>
+            <button class="ghost-btn" id="exactResponsePdfBtn" type="button">Download Response Details PDF</button>
+            <button class="ghost-btn" id="exactTrackingExcelBtn" type="button">Download NR Tracking Excel</button>
+            <button class="ghost-btn" id="exactTrackingPdfBtn" type="button">Download NR Tracking PDF</button>
           </div>
         </article>
       </section>
@@ -693,7 +704,7 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.14"></script>
-<script src="exact-excel-reports.js?v=8.14"></script>
+<script src="app.js?v=8.16"></script>
+<script src="exact-excel-reports.js?v=8.16"></script>
 </body>
 </html>

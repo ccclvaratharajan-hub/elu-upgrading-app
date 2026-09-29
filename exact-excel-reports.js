@@ -7,7 +7,7 @@
   const xml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[ch]));
   const col=n=>{let s="";while(n){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26)}return s};
   const c=(address,value,style=0,formula=null)=>{
-    if(formula)return `<c r="${address}" s="${style}"><f>${xml(formula)}</f><v>${Number(value)||0}</v></c>`;
+    // Export current app values directly; no workbook links are required.
     if(value===null||value===undefined||value==="")return `<c r="${address}" s="${style}"/>`;
     if(typeof value==="number")return `<c r="${address}" s="${style}"><v>${value}</v></c>`;
     return `<c r="${address}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`
@@ -39,6 +39,38 @@
   const sums=blocks=>({total:blocks.reduce((n,b)=>n+b.total,0),agreed:blocks.reduce((n,b)=>n+b.agreed.length,0),out:blocks.reduce((n,b)=>n+b.out.length,0),nr:blocks.reduce((n,b)=>n+b.nr.length,0)});
   const date=()=>new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date()).replaceAll("/",".");
   const sheetName=block=>`BLK ${block}`;
+  const preview=document.getElementById("siteSheetPreview");
+  let activeSheet="block";
+  const td=(value,cls="")=>`<td${cls?` class="${cls}"`:""}>${xml(value)}</td>`;
+  function previewBlock(blocks){
+    const total=sums(blocks);
+    const summary=`<div class="site-table-scroll"><table class="site-sheet-table"><thead><tr><th>Block</th><th>Street</th><th>Total units</th><th>Opt-In A + C</th><th>Opt-Out</th><th>NR</th></tr></thead><tbody>${blocks.map(b=>`<tr>${td(b.block)}${td(area(b.block))}${td(b.total)}${td(b.agreed.length,"site-agree")}${td(b.out.length,"site-out")}${td(b.nr.length,"site-nr")}</tr>`).join("")}<tr class="site-total">${td("TOTAL")}${td("")}${td(total.total)}${td(total.agreed)}${td(total.out)}${td(total.nr)}</tr></tbody></table></div>`;
+    const details=blocks.map(b=>{
+      const floors=[...new Set(b.units.map(u=>Number(u.floor)))].sort((a,z)=>z-a);
+      const numbers=[...new Set(b.units.map(u=>Number(u.unit)))].sort((a,z)=>a-z);
+      const lookup=new Map(b.units.map(u=>[`${u.floor}-${u.unit}`,u]));
+      return `<details class="site-block-details"><summary>Blk ${b.block} · ${b.total} units · A+C ${b.agreed.length} · D ${b.out.length} · NR ${b.nr.length}</summary><div class="site-table-scroll"><table class="site-sheet-table site-unit-grid"><thead><tr><th>Level</th>${numbers.map(n=>`<th>#${xml(n)}</th>`).join("")}</tr></thead><tbody>${floors.map(f=>`<tr><th>${xml(f)}</th>${numbers.map(n=>{const u=lookup.get(`${f}-${n}`),s=u&&b.started?response(u):"";return td(s,s==="A"?"site-agree":s==="D"?"site-out":s==="NR"?"site-nr":"")}).join("")}</tr>`).join("")}</tbody></table></div></details>`
+    }).join("");
+    return `<h3>Block Chart · Summary</h3>${summary}<h3>Block wise unit charts</h3>${details}`
+  }
+  function previewResponse(blocks,zone){
+    const totals=sums(blocks);
+    return `<h3>Zone ${zone} · Opt-In, Opt-Out &amp; NR Unit Details</h3><div class="site-table-scroll"><table class="site-sheet-table site-response-table"><thead><tr><th>SL No.</th><th>Block</th><th>Total units</th><th>Opt-In</th><th>Opt-Out</th><th>Opt-Out unit details</th><th>NR</th><th>NR unit details</th></tr></thead><tbody>${blocks.map((b,i)=>`<tr>${td(i+1)}${td(`Blk ${b.block}`)}${td(b.total)}${td(b.agreed.length,"site-agree")}${td(b.out.length,"site-out")}${td(b.out.map(label).join(", "))}${td(b.nr.length,"site-nr")}${td(b.nr.map(label).join(", "))}</tr>`).join("")}<tr class="site-total">${td("TOTAL")}${td("")}${td(totals.total)}${td(totals.agreed)}${td(totals.out)}${td("")}${td(totals.nr)}${td("")}</tr></tbody></table></div>`
+  }
+  function previewTracking(blocks,zone){
+    const units=blocks.flatMap(b=>b.nr.map(unit=>({block:b.block,unit})));
+    return `<h3>Zone ${zone} · NR Unit Tracking</h3><p>Tracking number cells stay blank for site entry.</p><div class="site-table-scroll"><table class="site-sheet-table"><thead><tr><th>SL No.</th><th>Address</th><th>SingPost tracking number</th></tr></thead><tbody>${units.map((item,i)=>`<tr>${td(i+1)}${td(`BLK ${item.block}, ${label(item.unit)} · ${area(item.block)} ${510000+Number(item.block)}`)}${td("")}</tr>`).join("")||`<tr><td colspan="3">No NR units in this zone.</td></tr>`}</tbody></table></div>`
+  }
+  function renderPreview(){
+    if(!preview)return;
+    const zone=Number(zoneSelect.value),blocks=data(zone);
+    preview.innerHTML=blocks.length?(activeSheet==="block"?previewBlock(blocks):activeSheet==="response"?previewResponse(blocks,zone):previewTracking(blocks,zone)):'<p class="site-empty">Select a zone to view its three report sheets.</p>';
+    document.querySelectorAll("[data-site-sheet]").forEach(button=>{const selected=button.dataset.siteSheet===activeSheet;button.classList.toggle("active",selected);button.setAttribute("aria-selected",String(selected))});
+  }
+  zoneSelect.value="3";
+  zoneSelect.addEventListener("change",renderPreview);
+  document.querySelectorAll("[data-site-sheet]").forEach(button=>button.addEventListener("click",()=>{activeSheet=button.dataset.siteSheet;renderPreview()}));
+  renderPreview();
 
   function blockWorkbook(zone,blocks){
     const first=blocks[0].block,last=blocks.at(-1).block,t=sums(blocks),summary=[];
@@ -130,6 +162,57 @@
     const names={block:"Block_Chart",response:"NR_OptOut_Details",tracking:"NR_Tracking"};
     downloadBlob(`ELU_Zone_${zone}_${names[kind]}_${isoTodaySG()}.xlsx`,blob)
   }
+  const pdfInk=[.08,.21,.30],pdfBlue=[.10,.39,.59],pdfPale=[.85,.93,.97],pdfGreen=[.84,.95,.88],pdfYellow=[1,.94,.77],pdfRed=[1,.86,.88];
+  function pdfHeader(title,subtitle){return pdfRect(0,0,842,78,pdfPale)+pdfText(28,19,18,title,true,pdfInk)+pdfText(28,49,9,subtitle,false,pdfInk)}
+  function pdfTableLine(y,items,widths,shade=false){let out=pdfRect(28,y,786,26,shade?pdfPale:[1,1,1],[.72,.82,.88]),x=34;items.forEach((item,i)=>{out+=pdfText(x,y+7,8,String(item),shade,pdfInk);x+=widths[i]});return out}
+  function pdfBlockPages(zone,blocks){
+    const totals=sums(blocks),pages=[];
+    let page=pdfHeader("BLOCK CHART - ELECTRICAL LOAD UPGRADING",`ZONE ${zone}  |  BLK ${blocks[0].block} TO ${blocks.at(-1).block}  |  ${date()}`);
+    page+=pdfTableLine(94,["BLOCK","STREET","TOTAL","AGREED","DISAGREED","NO REPLY"],[80,260,90,115,120,120],true);
+    blocks.forEach((b,i)=>{page+=pdfTableLine(120+i*27,[b.block,area(b.block),b.total,b.agreed.length,b.out.length,b.nr.length],[80,260,90,115,120,120],i%2===1)});
+    page+=pdfTableLine(120+blocks.length*27,["TOTAL","",totals.total,totals.agreed,totals.out,totals.nr],[80,260,90,115,120,120],true);
+    page+=pdfText(30,345,9,"A/C = agreed   |   D = disagreed   |   NR/P = no reply",false,pdfInk);pages.push(page);
+    blocks.forEach(b=>{
+      const floors=[...new Set(b.units.map(u=>Number(u.floor)))].sort((a,z)=>z-a),numbers=[...new Set(b.units.map(u=>Number(u.unit)))].sort((a,z)=>a-z);
+      const lookup=new Map(b.units.map(u=>[`${u.floor}-${u.unit}`,u]));
+      const perPage=19;
+      for(let start=0;start<floors.length||start===0;start+=perPage){let p=pdfHeader(`BLOCK ${b.block} - UNIT CHART`,`ZONE ${zone}  |  ${area(b.block)}  |  Total ${b.total}  Agreed ${b.agreed.length}  Disagreed ${b.out.length}  NR ${b.nr.length}`);
+        const xs=Math.min(66,740/Math.max(1,numbers.length)),x0=62;p+=pdfRect(28,94,786,24,pdfPale);p+=pdfText(33,101,8,"LEVEL",true,pdfInk);
+        numbers.forEach((n,j)=>p+=pdfText(x0+j*xs,101,8,`#${n}`,true,pdfInk));
+        floors.slice(start,start+perPage).forEach((f,i)=>{const y=119+i*22;p+=pdfRect(28,y,786,22,i%2?[.96,.98,.99]:[1,1,1],[.8,.87,.91]);p+=pdfText(34,y+6,8,f,true,pdfInk);
+          numbers.forEach((n,j)=>{const u=lookup.get(`${f}-${n}`),s=u&&b.started?response(u):"";if(s){p+=pdfRect(x0+j*xs-3,y+2,Math.max(18,xs-7),18,s==="A"?pdfGreen:s==="D"?pdfYellow:pdfRed);p+=pdfText(x0+j*xs,y+6,8,s,true,pdfInk)}})
+        });pages.push(p)}
+    });return pages
+  }
+  function pdfResponsePages(zone,blocks){
+    const pages=[],totals=sums(blocks);let summary=pdfHeader("OPT IN / OPT OUT / NR UNIT DETAILS",`ZONE ${zone}  |  BLK ${blocks[0].block} TO ${blocks.at(-1).block}  |  ${date()}`);
+    summary+=pdfTableLine(94,["BLOCK","TOTAL UNIT","OPT IN","OPT OUT","NO RESPONSE"],[150,150,150,150,150],true);
+    blocks.forEach((b,i)=>summary+=pdfTableLine(120+i*27,[b.block,b.total,b.agreed.length,b.out.length,b.nr.length],[150,150,150,150,150],i%2===1));
+    summary+=pdfTableLine(120+blocks.length*27,["TOTAL",totals.total,totals.agreed,totals.out,totals.nr],[150,150,150,150,150],true);pages.push(summary);
+    blocks.forEach(b=>{const out=b.out.map(label),nr=b.nr.map(label),lists=[["OPT OUT UNIT DETAILS",out],["NO RESPONSE UNIT DETAILS",nr]];
+      lists.forEach(([heading,items])=>{if(!items.length)return;const chunks=[];for(let i=0;i<items.length;i+=96)chunks.push(items.slice(i,i+96));
+        chunks.forEach((part,partIndex)=>{let p=pdfHeader(`BLK ${b.block} - ${heading}`,`ZONE ${zone}  |  ${area(b.block)}  |  ${partIndex+1}/${chunks.length}  |  ${date()}`);
+          p+=pdfText(30,92,10,`Total units: ${b.total}   Opt In: ${b.agreed.length}   Opt Out: ${b.out.length}   NR: ${b.nr.length}`,true,pdfInk);
+          if(!part.length)p+=pdfText(32,133,10,"No units",false,pdfInk);
+          part.forEach((unit,i)=>{const x=32+(i%4)*195,y=134+Math.floor(i/4)*18;p+=pdfRect(x-3,y-2,184,17,i%2?pdfPale:[1,1,1]);p+=pdfText(x,y,9,unit,false,pdfInk)});pages.push(p)})
+      })
+    });return pages
+  }
+  function pdfTrackingPages(zone,blocks){
+    const pages=[],groups=[{name:"SUMMARY",items:blocks.flatMap(b=>b.nr.map(unit=>({block:b.block,unit})))},...blocks.filter(b=>b.nr.length).map(b=>({name:`BLK ${b.block}`,items:b.nr.map(unit=>({block:b.block,unit}))}))];
+    groups.forEach(group=>{const chunks=[];for(let i=0;i<group.items.length;i+=16)chunks.push(group.items.slice(i,i+16));if(!chunks.length)chunks.push([]);
+      chunks.forEach((items,partIndex)=>{let p=pdfHeader(`NR UNIT - TRACKING REGISTER (${group.name})`,`ZONE ${zone}  |  BLK ${blocks[0].block} TO ${blocks.at(-1).block}  |  ${partIndex+1}/${chunks.length}`);
+        p+=pdfTableLine(94,["SL NO.","ADDRESS","SINGPOST TRACKING NUMBER"],[75,420,275],true);
+        items.forEach((item,i)=>{const y=120+i*27;p+=pdfRect(28,y,786,27,i%2?pdfPale:[1,1,1],[.72,.82,.88]);p+=pdfText(34,y+8,8,partIndex*16+i+1,false,pdfInk);p+=pdfText(109,y+8,8,`BLK ${item.block}, ${label(item.unit)}  ${area(item.block)}  ${510000+Number(item.block)}`,false,pdfInk)});
+        pages.push(p)})
+    });return pages
+  }
+  function exportPdf(kind){const zone=Number(zoneSelect.value),blocks=data(zone);if(!blocks.length){toast("Select a Zone for the PDF report");return}
+    const pages=kind==="block"?pdfBlockPages(zone,blocks):kind==="response"?pdfResponsePages(zone,blocks):pdfTrackingPages(zone,blocks);
+    const names={block:"Block_Chart",response:"NR_OptOut_Details",tracking:"NR_Tracking"};
+    downloadBlob(`ELU_Zone_${zone}_${names[kind]}_${isoTodaySG()}.pdf`,buildPdfBlob(pages));toast(`${kind} PDF downloaded`)
+  }
+  [["exactBlockPdfBtn","block"],["exactResponsePdfBtn","response"],["exactTrackingPdfBtn","tracking"]].forEach(([id,kind])=>document.getElementById(id).addEventListener("click",()=>{try{rebuildAllMasters();exportPdf(kind)}catch(error){console.error(error);toast("PDF report could not be created")}}));
   [["exactBlockExcelBtn","block"],["exactResponseExcelBtn","response"],["exactTrackingExcelBtn","tracking"]].forEach(([id,kind])=>{
     document.getElementById(id).addEventListener("click",async()=>{
       const button=document.getElementById(id);button.disabled=true;
