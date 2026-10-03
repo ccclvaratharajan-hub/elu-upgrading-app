@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.27">
+  <link rel="stylesheet" href="styles.css?v=8.29">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -528,15 +528,15 @@
         <article class="panel photo-block-report-panel">
           <div class="panel-head register-head">
             <div><span class="section-label">BLOCK-WISE OUTPUT</span><h3>Block-wise Photo Report</h3>
-              <p>Daily uploads stay unchanged. This report collects every stored photo for the selected block across the chosen date range.</p>
+              <p>Select one block or All blocks in the zone. Photos are listed continuously across the chosen date range.</p>
             </div>
             <div class="register-tools block-photo-tools">
               <label class="mini-filter">Zone<select id="photoBlockReportZone"></select></label>
               <label class="mini-filter">Block<select id="photoBlockReportBlock"></select></label>
               <label class="mini-filter">From<input type="date" id="photoBlockReportFrom"></label>
               <label class="mini-filter">To<input type="date" id="photoBlockReportTo"></label>
-              <button class="primary-btn" id="photoBlockWordBtn" type="button">Block Word</button>
-              <button class="ghost-btn" id="photoBlockPdfBtn" type="button">Block Print / PDF</button>
+              <button class="primary-btn" id="photoBlockWordBtn" type="button">Download Word</button>
+              <button class="ghost-btn" id="photoBlockPdfBtn" type="button">Print / PDF</button>
             </div>
           </div>
           <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
@@ -708,8 +708,8 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.27"></script>
-<script src="exact-excel-reports.js?v=8.27"></script>
-<script src="zone6-import.js?v=8.27"></script>
+<script src="app.js?v=8.29"></script>
+<script src="exact-excel-reports.js?v=8.29"></script>
+<script src="zone6-import.js?v=8.29"></script>
 </body>
 </html>

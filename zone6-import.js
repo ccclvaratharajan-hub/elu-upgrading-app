@@ -60,13 +60,13 @@
         if(!PROJECT_LAYOUT[block]?.floors?.[floor]?.includes(unit))throw Error(`Unit in Excel is not in the app: Blk ${block} #${floor}-${unit}`);
         if(entries[key])throw Error(`Duplicate unit in Excel: Blk ${block} #${floor}-${unit}`);
         const mark=chartStatus.get(`${floor}-${unit}`)||'';
+        if(!mark)continue; // Unstarted units remain exactly as they were.
+        if(!['A','C','D','NR','CNR','VNR'].includes(mark))throw Error(`Unknown Block Chart status ${mark}: Blk ${block} #${floor}-${unit}`);
         const work=String(r.J||'').trim(),rawDate=String(r.I||'').trim(),date=legacyDateISO(rawDate);
-        const explicitCompleted=/^rewiring completed$/i.test(work),confirmed=/^appointment confirmed$/i.test(work);
-        const optOut=String(r.F||'').trim()==='1',optIn=String(r.E||'').trim()==='1';
-        const completed=explicitCompleted||Boolean(date&&date<isoTodaySG()&&optIn&&!optOut&&mark!=='D'&&mark!=='NR'&&mark!=='CNR');
-        let status=optOut||mark==='D'?'D':mark==='NR'||mark==='CNR'?'NR':completed?'A':(confirmed||optIn)&&date?'C':optIn?'A':'NR';
-        if((explicitCompleted||confirmed)&&!date)throw Error(`Missing date for ${work}: Blk ${block} #${floor}-${unit}`);
-        if(mark==='D'&&optIn||mark==='CNR'&&optIn)throw Error(`Conflicting status: Blk ${block} #${floor}-${unit}`);
+        // The chart owns the response. Rajan explicitly corrected 554 #10-117 to Opt-In.
+        const status=block===554&&floor===10&&unit===117?'A':mark==='CNR'||mark==='VNR'?'NR':mark;
+        const completed=status==='A'&&Boolean(date);
+        if(status==='C'&&!date)throw Error(`Confirmed appointment date missing: Blk ${block} #${floor}-${unit}`);
         const name=String(r.H||'').trim(),contact=String(r.G||'').trim();
         const normalizedSchedule=rawDate.replace(/(\d{1,2}(?::\d{2})?(?:am|pm))(\d{1,2}(?::\d{2})?(?:am|pm))/i,'$1–$2');
         const slot=legacySlot(normalizedSchedule);
@@ -74,11 +74,12 @@
         entries[key]={status,ownerName:name,contact,completed,appointmentDate:date,appointmentSlot:slot,legacySchedule:rawDate,legacyRemark:''};
         count++;
       }
-      if(count&&count!==Object.values(PROJECT_LAYOUT[block].floors).reduce((n,a)=>n+a.length,0))throw Error(`Blk ${block}: ${count} Excel units do not match the app's full unit list`);
+      const chartCount=[...chartStatus.values()].filter(Boolean).length;
+      if(count!==chartCount)throw Error(`Blk ${block}: ${count} listing units do not match ${chartCount} marked chart units`);
       stats[block]={total:count,A:0,C:0,D:0,NR:0,completed:0};
       for(const [key,e] of Object.entries(entries))if(key.startsWith(`${block}-`)){stats[block][e.status]++;if(e.completed)stats[block].completed++}
     }
-    if(Object.keys(entries).length!==315)throw Error(`Expected 315 worked-block units, found ${Object.keys(entries).length}`);
+    if(!Object.keys(entries).length)throw Error('No marked Zone 6 units found');
     return {entries,stats};
   }
   fileInput.addEventListener('change',async()=>{
@@ -87,7 +88,7 @@
     preview.textContent='Reading Zone 6 survey Excel…';
     try{
       candidate=await parse(file);
-      preview.textContent=`Ready: ${Object.keys(candidate.entries).length} units in Blk 551–554. DONE stays Opt-In; dates before today count as completed; CNR → NR. Blk 555–556 are blank in this Excel and will remain untouched. `+Object.entries(candidate.stats).map(([b,v])=>`Blk ${b}: ${v.total} units, ${v.A+v.C} Opt-In, ${v.D} Opt-Out, ${v.NR} NR, ${v.completed} completed`).join(' · ');
+      preview.textContent=`Ready: ${Object.keys(candidate.entries).length} marked units in Zone 6. Block Chart A/C/D/NR controls the status; CNR/VNR → NR. Blk 554 #10-117 uses your explicit Opt-In correction. Blank chart units remain untouched. `+Object.entries(candidate.stats).map(([b,v])=>`Blk ${b}: ${v.A} Opt-In, ${v.C} Confirmation, ${v.D} Opt-Out, ${v.NR} NR`).join(' · ');
       applyBtn.disabled=false;
     }catch(e){console.error(e);preview.textContent=`Cannot import: ${e.message}`}
   });
@@ -108,7 +109,7 @@
         const u=state.units[key],status=e.status;
         if(!u)throw Error(`App unit missing: ${key}`);
         if(status==='C'||e.completed){
-          state.appointments.push({id:now+offset++,unitKey:key,zone:6,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:e.ownerName,contact:e.contact,date:e.appointmentDate,slot:e.appointmentSlot||'',team:'',remarks:'',source:'Zone6 Survey Import',scheduleState:'Active',workStatus:e.completed?'Completed':'Pending'});
+          state.appointments.push({id:now+offset++,unitKey:key,zone:6,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:e.ownerName,contact:e.contact,date:e.appointmentDate,slot:e.appointmentSlot||'',team:'',remarks:'',source:'Zone6 Survey Import',scheduleState:'Active',workStatus:e.completed?'Completed':'Pending',requiresExplicitCompletion:status==='C'});
           delete state.statusOverrides[key];
         }else{
           state.statusOverrides[key]={status,source:'Zone6 Survey Import',reason:status==='A'?'Zone 6 survey Opt-In (status only)':'Zone 6 survey Excel',updatedAt:new Date().toISOString()};
@@ -116,7 +117,7 @@
         state.statusAudit.push({id:`zone6-import-${now}-${key}`,unitKey:key,from:u.response,to:status,action:'zone6-survey-import',source:'Zone6 Survey Import',at:new Date().toISOString()});
       }
       rebuildAllMasters();await securePersistNow();renderAll();
-      preview.textContent=`Zone 6 updated: ${keys.size} units from the selected Excel. Blk 555–556 and all other zones stayed unchanged.`;
+      preview.textContent=`Zone 6 updated: ${keys.size} marked units from the selected Excel. Blank chart units and all other zones stayed unchanged.`;
       undoBtn.hidden=false;toast('Zone 6 survey imported');
     }catch(e){console.error(e);preview.textContent=`Import failed: ${e.message}. Use Undo last import to restore.`;undoBtn.hidden=false}
   });

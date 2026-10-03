@@ -351,7 +351,6 @@ function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
 function getBlockUnits(block){return unitsArray().filter(u=>u.block===Number(block)).sort((a,b)=>b.floor-a.floor||a.unit-b.unit)}
 function appointmentHasEnded(a){
-  if(a?.source==="Zone6 Survey Import")return Boolean(a.date&&a.date<isoTodaySG());
   if(a?.requiresExplicitCompletion)return false;
   if(!a?.date||!a?.slot)return false;
   const now=sgClock();if(a.date<now.date)return true;if(a.date>now.date)return false;
@@ -2444,6 +2443,10 @@ async function importPhotoZip(){
 function photoReportOrder(photos){
   return [...(photos||[])].sort((a,b)=>Number(a.order||0)-Number(b.order||0)).slice(0,3)
 }
+function photoReportCells(photos){
+  const ordered=photoReportOrder(photos);
+  return ordered.length===2?[ordered[0],null,ordered[1]]:[ordered[0]||null,ordered[1]||null,ordered[2]||null]
+}
 async function savePhotoManualOrder(date,unitKey,orderedIds){
   const all=await photoDbAll("photos"),rows=all.filter(p=>p.date===date&&p.unitKey===unitKey);
   const byId=new Map(rows.map(p=>[p.id,p]));
@@ -2466,9 +2469,9 @@ async function renderPhotoCenter(){
   if(!sched.length){board.innerHTML=`<div class="empty-state">No Photo Daily Register units or stored photos for this Zone / Date.</div>`}
   else board.innerHTML=sched.map(a=>{
     const ps=all.filter(p=>p.date===date&&p.unitKey===a.unitKey).sort((x,y)=>x.order-y.order);
-    const report=photoReportOrder(ps),role=new Map(report.map((p,i)=>[p.id,i]));
-    return `<section class="photo-unit-card ${ps.length>=3?"ready":""}" data-photo-date="${date}" data-photo-unit="${a.unitKey}">
-      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${a.photoOnly?`Stored photos · Daily Register row missing`:`${esc(a.team||"")} · ${esc(a.slot||"")}`} · Drag photos to set print order</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=3?" · Ready":""}</em></div>
+    const report=photoReportCells(ps),role=new Map(report.filter(Boolean).map((p,i)=>[p.id,report.indexOf(p)]));
+    return `<section class="photo-unit-card ${ps.length>=2?"ready":""}" data-photo-date="${date}" data-photo-unit="${a.unitKey}">
+      <div class="photo-unit-head"><div><strong>Blk ${a.block} ${a.unitDisplay||unitDisplay(a.floor,a.unit)}</strong><span>${a.photoOnly?`Stored photos · Daily Register row missing`:`${esc(a.team||"")} · ${esc(a.slot||"")}`} · Drag photos to set print order</span></div><em>${ps.length} photo${ps.length===1?"":"s"}${ps.length>=2?" · Ready":""}</em></div>
       <div class="photo-thumb-grid">${ps.map(p=>{
         const pos=role.has(p.id)?role.get(p.id):-1;
         const label=pos===0?"1 · Closed DB":pos===1?"2 · BEFORE":pos===2?"3 · AFTER":"Extra";
@@ -2477,8 +2480,8 @@ async function renderPhotoCenter(){
     </section>`
   }).join("");
   const cyclePhotos=all.filter(p=>p.cycleId===cycle.id&&p.zone===zone),units=new Set(cyclePhotos.map(p=>`${p.date}|${p.unitKey}`));
-  const ready=[...units].filter(k=>cyclePhotos.filter(p=>`${p.date}|${p.unitKey}`===k).length>=3).length;
-  document.getElementById("photoMonthlySummary").innerHTML=`<span>${cyclePhotos.length} photos stored</span><span>${units.size} unit-days</span><span>${ready} ready with 3+ photos</span>`;
+  const ready=[...units].filter(k=>cyclePhotos.filter(p=>`${p.date}|${p.unitKey}`===k).length>=2).length;
+  document.getElementById("photoMonthlySummary").innerHTML=`<span>${cyclePhotos.length} photos stored</span><span>${units.size} unit-days</span><span>${ready} ready with 2+ photos</span>`;
 }
 document.getElementById("photoImportBtn").addEventListener("click",()=>importPhotoZip().catch(e=>{console.error(e);toast("Photo import failed")}));
 document.getElementById("photoScheduleForm").addEventListener("submit",e=>{e.preventDefault();savePhotoScheduleEntry().catch(err=>{console.error(err);toast("Photo Daily Register save failed")})});
@@ -2568,7 +2571,7 @@ async function monthlyPhotoGroups(zone,cycle){
 }
 
 function photoBlockOptions(zone){
-  return (ZONE_BLOCKS[zone]||[]).filter(b=>Boolean(PROJECT_LAYOUT[String(b)]||PROJECT_LAYOUT[b]))
+  return '<option value="all">All blocks</option>'+(ZONE_BLOCKS[zone]||[]).filter(b=>Boolean(PROJECT_LAYOUT[String(b)]||PROJECT_LAYOUT[b]))
     .map(b=>`<option value="${b}">Blk ${b}</option>`).join("")
 }
 function syncPhotoBlockReportBlocks(){
@@ -2579,8 +2582,9 @@ function syncPhotoBlockReportBlocks(){
   if([...block.options].some(o=>o.value===previous))block.value=previous;
   renderBlockPhotoSummary().catch(console.error)
 }
-async function blockPhotoGroups(block,fromDate,toDate){
-  const all=(await photoDbAll("photos")).filter(p=>Number(p.block)===Number(block)&&p.date>=fromDate&&p.date<=toDate);
+async function blockPhotoGroups(block,fromDate,toDate,zone){
+  const allowed=new Set(ZONE_BLOCKS[zone]||[]);
+  const all=(await photoDbAll("photos")).filter(p=>(block==='all'?allowed.has(Number(p.block)):Number(p.block)===Number(block))&&p.date>=fromDate&&p.date<=toDate);
   const map=new Map();
   for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
   const groups=[];
@@ -2589,16 +2593,16 @@ async function blockPhotoGroups(block,fromDate,toDate){
     groups.push({date:ps[0].date,unitKey:ps[0].unitKey,block:Number(ps[0].block),unitDisplay:ps[0].unitDisplay,
       photos:photoReportOrder(ps),storedCount:ps.length})
   }
-  return groups.sort((a,b)=>a.date.localeCompare(b.date)||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
+  return groups.sort((a,b)=>block==='all'?a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true})||a.date.localeCompare(b.date):a.date.localeCompare(b.date)||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 async function renderBlockPhotoSummary(){
   const box=document.getElementById("photoBlockSummary");if(!box)return;
-  const block=Number(document.getElementById("photoBlockReportBlock").value||0);
+  const block=document.getElementById("photoBlockReportBlock").value,zone=Number(document.getElementById("photoBlockReportZone").value);
   const from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
   if(!block||!from||!to){box.innerHTML="";return}
-  const groups=await blockPhotoGroups(block,from,to),photos=groups.reduce((n,g)=>n+g.storedCount,0),ready=groups.filter(g=>g.photos.length>=3).length;
-  box.innerHTML=`<div><strong>Blk ${block}</strong><span>${groups.length} unit-day${groups.length===1?"":"s"}</span></div>
-  <div><strong>${photos}</strong><span>stored photos</span></div><div><strong>${ready}</strong><span>ready with 3+</span></div>
+  const groups=await blockPhotoGroups(block,from,to,zone),photos=groups.reduce((n,g)=>n+g.storedCount,0),ready=groups.filter(g=>g.photos.length>=2).length;
+  box.innerHTML=`<div><strong>${block==='all'?`Zone ${zone} · All blocks`:`Blk ${block}`}</strong><span>${groups.length} unit-day${groups.length===1?"":"s"}</span></div>
+  <div><strong>${photos}</strong><span>stored photos</span></div><div><strong>${ready}</strong><span>ready with 2+</span></div>
   <div><strong>${safeDate(from)} → ${safeDate(to)}</strong><span>report range</span></div>`
 }
 async function buildBlockPhotoDocx(groups,block,from,to){
@@ -2606,11 +2610,11 @@ async function buildBlockPhotoDocx(groups,block,from,to){
   for(let p=0;p<groups.length;p+=6){
     const rows=groups.slice(p,p+6),refs=[];
     for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){
-      const ph=rows[i].photos[j];if(!ph){refs[i][j]=null;continue}
+      const ph=photoReportCells(rows[i].photos)[j];if(!ph){refs[i][j]=null;continue}
       const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});
       refs[i][j]={photo:ph,rId,docId:docId++}
     }}
-    pages.push(photoP(`ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCK ${block} PASIR RIS STREET 51 · ${safeDate(from)} TO ${safeDate(to)}`,true,18)+photoPageTable(rows,refs));
+    pages.push(photoP(`ELECTRICAL LOAD UPGRADING WORKS (ELU) AT ${block} PASIR RIS STREET 51 · ${safeDate(from)} TO ${safeDate(to)}`,true,18)+photoPageTable(rows,refs));
     if(p+6<groups.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
   }
   const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
@@ -2623,20 +2627,22 @@ async function buildBlockPhotoDocx(groups,block,from,to){
   return zip.generateAsync({type:"blob",compression:"DEFLATE"})
 }
 async function generateBlockPhotoWord(){
-  const block=Number(document.getElementById("photoBlockReportBlock").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
+  const block=document.getElementById("photoBlockReportBlock").value,zone=Number(document.getElementById("photoBlockReportZone").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
   if(!block||!from||!to){toast("Select Block, From and To dates");return} if(from>to){toast("From date cannot be after To date");return}
-  const groups=await blockPhotoGroups(block,from,to);if(!groups.length){toast(`No stored photos for Blk ${block} in this date range`);return}
-  if(groups.some(g=>g.photos.length<3)&&!confirm("Some units have fewer than 3 photos. Generate Word with blank cells?"))return;
-  const blob=await buildBlockPhotoDocx(groups,block,from,to),url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download=`ELU_Photo_Report_Blk${block}_${from}_to_${to}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast(`Block ${block} Word report downloaded`)
+  const groups=await blockPhotoGroups(block,from,to,zone);if(!groups.length){toast("No stored photos in this date range");return}
+  if(groups.some(g=>g.photos.length<2)&&!confirm("Some units have only one photo. Generate Word with blank cells?"))return;
+  const label=block==='all'?`Zone ${zone} · All blocks`:`Block ${block}`;
+  const blob=await buildBlockPhotoDocx(groups,label,from,to),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`ELU_Photo_Report_${block==='all'?`Zone${zone}_All_Blocks`:`Blk${block}`}_${from}_to_${to}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast(`${label} Word report downloaded`)
 }
 async function generateBlockPhotoPdf(){
-  const block=Number(document.getElementById("photoBlockReportBlock").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
+  const block=document.getElementById("photoBlockReportBlock").value,zone=Number(document.getElementById("photoBlockReportZone").value),from=document.getElementById("photoBlockReportFrom").value,to=document.getElementById("photoBlockReportTo").value;
   if(!block||!from||!to){toast("Select Block, From and To dates");return} if(from>to){toast("From date cannot be after To date");return}
-  const groups=await blockPhotoGroups(block,from,to);if(!groups.length){toast(`No stored photos for Blk ${block} in this date range`);return}
+  const groups=await blockPhotoGroups(block,from,to,zone);if(!groups.length){toast("No stored photos in this date range");return}
   const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
-  const urls=[],cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${[0,1,2].map(i=>{if(!g.photos[i])return"<div></div>";const u=URL.createObjectURL(g.photos[i].blob);urls.push(u);return `<div><img src="${u}"></div>`}).join("")}</div></div>`).join("");
-  win.document.write(`<!doctype html><html><head><title>ELU Blk ${block} Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0}.sub{text-align:center;font-size:8px;margin-bottom:4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCK ${block} PASIR RIS STREET 51</div><div class="sub">${safeDate(from)} TO ${safeDate(to)}</div>${cards}<script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);win.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),60000)
+  const label=block==='all'?`ZONE ${zone} · ALL BLOCKS`:`BLOCK ${block}`;
+  const urls=[],cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${photoReportCells(g.photos).map(ph=>{if(!ph)return"<div></div>";const u=URL.createObjectURL(ph.blob);urls.push(u);return `<div><img src="${u}"></div>`}).join("")}</div></div>`).join("");
+  win.document.write(`<!doctype html><html><head><title>ELU ${label} Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0}.sub{text-align:center;font-size:8px;margin-bottom:4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT ${label} PASIR RIS STREET 51</div><div class="sub">${safeDate(from)} TO ${safeDate(to)}</div>${cards}<script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);win.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),60000)
 }
 
 async function markPhotoExport(zone,cycle,type){
@@ -2645,10 +2651,10 @@ async function markPhotoExport(zone,cycle,type){
 async function generateMonthlyPhotoWord(){
   const zone=Number(document.getElementById("photoZone").value),cycle=cycleForDate(document.getElementById("photoCycleDate").value||isoTodaySG()),groups=await monthlyPhotoGroups(zone,cycle);
   if(!groups.length){toast("No stored photos for this Zone / Cycle");return}
-  if(groups.some(g=>g.photos.length<3)&&!confirm("Some units have fewer than 3 photos. Generate Word with blank cells?"))return;
+  if(groups.some(g=>g.photos.length<2)&&!confirm("Some units have only one photo. Generate Word with blank cells?"))return;
   const zip=new JSZip(),rels=[],media=[];let rn=2,docId=1;const pages=[];
   for(let p=0;p<groups.length;p+=6){const rows=groups.slice(p,p+6),refs=[];
-    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){const ph=rows[i].photos[j];if(!ph){refs[i][j]=null;continue}const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});refs[i][j]={photo:ph,rId,docId:docId++}}}
+    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){const ph=photoReportCells(rows[i].photos)[j];if(!ph){refs[i][j]=null;continue}const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});refs[i][j]={photo:ph,rId,docId:docId++}}}
     pages.push(photoP("ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51",true,18)+photoPageTable(rows,refs));if(p+6<groups.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
   }
   const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
@@ -2665,7 +2671,7 @@ async function generateMonthlyPhotoPdf(){
   const zone=Number(document.getElementById("photoZone").value),cycle=cycleForDate(document.getElementById("photoCycleDate").value||isoTodaySG()),groups=await monthlyPhotoGroups(zone,cycle);
   if(!groups.length){toast("No stored photos for this Zone / Cycle");return}
   const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
-  const cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${[0,1,2].map(i=>g.photos[i]?`<div><img src="${URL.createObjectURL(g.photos[i].blob)}"></div>`:`<div></div>`).join("")}</div></div>`).join("");
+  const cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${photoReportCells(g.photos).map(ph=>ph?`<div><img src="${URL.createObjectURL(ph.blob)}"></div>`:`<div></div>`).join("")}</div></div>`).join("");
   win.document.write(`<!doctype html><html><head><title>ELU Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0 4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51 · Zone ${zone}</div>${cards}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close();
   await markPhotoExport(zone,cycle,"PDF");await renderPhotoCenter()
 }
