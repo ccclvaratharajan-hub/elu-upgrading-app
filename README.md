@@ -1,3 +1,13 @@
+# V8.31 — Complaint case history
+
+- Complaint Register remains zone/block filtered. Each complaint case belongs to its existing unit.
+- Open a unit to review all its cases and dated visit/action history in order.
+- Add each attendance, rectification, closure or reopening as a new visit. Earlier entries stay visible.
+- Record received source, issue type, attended by, appointment date, visit date/time, action and visit photos.
+- Complaint photos use a separate IndexedDB store and are included in Full Backup ZIP v2. Restore accepts earlier v1 backups as well.
+- Survey Register displays the latest appointment date, slot and state without changing appointment records.
+- No project seed records, zone mappings, meeting reports or photo-report flow were changed.
+
 # ELU Upgrading — Premium V7.52 Secure · Compact Zone Daily Photo Workflow
 
 ## Main V7 addition: Appointment Planner

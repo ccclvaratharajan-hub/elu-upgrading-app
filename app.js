@@ -1007,7 +1007,7 @@ function renderSurveyTable(){
   const upcoming=all.filter(s=>(s.visitDate||s.followUpDate||"")>=today).sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.block)-Number(b.block));
   const past=all.filter(s=>(s.visitDate||s.followUpDate||"")<today).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
   const r=[...upcoming,...past];
-  document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">No survey visits yet.</div>`
+  document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">No survey visits yet.</div>`
 }
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
@@ -1266,25 +1266,65 @@ function renderUnitTable(){
   document.getElementById("unitTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(u=>u.zone===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group unit-zone-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`:table(r)
 }
 
-function resetComplaintForm(){document.getElementById("complaintEditId").value="";document.getElementById("complaintSaveBtn").textContent="Save Complaint";document.getElementById("complaintCancelEdit").classList.add("hidden");document.getElementById("complaintText").value="";document.getElementById("complaintRemarks").value="";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("complaintStatus").value="Open";autofillPair("complaint")}
+function complaintEvents(c){return Array.isArray(c.visits)&&c.visits.length?c.visits:[{id:`legacy-${c.id}`,date:c.date||"",time:"",outcome:c.status||"Open",action:c.remarks||"Complaint recorded",attendedBy:"",appointmentDate:"",legacy:true}]}
+function complaintLatest(c){return [...complaintEvents(c)].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.time||"").localeCompare(a.time||"")||String(b.id).localeCompare(String(a.id)))[0]}
+function complaintState(c){return complaintLatest(c)?.outcome||c.status||"Open"}
+function resetComplaintForm(){document.getElementById("complaintEditId").value="";document.getElementById("complaintSaveBtn").textContent="Save Complaint";document.getElementById("complaintCancelEdit").classList.add("hidden");document.getElementById("complaintText").value="";document.getElementById("complaintRemarks").value="";document.getElementById("complaintDate").value=isoTodaySG();document.getElementById("complaintStatus").value="Open";document.getElementById("complaintSource").value="Resident / Owner";document.getElementById("complaintType").value="Power trip";autofillPair("complaint")}
 document.getElementById("complaintCancelEdit").addEventListener("click",resetComplaintForm);
 document.getElementById("complaintForm").addEventListener("submit",e=>{
   e.preventDefault();const key=document.getElementById("complaintUnit").value,u=getUnit(key);if(!u)return;const id=Number(document.getElementById("complaintEditId").value)||Date.now();
-  const entry={id,unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date:document.getElementById("complaintDate").value,status:document.getElementById("complaintStatus").value,complaint:document.getElementById("complaintText").value.trim(),remarks:document.getElementById("complaintRemarks").value.trim()};
-  const idx=state.complaints.findIndex(c=>c.id===id);if(idx>=0)state.complaints[idx]=entry;else state.complaints.push(entry);resetComplaintForm();save(idx>=0?"Complaint updated":"Complaint saved separately");
+  const idx=state.complaints.findIndex(c=>c.id===id),old=idx>=0?state.complaints[idx]:null;
+  const date=document.getElementById("complaintDate").value,status=document.getElementById("complaintStatus").value,remarks=document.getElementById("complaintRemarks").value.trim();
+  const visits=old?complaintEvents(old).map(v=>({...v})):[];
+  if(!old)visits.push({id:`opened-${id}`,date,time:"",outcome:status,action:remarks||"Complaint received",attendedBy:"",appointmentDate:""});
+  else if(visits.length===1){visits[0].date=date;visits[0].outcome=status;visits[0].action=remarks||visits[0].action}
+  const entry={...old,id,unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:u.ownerName,contact:u.contact,date,status:visits.length>1?complaintState({...old,visits}):status,complaint:document.getElementById("complaintText").value.trim(),remarks,source:document.getElementById("complaintSource").value,type:document.getElementById("complaintType").value,visits};
+  if(idx>=0)state.complaints[idx]=entry;else state.complaints.push(entry);resetComplaintForm();save(idx>=0?"Complaint updated":"Complaint case opened");if(activeComplaintCaseId===id)renderComplaintHistory();
 });
-function editComplaint(id){const c=state.complaints.find(x=>x.id===id);if(!c)return;setView("complaints");document.getElementById("complaintZone").value=String(c.zone||zoneOfBlock(c.block));syncComplaintBlocks();document.getElementById("complaintBlock").value=String(c.block);syncPairUnits("complaint");document.getElementById("complaintUnit").value=c.unitKey;autofillPair("complaint");document.getElementById("complaintDate").value=c.date;document.getElementById("complaintStatus").value=c.status;document.getElementById("complaintText").value=c.complaint;document.getElementById("complaintRemarks").value=c.remarks||"";document.getElementById("complaintEditId").value=String(c.id);document.getElementById("complaintSaveBtn").textContent="Update Complaint";document.getElementById("complaintCancelEdit").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
-function deleteComplaint(id){if(!confirm("Delete this complaint entry?"))return;state.complaints=state.complaints.filter(x=>x.id!==id);save("Complaint deleted")}
+function editComplaint(id){const c=state.complaints.find(x=>x.id===id);if(!c)return;setView("complaints");document.getElementById("complaintZone").value=String(c.zone||zoneOfBlock(c.block));syncComplaintBlocks();document.getElementById("complaintBlock").value=String(c.block);syncPairUnits("complaint");document.getElementById("complaintUnit").value=c.unitKey;autofillPair("complaint");document.getElementById("complaintDate").value=c.date;document.getElementById("complaintStatus").value=complaintState(c);document.getElementById("complaintSource").value=c.source||"Resident / Owner";document.getElementById("complaintType").value=c.type||"Other";document.getElementById("complaintText").value=c.complaint;document.getElementById("complaintRemarks").value=c.remarks||"";document.getElementById("complaintEditId").value=String(c.id);document.getElementById("complaintSaveBtn").textContent="Update Complaint";document.getElementById("complaintCancelEdit").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
+async function deleteComplaint(id){if(!confirm("Delete this complaint case and its visit photos?"))return;try{await photoDbDeleteWhere("complaintPhotos",p=>p.caseId===id);state.complaints=state.complaints.filter(x=>x.id!==id);if(activeComplaintCaseId===id)closeComplaintHistory();save("Complaint deleted")}catch(error){console.error(error);toast("Could not delete complaint photos")}}
+let activeComplaintCaseId=null,complaintPhotoUrls=[];
+function closeComplaintHistory(){activeComplaintCaseId=null;complaintPhotoUrls.forEach(URL.revokeObjectURL);complaintPhotoUrls=[];document.getElementById("complaintHistoryPanel").classList.add("hidden")}
+document.getElementById("complaintHistoryClose").addEventListener("click",closeComplaintHistory);
+function openComplaintHistory(id){activeComplaintCaseId=id;document.getElementById("complaintHistoryPanel").classList.remove("hidden");document.getElementById("complaintVisitCaseId").value=String(id);document.getElementById("complaintVisitForm").reset();document.getElementById("complaintVisitDate").value=isoTodaySG();renderComplaintHistory();document.getElementById("complaintHistoryPanel").scrollIntoView({behavior:"smooth",block:"start"})}
+async function renderComplaintHistory(){
+  const id=activeComplaintCaseId,c=state.complaints.find(x=>x.id===id);if(!c)return;
+  const unitCases=state.complaints.filter(x=>x.unitKey===c.unitKey).sort((a,b)=>(a.date||"").localeCompare(b.date||"")||a.id-b.id);
+  document.getElementById("complaintHistoryTitle").textContent=`Blk ${c.block} ${c.unitDisplay||unitDisplay(c.floor,c.unit)}`;
+  document.getElementById("complaintHistorySummary").textContent=`${unitCases.length} case(s) at this unit · ${unitCases.reduce((n,x)=>n+complaintEvents(x).filter(v=>!String(v.id).startsWith("opened-")).length,0)} follow-up / visit entries · Selected case: ${complaintState(c)}`;
+  complaintPhotoUrls.forEach(URL.revokeObjectURL);complaintPhotoUrls=[];
+  try{
+    const photos=(await photoDbAll("complaintPhotos")).filter(p=>p.unitKey===c.unitKey);
+    if(activeComplaintCaseId!==id)return;
+    const byVisit=(caseId,v)=>photos.filter(p=>p.caseId===caseId&&p.visitId===v.id).map(p=>{const url=URL.createObjectURL(p.blob);complaintPhotoUrls.push(url);return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Visit photo" loading="lazy"></a>`}).join("");
+    document.getElementById("complaintCaseTimeline").innerHTML=unitCases.map(k=>{
+      const visits=complaintEvents(k).sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||"")||String(a.id).localeCompare(String(b.id)));
+      return `<section class="complaint-unit-case"><div class="complaint-case-head"><strong>${esc(k.complaint||"Complaint")}</strong><span class="pill ${complaintState(k)==="Closed"?"completed":"d"}">${esc(complaintState(k))}</span><small>${esc(k.type||"Other")} · ${esc(k.source||"Resident / Owner")} · Opened ${esc(safeDate(k.date))}</small><button type="button" class="table-action" data-case-followup="${k.id}">${k.id===id?"Adding visit below":"Add follow-up to this case"}</button></div><ol class="complaint-timeline">${visits.map((v,i)=>`<li><div class="complaint-timeline-date"><strong>${esc(safeDate(v.date)||"Date unknown")}</strong>${v.time?`<span>${esc(v.time)}</span>`:""}<span class="pill ${v.outcome==="Closed"?"completed":"pending"}">${esc(v.outcome||"Open")}</span></div><div class="complaint-timeline-body"><p>${esc(v.action||"—")}</p><small>${v.attendedBy?`Attended by ${esc(v.attendedBy)} · `:""}${v.appointmentDate?`Appointment ${esc(safeDate(v.appointmentDate))} · `:""}${v.outcome==="Closed"?"Rectified / closed":i>0&&visits[i-1].outcome==="Closed"?"Reopened / follow-up":"Follow-up"}</small><div class="complaint-visit-images">${byVisit(k.id,v)}</div></div></li>`).join("")}</ol></section>`
+    }).join("")+`<p class="complaint-history-note">A later visit on the same case can reopen it; the earlier closure stays in the history.</p>`;
+  }catch(error){console.error(error);document.getElementById("complaintCaseTimeline").textContent="Could not load visit photos."}
+}
+document.getElementById("complaintCaseTimeline").addEventListener("click",e=>{const b=e.target.closest("[data-case-followup]");if(!b)return;activeComplaintCaseId=Number(b.dataset.caseFollowup);document.getElementById("complaintVisitCaseId").value=b.dataset.caseFollowup;renderComplaintHistory();document.getElementById("complaintVisitForm").scrollIntoView({behavior:"smooth",block:"start"})});
+document.getElementById("complaintVisitForm").addEventListener("submit",async e=>{
+  e.preventDefault();const form=e.currentTarget,button=document.getElementById("complaintVisitSave"),id=Number(document.getElementById("complaintVisitCaseId").value),c=state.complaints.find(x=>x.id===id);if(!c)return;
+  const date=document.getElementById("complaintVisitDate").value,action=document.getElementById("complaintVisitAction").value.trim();if(!date||!action)return;
+  const visit={id:`visit-${Date.now()}-${Math.random().toString(36).slice(2)}`,date,time:document.getElementById("complaintVisitTime").value,outcome:document.getElementById("complaintVisitOutcome").value,action,attendedBy:document.getElementById("complaintVisitBy").value.trim(),appointmentDate:document.getElementById("complaintVisitAppointment").value};
+  const files=[...document.getElementById("complaintVisitPhotos").files];button.disabled=true;
+  const stored=[];
+  try{
+    for(const file of files){if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Select JPEG, PNG or WebP images only.");const p={id:`complaint-${Date.now()}-${Math.random().toString(36).slice(2)}`,caseId:id,visitId:visit.id,unitKey:c.unitKey,date,name:file.name,blob:file};await photoDbPut("complaintPhotos",p);stored.push(p.id)}
+    c.visits=complaintEvents(c).map(v=>({...v}));c.visits.push(visit);c.status=complaintState(c);save("Visit added to complaint history");form.reset();document.getElementById("complaintVisitCaseId").value=String(id);document.getElementById("complaintVisitDate").value=isoTodaySG();await renderComplaintHistory();
+  }catch(error){for(const photoId of stored)await photoDbDelete("complaintPhotos",photoId);console.error(error);toast("Visit could not be saved; previous records unchanged")}finally{button.disabled=false}
+});
 function renderComplaintTable(){
-  const zf=document.getElementById("complaintZoneFilter").value,bf=document.getElementById("complaintBlockFilter").value;let r=[...state.complaints].sort((a,b)=>b.id-a.id);if(zf!=="all")r=r.filter(c=>Number(c.zone||zoneOfBlock(c.block))===Number(zf));if(bf!=="all")r=r.filter(c=>Number(c.block)===Number(bf));
-  const row=c=>`<tr><td>${safeDate(c.date)}</td><td>Blk ${c.block}<br><strong>${esc(c.unitDisplay)}</strong></td><td>${esc(c.ownerName||"—")}</td><td>${esc(c.contact||"—")}</td><td>${esc(c.complaint)}</td><td><span class="pill ${c.status==="Closed"?"completed":c.status==="Open"?"d":"pending"}">${esc(c.status)}</span></td><td>${esc(c.remarks||"—")}</td><td><div class="action-set"><button class="table-action" data-comp-edit="${c.id}">Edit</button><button class="table-action delete" data-comp-delete="${c.id}">Delete</button></div></td></tr>`;
-  const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Date</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Complaint</th><th>Status</th><th>Remarks</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
+  const zf=document.getElementById("complaintZoneFilter").value,bf=document.getElementById("complaintBlockFilter").value;let r=[...state.complaints].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.id-a.id);if(zf!=="all")r=r.filter(c=>Number(c.zone||zoneOfBlock(c.block))===Number(zf));if(bf!=="all")r=r.filter(c=>Number(c.block)===Number(bf));
+  const row=c=>`<tr><td>${esc(safeDate(c.date))}</td><td><button type="button" class="complaint-unit-link" data-comp-open="${c.id}">Blk ${esc(c.block)} <strong>${esc(c.unitDisplay||unitDisplay(c.floor,c.unit))}</strong></button></td><td>${esc(c.complaint)}</td><td>${esc(c.source||"Resident / Owner")}</td><td>${esc(complaintEvents(c).length)} entries</td><td><span class="pill ${complaintState(c)==="Closed"?"completed":complaintState(c)==="Open"?"d":"pending"}">${esc(complaintState(c))}</span></td><td>${esc(safeDate(complaintLatest(c).date))}</td><td><div class="action-set"><button class="table-action" data-comp-open="${c.id}">History / visit</button><button class="table-action" data-comp-edit="${c.id}">Edit</button><button class="table-action delete" data-comp-delete="${c.id}">Delete</button></div></td></tr>`;
+  const table=x=>`<div class="table-shell zone-table-shell"><table><thead><tr><th>Opened</th><th>Block / Unit</th><th>Complaint</th><th>Source</th><th>History</th><th>Status</th><th>Last visit</th><th>Action</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
   if(!r.length){document.getElementById("complaintTable").innerHTML=`<div class="empty-state">No complaints yet.</div>`;return}
   document.getElementById("complaintTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,r.filter(c=>Number(c.zone||zoneOfBlock(c.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"complaints")}${table(x)}</section>`).join("")}</div>`:table(r)
 }
 document.getElementById("complaintZoneFilter").addEventListener("change",()=>{const z=document.getElementById("complaintZoneFilter").value;document.getElementById("complaintBlockFilter").innerHTML=filterBlockOptions(z,true);renderComplaintTable()});
 document.getElementById("complaintBlockFilter").addEventListener("change",renderComplaintTable);
-document.getElementById("complaintTable").addEventListener("click",e=>{let b=e.target.closest("[data-comp-edit]");if(b)return editComplaint(Number(b.dataset.compEdit));b=e.target.closest("[data-comp-delete]");if(b)deleteComplaint(Number(b.dataset.compDelete))});
+document.getElementById("complaintTable").addEventListener("click",e=>{let b=e.target.closest("[data-comp-open]");if(b)return openComplaintHistory(Number(b.dataset.compOpen));b=e.target.closest("[data-comp-edit]");if(b)return editComplaint(Number(b.dataset.compEdit));b=e.target.closest("[data-comp-delete]");if(b)deleteComplaint(Number(b.dataset.compDelete))});
 
 function addDaysISO(date,days){const d=new Date(date+"T12:00:00+08:00");d.setDate(d.getDate()+days);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function plannerDateLabel(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
@@ -2127,7 +2167,7 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=2;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=3;
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
@@ -2135,7 +2175,8 @@ function photoDb(){
       const db=req.result;
       if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"});
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
-      if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"})
+      if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"})
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -2159,24 +2200,30 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
-const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=1;
+const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=2;
 let selectedFullBackup=null,safetyCopyDownloaded=false,backupBusy=false;
 async function fullBackupBlob(){
   await securePersistChain;
-  const [photos,schedule,meta]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta")]);
-  const zip=new JSZip(),entries=[];
+  const [photos,schedule,meta,complaintPhotos]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos")]);
+  const zip=new JSZip(),entries=[],complaintEntries=[];
   for(const [index,photo] of photos.entries()){
     const {blob,...details}=photo;
     if(!(blob instanceof Blob))throw new Error("A stored photo is missing its image data. Backup stopped.");
     const path=`images/${String(index).padStart(6,"0")}.bin`;
     zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});entries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
   }
+  for(const [index,photo] of complaintPhotos.entries()){
+    const {blob,...details}=photo;if(!(blob instanceof Blob))throw new Error("A complaint photo is missing its image data. Backup stopped.");
+    const path=`complaint-images/${String(index).padStart(6,"0")}.bin`;
+    zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});complaintEntries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
+  }
   const snapshot=secureSnapshot();
-  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}}));
+  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length}}));
   zip.file("records.json",JSON.stringify(snapshot));
   zip.file("photos.json",JSON.stringify(entries));
   zip.file("photo-schedule.json",JSON.stringify(schedule));
   zip.file("photo-meta.json",JSON.stringify(meta));
+  zip.file("complaint-photos.json",JSON.stringify(complaintEntries));
   return zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:4}})
 }
 async function downloadFullBackup(){
@@ -2196,17 +2243,19 @@ function closeBackupDialog(){document.getElementById("backupBackdrop").hidden=tr
 document.getElementById("restoreBackupBtn").addEventListener("click",()=>{document.getElementById("backupBackdrop").hidden=false;document.getElementById("backupPreview").textContent="No backup selected."});
 document.getElementById("backupClose").addEventListener("click",closeBackupDialog);
 document.getElementById("backupSafetyBtn").addEventListener("click",e=>runFullBackup(e.currentTarget,true));
-function validateBackupRecords(records,manifest,photos,schedule,meta){
+function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[]){
   if(!records||typeof records!=="object"||Array.isArray(records))throw new Error("Invalid records in backup.");
   for(const k of ["surveys","appointments","complaints","statusAudit","zone1CorrectionsApplied"])if(!Array.isArray(records[k]))throw new Error(`Missing ${k} records.`);
   if(!records.statusOverrides||typeof records.statusOverrides!=="object"||Array.isArray(records.statusOverrides))throw new Error("Invalid status decisions.");
-  if(![photos,schedule,meta].every(Array.isArray))throw new Error("Invalid photo register.");
+  if(![photos,schedule,meta,complaintPhotos].every(Array.isArray))throw new Error("Invalid photo register.");
   const counts=manifest.counts||{};
   for(const [key,actual] of Object.entries({surveys:records.surveys.length,appointments:records.appointments.length,complaints:records.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}))if(counts[key]!==actual)throw new Error(`Backup count mismatch: ${key}.`);
-  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"]]){
+  if(manifest.version===2&&counts.complaintPhotos!==complaintPhotos.length)throw new Error("Backup count mismatch: complaint photos.");
+  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"]]){
     const ids=new Set();for(const row of items){if(!row||typeof row!=="object"||row[key]==null||ids.has(row[key]))throw new Error(`Invalid or duplicate photo ${key}.`);ids.add(row[key])}
   }
   if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
+  if(complaintPhotos.some(p=>typeof p.blobPath!=="string"||!/^complaint-images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!records.complaints.some(c=>c.id===p.caseId)))throw new Error("Invalid complaint photo in backup.");
 }
 async function readFullBackup(file,withImages=false){
   if(typeof JSZip==="function"&&file.size>2*1024*1024*1024)throw new Error("Backup is too large for this browser.");
@@ -2214,13 +2263,14 @@ async function readFullBackup(file,withImages=false){
   const required=["manifest.json","records.json","photos.json","photo-schedule.json","photo-meta.json"];
   if(required.some(name=>!zip.file(name)))throw new Error("This is not an ELU full backup ZIP.");
   const [manifest,records,photos,schedule,meta]=await Promise.all(required.map(async name=>JSON.parse(await zip.file(name).async("string"))));
-  if(manifest.format!==FULL_BACKUP_FORMAT||manifest.version!==FULL_BACKUP_VERSION)throw new Error("Unsupported backup version.");
-  validateBackupRecords(records,manifest,photos,schedule,meta);
-  if(photos.some(p=>!zip.file(p.blobPath)))throw new Error("A photo image is missing from the backup.");
+  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2].includes(manifest.version))throw new Error("Unsupported backup version.");
+  const complaintPhotos=manifest.version===2?JSON.parse(await zip.file("complaint-photos.json")?.async("string")||"null"):[];
+  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos);
+  if([...photos,...complaintPhotos].some(p=>!zip.file(p.blobPath)))throw new Error("A photo image is missing from the backup.");
   if(withImages){
-    for(const row of photos){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Photo image size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
+    for(const row of [...photos,...complaintPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Photo image size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
   }
-  return {manifest,records,photos,schedule,meta}
+  return {manifest,records,photos,schedule,meta,complaintPhotos}
 }
 document.getElementById("backupFile").addEventListener("change",async e=>{
   selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
@@ -2232,8 +2282,8 @@ document.getElementById("backupFile").addEventListener("change",async e=>{
 async function replacePhotoStores(data){
   const db=await photoDb();
   return new Promise((resolve,reject)=>{
-    const tx=db.transaction(["photos","schedule","meta"],"readwrite");
-    for(const name of ["photos","schedule","meta"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
+    const tx=db.transaction(["photos","schedule","meta","complaintPhotos"],"readwrite");
+    for(const name of ["photos","schedule","meta","complaintPhotos"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
     tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>{db.close();reject(tx.error||new Error("Photo restore transaction failed."))};tx.onerror=()=>{}
   })
 }
@@ -2248,7 +2298,7 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
     for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
     await securePersistChain;
     const encrypted=await encryptPayload(imported.records,secureSessionKey);
-    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta")};
+    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos")};
     button.textContent="Restoring…";
     await replacePhotoStores(imported);
     try{localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(encrypted))}
@@ -2548,10 +2598,10 @@ function photoP(text,bold=false,size=16,align="center"){return `<w:p><w:pPr><w:j
 function photoImageP(p,rId,docId,maxW,maxH){
   const d=photoFitEmu(p,maxW,maxH);return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${d.cx}" cy="${d.cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${docId}" name="Photo ${docId}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${docId}" name="image${docId}.jpg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${d.cx}" cy="${d.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`
 }
-function photoTc(width,content){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`}
+function photoTc(width,content,heading=false){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="center"/>${heading?'<w:shd w:fill="DCECF4"/>':''}<w:tcMar><w:top w:w="45" w:type="dxa"/><w:left w:w="45" w:type="dxa"/><w:bottom w:w="45" w:type="dxa"/><w:right w:w="45" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`}
 function photoPageTable(rows,refs){
-  const w=[1032,2580,3909,3909];let x=`<w:tbl><w:tblPr><w:tblW w:w="11430" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:color="000000"/></w:tblBorders></w:tblPr><w:tblGrid>${w.map(n=>`<w:gridCol w:w="${n}"/>`).join("")}</w:tblGrid>`;
-  for(let i=0;i<6;i++){const r=rows[i];if(r){x+=`<w:tr><w:trPr><w:trHeight w:val="306" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP("DATE",true,15))}${photoTc(w[1],photoP(`Blk${r.block}${r.unitDisplay}`,true,15))}${photoTc(w[2],photoP("BEFORE",true,15))}${photoTc(w[3],photoP("AFTER",true,15))}</w:tr>`;
+  const w=[1032,2580,3909,3909];let x=`<w:tbl><w:tblPr><w:tblW w:w="11430" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="5" w:color="94B7CB"/><w:left w:val="single" w:sz="5" w:color="94B7CB"/><w:bottom w:val="single" w:sz="5" w:color="94B7CB"/><w:right w:val="single" w:sz="5" w:color="94B7CB"/><w:insideH w:val="single" w:sz="4" w:color="BAD2DF"/><w:insideV w:val="single" w:sz="4" w:color="BAD2DF"/></w:tblBorders></w:tblPr><w:tblGrid>${w.map(n=>`<w:gridCol w:w="${n}"/>`).join("")}</w:tblGrid>`;
+  for(let i=0;i<6;i++){const r=rows[i];if(r){x+=`<w:tr><w:trPr><w:trHeight w:val="330" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP("DATE",true,16),true)}${photoTc(w[1],photoP(`Blk ${r.block} ${r.unitDisplay}`,true,16),true)}${photoTc(w[2],photoP("BEFORE",true,16),true)}${photoTc(w[3],photoP("AFTER",true,16),true)}</w:tr>`;
     const rr=refs[i]||[],p1=rr[0]?photoImageP(rr[0].photo,rr[0].rId,rr[0].docId,1.70,1.38):photoP(""),p2=rr[1]?photoImageP(rr[1].photo,rr[1].rId,rr[1].docId,2.62,1.38):photoP(""),p3=rr[2]?photoImageP(rr[2].photo,rr[2].rId,rr[2].docId,2.62,1.38):photoP("");
     x+=`<w:tr><w:trPr><w:trHeight w:val="2110" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP(safeDate(r.date),true,14))}${photoTc(w[1],p1)}${photoTc(w[2],p2)}${photoTc(w[3],p3)}</w:tr>`}
   }

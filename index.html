@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.29">
+  <link rel="stylesheet" href="styles.css?v=8.31">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -323,7 +323,7 @@
       <section class="view" id="complaints">
         <div class="form-layout">
           <article class="panel form-card">
-            <div class="panel-head"><div><span class="section-label">SEPARATE RECORD</span><h3>New Complaint</h3><p>Select the unit; owner and contact are looked up. No complaint is created automatically.</p></div></div>
+            <div class="panel-head"><div><span class="section-label">SEPARATE RECORD</span><h3>New Complaint</h3><p>Open one case for the issue. Add repeat visits to its history below.</p></div></div>
             <form id="complaintForm" class="premium-form">
               <input type="hidden" id="complaintEditId">
               <div class="form-row three">
@@ -339,6 +339,10 @@
                 <label>Date<input type="date" id="complaintDate" required></label>
                 <label>Status<select id="complaintStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select></label>
               </div>
+              <div class="form-row two">
+                <label>Received via<select id="complaintSource"><option>Resident / Owner</option><option>Town Council</option><option>Other</option></select></label>
+                <label>Type<select id="complaintType"><option>Power trip</option><option>Light / switch</option><option>Damage</option><option>Wall / paint</option><option>Other</option></select></label>
+              </div>
               <label>Complaint<textarea id="complaintText" rows="4" required></textarea></label>
               <label>Remarks<textarea id="complaintRemarks" rows="3"></textarea></label>
               <div class="form-actions">
@@ -349,8 +353,28 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3><p>Select a unit to see its cases and visit history.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label></div></div>
             <div id="complaintTable" class="table-shell"></div>
+          </article>
+          <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
+            <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div>
+            <div id="complaintCaseTimeline" class="complaint-case-timeline"></div>
+            <form id="complaintVisitForm" class="premium-form complaint-visit-form">
+              <input type="hidden" id="complaintVisitCaseId">
+              <h3>Add visit / follow-up</h3>
+              <div class="form-row three">
+                <label>Visit date<input type="date" id="complaintVisitDate" required></label>
+                <label>Visit time<input type="time" id="complaintVisitTime"></label>
+                <label>Outcome<select id="complaintVisitOutcome"><option value="Open">Open / follow-up</option><option value="In Progress">In Progress</option><option value="Closed">Closed / rectified</option></select></label>
+              </div>
+              <div class="form-row two">
+                <label>Attended by<input id="complaintVisitBy" placeholder="Team / person"></label>
+                <label>Appointment date<input type="date" id="complaintVisitAppointment"></label>
+              </div>
+              <label>Action / rectification<textarea id="complaintVisitAction" rows="3" required></textarea></label>
+              <label>Visit photos<input type="file" id="complaintVisitPhotos" accept="image/jpeg,image/png,image/webp" multiple><small>Photos are saved with this visit and included in Full Backup.</small></label>
+              <div class="form-actions"><button class="primary-btn" id="complaintVisitSave" type="submit">Save visit</button></div>
+            </form>
           </article>
         </div>
       </section>
@@ -708,7 +732,7 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.29"></script>
+<script src="app.js?v=8.31"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 </body>
