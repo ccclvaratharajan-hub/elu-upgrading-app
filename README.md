@@ -1,3 +1,10 @@
+# V8.34 — Upcoming Survey Register
+
+- Default Survey Register shows only survey visit dates from the current Singapore date onward, across every zone.
+- September and other past visit dates appear only after Show all is pressed. Upcoming only switches back.
+- The Zone filter applies in either mode. All survey records are preserved.
+- Complaint Register, project data, appointments, photos and reports remain unchanged from V8.33.
+
 # V8.33 — Clear Complaint Register and Recent Surveys
 
 - Complaint Register opens as one compact row per unit, with complaint and visit counts, latest issue, date, status and Open Record.
