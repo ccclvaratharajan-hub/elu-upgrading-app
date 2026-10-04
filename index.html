@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.32">
+  <link rel="stylesheet" href="styles.css?v=8.33">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -233,7 +233,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head"><div><span class="section-label">RECENT ACTIVITY</span><h3>Survey Register</h3></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">RECENT ACTIVITY</span><h3>Survey Register</h3><p id="surveyScopeNote">Showing recent visits. Older records remain available.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="surveyZoneFilter"></select></label><button type="button" class="ghost-btn" id="surveyShowAllBtn">Show all</button></div></div>
             <div id="surveyTable" class="table-shell"></div>
           </article>
         </div>
@@ -322,7 +322,7 @@
 
       <section class="view" id="complaints">
         <div class="form-layout">
-          <article class="panel form-card">
+          <article class="panel form-card hidden" id="complaintEntryPanel">
             <div class="panel-head"><div><span class="section-label">SEPARATE RECORD</span><h3>New Complaint</h3><p>Open one case for the issue. Add repeat visits to its history below.</p></div></div>
             <form id="complaintForm" class="premium-form">
               <input type="hidden" id="complaintEditId">
@@ -341,7 +341,7 @@
               </div>
               <div class="form-row two">
                 <label>Received via<select id="complaintSource"><option>Resident / Owner</option><option>Town Council</option><option>Other</option></select></label>
-                <label>Type<select id="complaintType"><option>Power trip</option><option>Light / switch</option><option>Damage</option><option>Wall / paint</option><option>Other</option></select></label>
+                <label>Type<select id="complaintType" required><option value="" disabled selected>Select complaint type</option><option>Power trip</option><option>DB cover / panel</option><option>Light / switch</option><option>Damage</option><option>Wall / paint</option><option>Other</option></select></label>
               </div>
               <label>Complaint<textarea id="complaintText" rows="4" required></textarea></label>
               <label>Complaint photos (optional)<input type="file" id="complaintPhotos" accept="image/jpeg,image/png,image/webp" multiple><small>For damage or visible defects. Tripping complaints do not require a before photo.</small></label>
@@ -354,7 +354,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Resident Complaints</h3><p>Select a unit to see its cases and visit history.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Unit complaint register</h3><p>One clear row per unit. Open it to see complaints and visits side by side.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label><button type="button" class="primary-btn" id="complaintNewBtn">+ New complaint</button></div></div>
             <div id="complaintTable" class="table-shell"></div>
           </article>
           <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
@@ -733,7 +733,7 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
-<script src="app.js?v=8.32"></script>
+<script src="app.js?v=8.33"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 </body>

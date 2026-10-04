@@ -1,3 +1,11 @@
+# V8.33 — Clear Complaint Register and Recent Surveys
+
+- Complaint Register opens as one compact row per unit, with complaint and visit counts, latest issue, date, status and Open Record.
+- The unit record has two readable columns: resident complaints on the left, linked site visits and rectification on the right. Long notes expand on demand. Photos remain attached to their complaint or visit.
+- New complaint entry stays collapsed until selected. A complaint type must be chosen explicitly; DB cover / panel is available.
+- Survey Register defaults to the next 10 upcoming and 10 most recent past visits, with Zone filter and Show all / Show recent toggle. All saved survey records remain unchanged.
+- No project seed, unit status, appointment record, meeting report or photo-report data was modified.
+
 # V8.32 — Separate complaint and site visit ledger
 
 - For each unit, received complaints are numbered Complaint 1, 2, 3 by complaint date.

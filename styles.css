@@ -2733,3 +2733,33 @@ body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgb
 .complaint-case-head{background:rgba(255,255,255,.72)}
 .complaint-original-photos{padding:12px 17px;margin-top:12px;border-radius:12px;background:rgba(207,236,250,.47);color:#23506d}
 .complaint-no-visits{margin:15px 2px 0;color:#46657b;font-size:.9rem}
+
+/* V8.33 clear unit-level complaint register */
+#complaints .form-layout{grid-template-columns:minmax(0,1fr);gap:14px}
+#complaints .form-layout>article:nth-child(2){order:1}
+#complaintEntryPanel{order:2;position:static;max-width:820px;width:100%;justify-self:center}
+#complaintHistoryPanel{order:3;min-width:0}
+#complaints .panel-head h3{font-size:19px;color:#123853}
+#complaints .panel-head p{font-size:12px;color:#3e6079}
+.complaint-register-shell table{min-width:900px;table-layout:fixed}
+.complaint-register-shell th,.complaint-register-shell td{font-size:12px;padding:10px 12px;vertical-align:middle}
+.complaint-register-shell th:nth-child(1){width:8%}.complaint-register-shell th:nth-child(2){width:14%}
+.complaint-register-shell th:nth-child(3),.complaint-register-shell th:nth-child(4){width:10%}
+.complaint-register-shell th:nth-child(5){width:27%}.complaint-register-shell th:nth-child(6){width:12%}
+.complaint-register-shell th:nth-child(7){width:10%}.complaint-register-shell th:nth-child(8){width:9%}
+.complaint-summary-cell{overflow-wrap:anywhere;line-height:1.4}
+.complaint-ledger-toolbar{display:flex;justify-content:flex-end;margin:0 0 13px}
+.complaint-ledger-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.complaint-ledger-columns>section{min-width:0;border:1px solid rgba(29,104,145,.2);border-radius:15px;background:rgba(240,249,254,.58);padding:14px}
+.complaint-ledger-columns h4{margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;color:#123d5a}
+.complaint-ledger-columns h4 span{border-radius:20px;background:#d5effd;color:#07547b;padding:4px 10px;font-size:12px}
+.complaint-ledger-card{min-width:0;padding:14px;margin-bottom:11px;border:1px solid rgba(29,104,145,.22);border-radius:12px;background:rgba(255,255,255,.82);color:#17364d;box-shadow:0 5px 16px rgba(27,77,106,.05)}
+.complaint-ledger-card.selected{border-color:#58a9d1;box-shadow:0 0 0 2px rgba(65,158,205,.15)}
+.complaint-ledger-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}.complaint-ledger-card-top b{font-size:15px;color:#103a58}
+.complaint-ledger-card small{display:block;color:#46657b;font-size:11px;line-height:1.5}
+.complaint-card-text,.complaint-read-more p{font-size:13px;line-height:1.48;font-weight:500;white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0}
+.complaint-read-more{margin:9px 0;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.complaint-read-more summary{cursor:pointer;color:#1a425e}.complaint-read-more summary b{color:#096d9b;white-space:nowrap}
+.complaint-ledger-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+#complaintVisitForm{max-width:850px;margin:18px auto 0}
+@media(max-width:900px){.complaint-ledger-columns{grid-template-columns:1fr}.complaint-register-shell table{min-width:820px}}
