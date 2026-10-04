@@ -2725,3 +2725,11 @@ body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgb
 .complaint-visit-images{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.complaint-visit-images img{width:100px;height:76px;object-fit:cover;border-radius:8px;border:1px solid #9dbbd0}
 .complaint-visit-form{border-top:1px solid rgba(31,104,148,.25);padding-top:18px}.complaint-visit-form h3{margin:0 0 15px;color:#103c5c}
 @media(max-width:700px){.complaint-timeline li{grid-template-columns:1fr;gap:7px}.complaint-case-head{align-items:flex-start}}
+
+/* Separate complaint and site visit sequence */
+.complaint-unit-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;color:#123b57}
+.complaint-unit-case{margin:0 0 20px;padding:18px;border:1px solid rgba(40,104,144,.28);border-radius:18px;background:rgba(255,255,255,.36)}
+.complaint-number,.complaint-timeline-date b{display:inline-flex;align-items:center;letter-spacing:.08em;font-size:.72rem;font-weight:800;color:#075782;background:#d8f2ff;border-radius:7px;padding:6px 9px}
+.complaint-case-head{background:rgba(255,255,255,.72)}
+.complaint-original-photos{padding:12px 17px;margin-top:12px;border-radius:12px;background:rgba(207,236,250,.47);color:#23506d}
+.complaint-no-visits{margin:15px 2px 0;color:#46657b;font-size:.9rem}

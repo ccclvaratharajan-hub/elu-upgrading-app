@@ -1,3 +1,13 @@
+# V8.32 — Separate complaint and site visit ledger
+
+- For each unit, received complaints are numbered Complaint 1, 2, 3 by complaint date.
+- Actual site visits are numbered Visit 1, 2, 3 separately by visit date and time, even across multiple complaints at the same unit.
+- Each visit remains linked to the complaint it attended; an opened complaint is never counted as a visit.
+- Complaint photos are optional and shown with the received complaint. Attendance/rectification photos are optional and shown with the visit.
+- Damage cases can show complaint damage photos and later rectification photos. Tripping cases can have visit photos only.
+- Existing V8.31 complaint records remain readable; saved photos use the same separate complaint-photo store and Full Backup format.
+- Project data, appointment logic, reporting and standard photo workflow are unchanged.
+
 # V8.31 — Complaint case history
 
 - Complaint Register remains zone/block filtered. Each complaint case belongs to its existing unit.
