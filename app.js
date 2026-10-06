@@ -879,14 +879,16 @@ function renderZoneMap(u){
 let zoneMapResizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>renderZoneMap(unitsArray()),140)});
 function renderDashboard(){
+  // Block Board / Unit Register is the single source of truth for dashboard counts.
+  // C = confirmed appointment; P remains pending and is included with NR for the No Response KPI.
   const u=unitsArray(),total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,done=u.filter(x=>x.workStatus==="Completed").length;
-  const agree=a+c,openFollowups=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).length,donePct=total?Math.round(done/total*100):0;
+  const agree=a+c,totalVisits=state.surveys.length,donePct=total?Math.round(done/total*100):0;
   document.getElementById("heroTotalUnits").textContent=total.toLocaleString();const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
   document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${total?Math.round(agree/total*100):0}% · A + C`;
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
   document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
-  document.getElementById("kpiNR").textContent=nr.toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=openFollowups.toLocaleString();
+  document.getElementById("kpiNR").textContent=(nr+p).toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=totalVisits.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,zp=zu.filter(x=>x.response==="P").length,pct=zu.length?Math.round(zc/zu.length*100):0;return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in · ${zp} pending</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
   renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
