@@ -3,9 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#c8efff">
+  <meta name="theme-color" content="#061a2b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ELU">
+  <link rel="manifest" href="manifest.webmanifest?v=8.44">
+  <link rel="apple-touch-icon" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.33">
+  <link rel="stylesheet" href="styles.css?v=8.44">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -736,8 +741,11 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-<script src="app.js?v=8.35"></script>
+<script src="app.js?v=8.44"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=8.44').catch(()=>{})); }
+</script>
 </body>
 </html>
