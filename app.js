@@ -2895,7 +2895,7 @@ scenePeekBtn.addEventListener("click",()=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeScenePeek()});
 document.getElementById("nav").addEventListener("click",closeScenePeek);
-const LIGHTING_MODE_KEY="elu_visual_lighting_v2";
+const LIGHTING_MODE_KEY="elu_visual_lighting_v1";
 function applyLightingMode(mode,remember=true){
   const night=mode==="dark";
   document.body.classList.toggle("theme-night",night);
@@ -2907,6 +2907,6 @@ function applyLightingMode(mode,remember=true){
   if(remember)try{localStorage.setItem(LIGHTING_MODE_KEY,night?"dark":"light")}catch{}
 }
 document.querySelectorAll("[data-lighting-mode]").forEach(button=>button.addEventListener("click",()=>applyLightingMode(button.dataset.lightingMode)));
-let initialLighting="dark";try{const saved=localStorage.getItem(LIGHTING_MODE_KEY);initialLighting=saved==="light"?"light":"dark"}catch{}
+let initialLighting="light";try{initialLighting=localStorage.getItem(LIGHTING_MODE_KEY)==="dark"?"dark":"light"}catch{}
 applyLightingMode(initialLighting,false);
 initSecurityGate();
