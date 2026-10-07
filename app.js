@@ -1576,8 +1576,8 @@ function reportTotals(rows){
 function pct(v){return`${v.toFixed(1)}%`}
 function meetingSheetHtml(rows){
   const t=reportTotals(rows),whole=v=>`${Math.round(v)}%`;
-  const line=(r,i)=>`<tr><td class="sheet-zone">ZONE ${r.zone}</td><td>${i+1}</td><td class="sheet-block">${r.block}</td><td>${r.total}</td><td class="sheet-agree">${r.agree}</td><td class="sheet-agree">${whole(r.agreePct)}</td><td class="sheet-done">${r.done}</td><td class="sheet-done">${whole(r.donePct)}</td><td class="sheet-out">${r.d}</td><td class="sheet-out">${whole(r.dPct)}</td><td class="sheet-nr">${r.nr+r.p}</td><td class="sheet-nr">${r.total?whole((r.nr+r.p)/r.total*100):"0%"}</td></tr>`;
-  return `<table class="meeting-sheet-table"><thead><tr><th rowspan="2">ESS Details</th><th rowspan="2">S/N</th><th rowspan="2">BLK NO.</th><th rowspan="2">TOTAL UNITS</th><th colspan="2">UNITS OPT-IN<br>(Agree)</th><th colspan="2">UNITS OPT-IN<br>(10mmsq Work Completed at site)</th><th colspan="2">UNITS OPT-OUT<br>(Disagree)</th><th colspan="2">UNITS NO RESPONSE</th></tr><tr><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th></tr></thead><tbody>${rows.map(line).join("")}<tr class="meeting-sheet-total"><td colspan="3">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${t.total?whole(t.agree/t.total*100):"0%"}</td><td>${t.done}</td><td>${t.total?whole(t.done/t.total*100):"0%"}</td><td>${t.d}</td><td>${t.total?whole(t.d/t.total*100):"0%"}</td><td>${t.nr+t.p}</td><td>${t.total?whole((t.nr+t.p)/t.total*100):"0%"}</td></tr></tbody></table>`
+  const line=(r,i)=>`<tr><td>${i+1}</td><td class="sheet-block">${r.block}</td><td>${r.total}</td><td class="sheet-agree">${r.agree}</td><td class="sheet-agree">${whole(r.agreePct)}</td><td class="sheet-done">${r.done}</td><td class="sheet-done">${whole(r.donePct)}</td><td class="sheet-out">${r.d}</td><td class="sheet-out">${whole(r.dPct)}</td><td class="sheet-nr">${r.nr+r.p}</td><td class="sheet-nr">${r.total?whole((r.nr+r.p)/r.total*100):"0%"}</td></tr>`;
+  return `<table class="meeting-sheet-table"><thead><tr><th rowspan="2">S/N</th><th rowspan="2">BLK NO.</th><th rowspan="2">TOTAL UNITS</th><th colspan="2">UNITS OPT-IN<br>(Agree)</th><th colspan="2">UNITS OPT-IN<br>(10mmsq Work Completed at site)</th><th colspan="2">UNITS OPT-OUT<br>(Disagree)</th><th colspan="2">UNITS NO RESPONSE</th></tr><tr><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th><th>Number</th><th>%</th></tr></thead><tbody>${rows.map(line).join("")}<tr class="meeting-sheet-total"><td colspan="2">TOTAL DU</td><td>${t.total}</td><td>${t.agree}</td><td>${t.total?whole(t.agree/t.total*100):"0%"}</td><td>${t.done}</td><td>${t.total?whole(t.done/t.total*100):"0%"}</td><td>${t.d}</td><td>${t.total?whole(t.d/t.total*100):"0%"}</td><td>${t.nr+t.p}</td><td>${t.total?whole((t.nr+t.p)/t.total*100):"0%"}</td></tr></tbody></table>`
 }
 function renderReport(){
   const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,rows=buildReportRows(z,b),t=reportTotals(rows);
@@ -1602,7 +1602,7 @@ document.getElementById("meetingSheetPrintBtn").addEventListener("click",()=>{
   if(!rows.length){toast("No meeting sheet data");return}
   const scope=`${zone==="all"?"All Zones":`Zone ${zone}`}${block==="all"?"":` · Blk ${block}`}`;
   const win=window.open("","_blank","width=1500,height=950");if(!win){toast("Allow pop-ups to print the Meeting Sheet");return}
-  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Meeting Sheet · ${scope}</title><style>@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{font-family:Arial,sans-serif;margin:0;color:#111}h1{font-size:16px;margin:0 0 3px}p{font-size:10px;margin:0 0 8px}.meeting-sheet-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}.meeting-sheet-table th,.meeting-sheet-table td{border:1px solid #333;text-align:center;vertical-align:middle;padding:6px 3px}.meeting-sheet-table th{background:#e8f3fa;font-weight:800}.meeting-sheet-table td{font-weight:700}.sheet-agree{color:#1738be}.sheet-done{color:#078541}.sheet-out{color:#8b4806}.sheet-nr{color:#bb1425}.meeting-sheet-total td{background:#e7f2f9;font-weight:900}thead{display:table-header-group}tr{break-inside:avoid}</style></head><body><h1>Electrical Load Upgrading · Block Progress Summary</h1><p>WEEKLY PROGRESS MEETING · ${scope}</p>${meetingSheetHtml(rows)}<p style="margin-top:8px">Meeting view: Pending Confirmation (P) is shown together with No Response. Unit Register statuses remain unchanged.</p><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
+  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Meeting Sheet · ${scope}</title><style>@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{font-family:Arial,sans-serif;margin:0;color:#111}h1{font-size:16px;margin:0 0 3px}p{font-size:10px;margin:0 0 8px}.meeting-sheet-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}.meeting-sheet-table th,.meeting-sheet-table td{border:1px solid #333;text-align:center;vertical-align:middle;padding:6px 3px}.meeting-sheet-table th{background:#e8f3fa;font-weight:800}.meeting-sheet-table td{font-weight:700}.sheet-agree{color:#1738be}.sheet-done{color:#078541}.sheet-out{color:#8b4806}.sheet-nr{color:#bb1425}.meeting-sheet-total td{background:#e7f2f9;font-weight:900}.meeting-zone-scope{font-size:15px;font-weight:900;color:#17384e;margin:0 0 10px}thead{display:table-header-group}tr{break-inside:avoid}</style></head><body><h1>Electrical Load Upgrading · Block Progress Summary</h1><p class="meeting-zone-scope">WEEKLY PROGRESS MEETING · ${scope}</p>${meetingSheetHtml(rows)}<p style="margin-top:8px">Meeting view: Pending Confirmation (P) is shown together with No Response. Unit Register statuses remain unchanged.</p><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
 });
 
 function responseSummaryUnitList(units){
@@ -1876,7 +1876,7 @@ async function exportManagerPPT(){
     pptx.lang="en-SG";
     const zones=selected.zone==="all"?[...new Set(selected.rows.map(row=>row.zone))].sort((a,b)=>a-b):[Number(selected.zone)];
     const W=13.333,H=7.5,edge="667A86";
-    const widths=[1.10,.45,.79,1.05,1.03,.61,1.13,.62,1.05,.62,1.12,.69].map(w=>w*12.43/10.26);
+    const widths=[.45,.79,1.05,1.03,.61,1.13,.62,1.05,.62,1.12,.69].map(w=>w*12.43/9.16);
     const xs=[.45];widths.forEach(w=>xs.push(xs[xs.length-1]+w));
     const cell=(slide,value,col,y,h,options={})=>{
       const isHeader=!!options.header,fill=options.fill||"FFFFFF";
@@ -1893,7 +1893,7 @@ async function exportManagerPPT(){
       slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:W,h:.12,line:{color:"12658D",transparency:100},fill:{color:"12658D"}});
       slide.addText("WEEKLY PROGRESS MEETING",{x:.45,y:.28,w:7.2,h:.25,fontFace:"Arial",fontSize:11,bold:true,color:"1B6685",margin:0});
       slide.addText("Electrical Load Upgrading · Block Progress Summary",{x:.45,y:.59,w:12.25,h:.48,fontFace:"Arial",fontSize:22,bold:true,color:"123E60",margin:0,fit:"shrink"});
-      slide.addText(`ZONE ${zone}${selected.block==="all"?"":` · BLK ${selected.block}`}`,{x:.45,y:1.12,w:7,h:.28,fontFace:"Arial",fontSize:12,bold:true,color:"1B6685",margin:0});
+      slide.addText(`ZONE ${zone}${selected.block==="all"?"":` · BLK ${selected.block}`}`,{x:.45,y:1.12,w:7,h:.28,fontFace:"Arial",fontSize:16,bold:true,color:"1B6685",margin:0});
       slide.addText(`Generated ${selected.stamp}`,{x:9.2,y:1.12,w:3.65,h:.25,fontFace:"Arial",fontSize:8,color:"516D7D",align:"right",margin:0});
       const top=1.60,first=.54,second=.38,rowH=Math.min(.62,(6.23-top-first-second-.57)/Math.max(1,rows.length));
       const heading=(text,col,span=1)=>{
@@ -1901,19 +1901,21 @@ async function exportManagerPPT(){
         slide.addShape(pptx.ShapeType.rect,{x:xs[col],y:top,w:width,h:first,line:{color:edge,width:.7},fill:{color:"E1F0F7"}});
         slide.addText(text,{x:xs[col]+.035,y:top+.02,w:width-.07,h:first-.04,margin:0,fontFace:"Arial",fontSize:8.3,bold:true,color:"133E56",align:"center",valign:"mid",fit:"shrink"});
       };
-      heading("ESS Details",0);heading("S/N",1);heading("BLK NO.",2);heading("TOTAL UNITS",3);
-      heading("UNITS OPT-IN\n(Agree)",4,2);heading("UNITS OPT-IN\n(10mmsq Work Completed at site)",6,2);
-      heading("UNITS OPT-OUT\n(Disagree)",8,2);heading("UNITS NO RESPONSE",10,2);
-      widths.forEach((_,j)=>cell(slide,j<4?"":j%2===0?"Number":"%",j,top+first,second,{header:true,fill:"F2F8FB",fontSize:8}));
+      heading("S/N",0);heading("BLK NO.",1);heading("TOTAL UNITS",2);
+      heading("UNITS OPT-IN\n(Agree)",3,2);heading("UNITS OPT-IN\n(10mmsq Work Completed at site)",5,2);
+      heading("UNITS OPT-OUT\n(Disagree)",7,2);heading("UNITS NO RESPONSE",9,2);
+      widths.forEach((_,j)=>cell(slide,j<3?"":j%2===1?"Number":"%",j,top+first,second,{header:true,fill:"F2F8FB",fontSize:8}));
       rows.forEach((r,i)=>{
         const y=top+first+second+i*rowH,base=i%2?"F8FBFD":"FFFFFF";
         const nr=r.nr+r.p,percentage=r.total?`${Math.round(nr/r.total*100)}%`:"0%";
-        const vals=[`ZONE ${zone}`,i+1,r.block,r.total,r.agree,`${Math.round(r.agreePct)}%`,r.done,`${Math.round(r.donePct)}%`,r.d,`${Math.round(r.dPct)}%`,nr,percentage];
-        vals.forEach((v,j)=>cell(slide,v,j,y,rowH,{fill:base,color:j===2?"123E60":j===4||j===5?"153AC2":j===6||j===7?"048647":j===8||j===9?"8C4B09":j>=10?"C52234":"101820",fontSize:j===2?13:j===0?9:11}));
+        const vals=[i+1,r.block,r.total,r.agree,`${Math.round(r.agreePct)}%`,r.done,`${Math.round(r.donePct)}%`,r.d,`${Math.round(r.dPct)}%`,nr,percentage];
+        vals.forEach((v,j)=>cell(slide,v,j,y,rowH,{fill:base,color:j===1?"123E60":j===3||j===4?"153AC2":j===5||j===6?"048647":j===7||j===8?"8C4B09":j>=9?"C52234":"101820",fontSize:j===1?13:11}));
       });
       const totalY=top+first+second+rows.length*rowH,totalH=.53;
-      const totalVals=["TOTAL DU","", "",t.total,t.agree,`${Math.round(t.agreePct)}%`,t.done,`${Math.round(t.donePct)}%`,t.d,`${Math.round(t.dPct)}%`,t.nr+t.p,t.total?`${Math.round((t.nr+t.p)/t.total*100)}%`:"0%"];
-      totalVals.forEach((v,j)=>cell(slide,v,j,totalY,totalH,{fill:"DDECF5",color:"143E57",fontSize:11}));
+      const totalVals=[t.total,t.agree,`${Math.round(t.agreePct)}%`,t.done,`${Math.round(t.donePct)}%`,t.d,`${Math.round(t.dPct)}%`,t.nr+t.p,t.total?`${Math.round((t.nr+t.p)/t.total*100)}%`:"0%"];
+      slide.addShape(pptx.ShapeType.rect,{x:xs[0],y:totalY,w:widths[0]+widths[1],h:totalH,line:{color:edge,width:.7},fill:{color:"DDECF5"}});
+      slide.addText("TOTAL DU",{x:xs[0]+.04,y:totalY+.02,w:widths[0]+widths[1]-.08,h:totalH-.04,margin:0,fontFace:"Arial",fontSize:11,bold:true,color:"143E57",align:"center",valign:"mid"});
+      totalVals.forEach((v,j)=>cell(slide,v,j+2,totalY,totalH,{fill:"DDECF5",color:"143E57",fontSize:11}));
       slide.addText("Meeting view: Pending Confirmation (P) is shown together with No Response. Unit records remain unchanged.",
         {x:.45,y:Math.min(6.95,totalY+totalH+.25),w:12.3,h:.25,fontFace:"Arial",fontSize:9,bold:true,color:"516D7D",margin:0,fit:"shrink"});
       slide.addText(`${slideIndex+1} / ${zones.length} · ELU Upgrading`,{x:10.35,y:7.12,w:2.52,h:.18,fontFace:"Arial",fontSize:7,color:"758A98",align:"right",margin:0});
