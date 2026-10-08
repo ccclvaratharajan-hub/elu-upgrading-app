@@ -2772,8 +2772,33 @@ body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgb
 @media(max-width:1050px){#blockboard .zone-headline{flex-direction:column}.zone-summary-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:720px){.zone-summary-grid{grid-template-columns:repeat(2,1fr)}}
 body.theme-night #blockboard .zone-headline{background:linear-gradient(110deg,#123d61,#1c5a83);border-color:#5aadd7}.theme-night .zone-summary-title span,.theme-night .zone-summary-title strong,.theme-night .zone-summary-title small{color:#e5f5ff}.theme-night .zone-summary-tile{background:rgba(218,242,255,.14);border-color:rgba(177,224,250,.3)}.theme-night .zone-summary-tile span,.theme-night .zone-summary-tile small{color:#d8efff}.theme-night .zone-summary-tile strong{color:#fff}
 /* V8.44.0 trial: two scenic backgrounds, preserving the original app layout and colours. */
-body:not(.theme-night)::before{background:url("scenic-light-v8440.jpg") center center/cover no-repeat;filter:none}
-body.theme-night{background-color:#102959;background-image:url("scenic-dark-v8440.jpg");background-position:center center;background-size:cover;background-attachment:fixed}
-body:not(.theme-night) .security-gate{background:url("scenic-light-v8440.jpg") center/cover no-repeat}
-body.theme-night .security-gate{background:linear-gradient(110deg,rgba(5,22,56,.22),rgba(5,25,62,.08)),url("scenic-dark-v8440.jpg") center/cover no-repeat}
-body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(4,24,63,.64),rgba(9,42,91,.43) 52%,rgba(9,46,97,.16)),url("scenic-dark-v8440.jpg");background-position:center center;background-size:cover}
+body:not(.theme-night)::before{background:url("scenic-light-v8442.jpg") center center/cover no-repeat;filter:none}
+body.theme-night{background-color:#102959;background-image:url("scenic-screensaver-v8444.jpg");background-position:center center;background-size:cover;background-attachment:fixed}
+body:not(.theme-night) .security-gate{background:url("scenic-light-v8442.jpg") center/cover no-repeat}
+body.theme-night .security-gate{background:linear-gradient(110deg,rgba(5,22,56,.22),rgba(5,25,62,.08)),url("scenic-screensaver-v8444.jpg") center/cover no-repeat}
+body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(4,24,63,.64),rgba(9,42,91,.43) 52%,rgba(9,46,97,.16)),url("scenic-screensaver-v8444.jpg");background-position:center center;background-size:cover}
+/* V8.44.1 — Balanced scenic brightness and mid royal-blue navigation only. */
+body:not(.theme-night)::before{filter:brightness(.92) saturate(.89)}
+body.theme-night{background-image:linear-gradient(rgba(7,22,54,.38),rgba(7,22,54,.38)),url("scenic-screensaver-v8444.jpg")}
+body:not(.theme-night) .security-gate{background:linear-gradient(rgba(12,37,77,.06),rgba(12,37,77,.06)),url("scenic-light-v8442.jpg") center/cover no-repeat}
+body.theme-night .security-gate{background:linear-gradient(rgba(7,22,54,.42),rgba(7,22,54,.42)),url("scenic-screensaver-v8444.jpg") center/cover no-repeat}
+body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(5,23,57,.78),rgba(8,35,78,.59) 55%,rgba(9,37,81,.29)),url("scenic-screensaver-v8444.jpg")}
+body:not(.theme-night) .sidebar{background:linear-gradient(160deg,rgba(29,70,143,.96),rgba(39,89,165,.94) 56%,rgba(24,62,136,.97));border-right-color:rgba(174,204,251,.63);box-shadow:8px 0 27px rgba(7,32,82,.27)}
+body:not(.theme-night) .sidebar:before{background:linear-gradient(180deg,transparent,#b9d6ff 28%,#86b4f5 68%,transparent);box-shadow:0 0 12px rgba(156,197,255,.49)}
+body:not(.theme-night) .sidebar :is(.brand-name,.project-badge strong,.sidebar-note strong),body:not(.theme-night) .sidebar .nav-item{color:#f8fbff;text-shadow:none}
+body:not(.theme-night) .sidebar :is(.brand-sub,.project-badge small,.sidebar-note span){color:#d5e5ff;text-shadow:none}
+body:not(.theme-night) .sidebar .brand-mark{background:linear-gradient(145deg,#85b6fc,#346bc5);border-color:#b8d4ff}
+body:not(.theme-night) .sidebar .project-badge{background:rgba(220,236,255,.14);border-color:rgba(204,225,255,.43)}
+body:not(.theme-night) .sidebar .project-dot{background:#b5d7ff;box-shadow:0 0 0 4px rgba(199,224,255,.18)}
+body:not(.theme-night) .sidebar .nav-item svg{background:rgba(204,225,255,.17);border-color:rgba(203,226,255,.46);color:#e5f1ff}
+body:not(.theme-night) .sidebar .nav-item:hover{background:rgba(188,215,255,.2);border-color:rgba(211,229,255,.52);color:#fff}
+body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(100deg,rgba(174,207,255,.42),rgba(105,160,239,.26));border-color:rgba(220,235,255,.71);color:#fff;box-shadow:inset 3px 0 #e5efff,0 7px 18px rgba(7,36,89,.2)}
+body:not(.theme-night) .sidebar .nav-item.active svg{background:linear-gradient(145deg,#9cc5ff,#4b83d9);border-color:#d5e6ff;color:#fff;box-shadow:0 0 13px rgba(174,211,255,.48)}
+body:not(.theme-night) .sidebar-note{border-top-color:rgba(215,232,255,.35)}
+body.theme-night .sidebar{background:linear-gradient(160deg,rgba(17,41,92,.96),rgba(29,67,134,.91) 56%,rgba(14,37,88,.96));border-right-color:rgba(164,199,251,.44)}
+body.theme-night .nav-item.active{background:linear-gradient(105deg,rgba(89,145,230,.49),rgba(48,98,180,.4));box-shadow:inset 3px 0 #d3e7ff,0 8px 19px rgba(4,25,71,.24)}
+@media(max-width:760px){body:not(.theme-night) .sidebar{background:linear-gradient(145deg,rgba(29,70,143,.98),rgba(34,79,153,.96))}}
+
+/* V8.44.4: user screensaver view with only a gentle night tint. */
+body.theme-night{background-image:linear-gradient(rgba(7,22,54,.12),rgba(7,22,54,.12)),url("scenic-screensaver-v8444.jpg")}
+body.theme-night .security-gate{background:linear-gradient(rgba(7,22,54,.14),rgba(7,22,54,.14)),url("scenic-screensaver-v8444.jpg") center/cover no-repeat}
