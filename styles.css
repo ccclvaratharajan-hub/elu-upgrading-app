@@ -2771,33 +2771,42 @@ body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgb
 .zone-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(112px,1fr));gap:8px;flex:1}.zone-summary-tile{border:1px solid rgba(91,168,230,.25);border-radius:12px;background:rgba(255,255,255,.78);padding:8px 10px;display:grid;grid-template-columns:1fr auto;grid-template-areas:"label pct" "count pct";align-items:center;gap:2px 8px}.zone-summary-tile span{grid-area:label;font-size:8px;font-weight:900;color:#55758e;white-space:nowrap}.zone-summary-tile strong{grid-area:count;font-size:18px;line-height:1.1;color:#214f73}.zone-summary-tile small{grid-area:pct;font-size:9px;font-weight:900;color:#68869d}.zone-summary-tile.total{border-top:3px solid #5ba8e6}.zone-summary-tile.optin{border-top:3px solid #46bd88}.zone-summary-tile.appt{border-top:3px solid #e76f9f}.zone-summary-tile.pending{border-top:3px solid #3f7fd1}.zone-summary-tile.completed{border-top:3px solid #32a56f}.zone-summary-tile.nr{border-top:3px solid #e35c63}.zone-summary-tile.optout{border-top:3px solid #e5c13e}.zone-summary-tile.visits{border-top:3px solid #8069d6}
 @media(max-width:1050px){#blockboard .zone-headline{flex-direction:column}.zone-summary-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:720px){.zone-summary-grid{grid-template-columns:repeat(2,1fr)}}
 body.theme-night #blockboard .zone-headline{background:linear-gradient(110deg,#123d61,#1c5a83);border-color:#5aadd7}.theme-night .zone-summary-title span,.theme-night .zone-summary-title strong,.theme-night .zone-summary-title small{color:#e5f5ff}.theme-night .zone-summary-tile{background:rgba(218,242,255,.14);border-color:rgba(177,224,250,.3)}.theme-night .zone-summary-tile span,.theme-night .zone-summary-tile small{color:#d8efff}.theme-night .zone-summary-tile strong{color:#fff}
-/* V8.43.4 — Royal Blue lighting palette. Visual only; no layout or status colours. */
-body:not(.theme-night){--bg:#dceafd;--bg2:#eaf3ff;--ink:#142b50;--muted:#526b8e;--line:#b9d1ee;--blue:#174ea6;--blue2:#4b83dd;--blueSoft:#e6f0ff;--navy:#102b62;background-color:#dceafd;background-image:radial-gradient(circle at 80% 7%,rgba(255,255,255,.72),transparent 37%),linear-gradient(155deg,rgba(230,242,255,.80),rgba(193,218,251,.68)),url("night-estate.jpg")}
-body:not(.theme-night) .sidebar{background:linear-gradient(160deg,rgba(13,39,91,.97),rgba(24,72,150,.95) 58%,rgba(12,40,96,.98));border-right:1px solid rgba(146,190,255,.45);box-shadow:10px 0 28px rgba(12,35,78,.25)}
-body:not(.theme-night) .sidebar :is(.brand-name,.project-badge strong,.sidebar-note strong){color:#f6faff}
-body:not(.theme-night) .sidebar :is(.brand-sub,.project-badge small,.sidebar-note span){color:#c5dafa}
-body:not(.theme-night) .sidebar .project-badge{background:rgba(230,241,255,.11);border-color:rgba(202,224,255,.33)}
-body:not(.theme-night) .sidebar .nav-item{color:#e0edff}
-body:not(.theme-night) .sidebar .nav-item:hover{background:rgba(146,190,255,.18);color:#fff}
-body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(95deg,rgba(102,158,250,.45),rgba(173,208,255,.16));color:#fff;box-shadow:inset 3px 0 #edc878,0 8px 22px rgba(3,20,62,.16)}
-body:not(.theme-night) .brand-mark{background:linear-gradient(140deg,#3977d4,#102b62);box-shadow:0 8px 22px rgba(1,18,55,.35)}
-body:not(.theme-night) :is(.panel,.kpi-card,.hero,.planner-hero,.today-team-panel){background-color:rgba(250,253,255,.84);border-color:rgba(181,210,246,.8);backdrop-filter:blur(12px)}
-body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(105deg,rgba(240,248,255,.86),rgba(200,224,255,.69)),url("night-estate.jpg") center/cover;border-color:#c8dcfa;color:#112f66}
-body:not(.theme-night) #dashboard .command-hero :is(p,.command-kicker){color:#244e8e}
-body:not(.theme-night) :is(.primary-btn,.lighting-mode-btn.selected){background:linear-gradient(135deg,#356fca,#174ea6);color:#fff;box-shadow:0 8px 20px rgba(19,65,141,.23)}
-body:not(.theme-night) .lighting-mode-control{background:rgba(224,238,255,.83);border-color:#9abce8}
-body:not(.theme-night) :is(.eyebrow,.section-label,.text-btn){color:#174ea6}
-body.theme-night{background-color:#091b3c;background-image:radial-gradient(circle at 78% 13%,rgba(82,143,244,.24),transparent 36%),linear-gradient(115deg,rgba(4,15,43,.78),rgba(12,39,91,.64) 54%,rgba(5,20,52,.76)),url("night-estate.jpg")}
-body.theme-night .sidebar{background:linear-gradient(160deg,rgba(4,16,47,.96),rgba(17,49,109,.88) 57%,rgba(5,22,61,.95));border-right-color:rgba(143,189,255,.43)}
-body.theme-night .nav-item.active{background:linear-gradient(105deg,rgba(53,112,213,.52),rgba(75,143,232,.32));box-shadow:inset 3px 0 #edc878,0 9px 24px rgba(0,11,45,.28)}
-body.theme-night .lighting-mode-control{background:rgba(8,29,73,.83);border-color:rgba(140,185,255,.52)}
-body.theme-night .lighting-mode-btn.selected{background:linear-gradient(135deg,#366fc6,#17458f);box-shadow:0 0 15px rgba(89,151,246,.31)}
-body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(5,20,55,.80),rgba(14,43,102,.66) 51%,rgba(19,61,124,.33)),url("night-estate.jpg")}
-/* V8.43.5 — Abstract electrical atmosphere; remove estate photos behind work surfaces. */
-body:not(.theme-night)::before{background:none!important;content:none!important}
-body:not(.theme-night){background-image:radial-gradient(circle at 84% 15%,rgba(255,255,255,.95),transparent 31%),radial-gradient(circle at 11% 70%,rgba(91,151,246,.22),transparent 36%),repeating-linear-gradient(125deg,transparent 0 118px,rgba(79,137,225,.045) 119px 120px),linear-gradient(155deg,#f1f7ff 0%,#dceafd 55%,#bfd8fa 100%)}
-body.theme-night{background-image:radial-gradient(circle at 78% 16%,rgba(106,165,255,.32),transparent 35%),radial-gradient(circle at 15% 77%,rgba(40,104,212,.25),transparent 39%),repeating-linear-gradient(125deg,transparent 0 118px,rgba(130,180,255,.045) 119px 120px),linear-gradient(145deg,#071631,#102d65 56%,#091c42)}
-body:not(.theme-night) #dashboard .command-hero{background-image:radial-gradient(circle at 82% 25%,rgba(255,255,255,.86),transparent 33%),linear-gradient(112deg,rgba(239,247,255,.95),rgba(190,219,255,.87) 58%,rgba(152,195,248,.76));background-size:cover}
-body.theme-night .main .command-hero{background-image:radial-gradient(circle at 85% 28%,rgba(116,176,255,.3),transparent 32%),linear-gradient(110deg,#071d49,#174989 60%,#2968a2);background-size:cover}
-body:not(.theme-night) .security-gate{background:radial-gradient(circle at 78% 20%,rgba(255,255,255,.9),transparent 28%),linear-gradient(125deg,#f0f7ff,#bcd8fa)}
-body.theme-night .security-gate{background:radial-gradient(circle at 75% 18%,rgba(100,164,255,.31),transparent 30%),linear-gradient(125deg,#081a3a,#174987)}
+/* V8.43.6 — Restore V8.43.3 lighting; recolour navigation only. Status colours stay intact. */
+body:not(.theme-night) .sidebar{background:linear-gradient(165deg,rgba(9,27,68,.97),rgba(20,55,119,.94) 57%,rgba(9,31,76,.97));border-right-color:rgba(135,176,243,.55);box-shadow:10px 0 31px rgba(3,18,56,.31),inset -1px 0 rgba(220,236,255,.12)}
+body:not(.theme-night) .sidebar:before{background:linear-gradient(180deg,transparent,#79aaff 27%,#d4e6ff 66%,transparent);box-shadow:0 0 15px rgba(88,153,249,.55)}
+body:not(.theme-night) .sidebar .brand-mark{background:linear-gradient(145deg,#65a3ff,#245ab7 64%,#143d86);border-color:rgba(201,223,255,.8);box-shadow:0 0 0 3px rgba(95,151,240,.17),0 0 21px rgba(91,153,245,.27),inset 0 1px rgba(255,255,255,.38)}
+body:not(.theme-night) .sidebar :is(.brand-name,.project-badge strong,.sidebar-note strong){color:#f5f9ff;text-shadow:none}
+body:not(.theme-night) .sidebar :is(.brand-sub,.project-badge small,.sidebar-note span){color:#c6dbfa;text-shadow:none}
+body:not(.theme-night) .sidebar .project-badge{background:linear-gradient(130deg,rgba(146,189,252,.18),rgba(112,155,229,.09));border-color:rgba(169,201,253,.42)}
+body:not(.theme-night) .sidebar .project-dot{background:#80b8ff;box-shadow:0 0 0 4px rgba(92,148,239,.18),0 0 12px rgba(106,167,255,.43)}
+body:not(.theme-night) .sidebar .nav-item{color:#e3edff}
+body:not(.theme-night) .sidebar .nav-item svg{background:linear-gradient(145deg,rgba(169,200,252,.2),rgba(49,93,179,.23));border-color:rgba(152,189,248,.4);color:#c4deff}
+body:not(.theme-night) .sidebar .nav-item:hover{background:rgba(94,149,239,.21);border-color:rgba(155,194,255,.53);color:#fff}
+body:not(.theme-night) .sidebar .nav-item.active{background:linear-gradient(100deg,rgba(61,117,217,.61),rgba(77,132,223,.36));border-color:rgba(155,198,255,.72);color:#fff;box-shadow:inset 3px 0 #c7dcff,0 8px 21px rgba(2,17,55,.25)}
+body:not(.theme-night) .sidebar .nav-item.active svg{background:linear-gradient(145deg,#6fa8fa,#285fbd);border-color:#94bcff;box-shadow:0 0 15px rgba(92,153,246,.44)}
+body:not(.theme-night) .sidebar-note{border-top-color:rgba(165,197,247,.31)}
+body:not(.theme-night) .sidebar .nav{scrollbar-color:rgba(138,180,247,.52) transparent}
+body.theme-night .sidebar{background:linear-gradient(155deg,rgba(4,19,51,.96),rgba(15,47,105,.89) 55%,rgba(5,22,59,.95));border-right-color:rgba(151,191,249,.39)}
+body.theme-night .sidebar .nav-item.active{background:linear-gradient(105deg,rgba(54,110,206,.54),rgba(45,95,174,.42));border-color:rgba(148,190,253,.55);box-shadow:inset 3px 0 #b9d6ff,0 9px 23px rgba(0,12,44,.24)}
+@media(max-width:760px){body:not(.theme-night) .sidebar{background:linear-gradient(140deg,rgba(9,27,68,.98),rgba(19,54,117,.96))}}
+/* V8.43.7 — Dashboard chrome blue; map image, lighting, data and status colours untouched. */
+body:not(.theme-night):has(#dashboard.view.active) .topbar{background:linear-gradient(112deg,rgba(9,29,72,.96),rgba(25,68,137,.93));border-color:rgba(139,183,248,.58);box-shadow:0 14px 28px rgba(4,22,62,.34),inset 0 1px rgba(220,237,255,.2)}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .eyebrow{color:#acd0ff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar h1{color:#f5f9ff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar p{color:#cdddff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){background:rgba(182,210,252,.15);border-color:rgba(152,192,251,.43);color:#f4f8ff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .top-actions .ghost-btn:hover{background:rgba(116,165,242,.28)}
+body:not(.theme-night) #dashboard .hero-mini-actions button{background:linear-gradient(110deg,#173d86,#285ab0);border-color:rgba(158,193,248,.72);color:#f4f8ff;box-shadow:0 5px 13px rgba(6,27,78,.24)}
+body:not(.theme-night) #dashboard .hero-mini-actions button:hover,body:not(.theme-night) #dashboard .hero-mini-actions button:focus-visible,body:not(.theme-night) #dashboard .hero-mini-actions button[aria-expanded="true"]{background:linear-gradient(110deg,#2457ae,#3975cf);border-color:#bfd8ff;box-shadow:0 0 0 2px rgba(141,185,250,.23),0 6px 15px rgba(9,37,94,.27)}
+body:not(.theme-night) #dashboard .map-zone-nav button[aria-pressed="true"]{background:linear-gradient(120deg,#d8e9ff,#86b3f0);color:#133c7d;box-shadow:0 3px 9px rgba(17,57,130,.24)}
+body:not(.theme-night) #dashboard .map-zone-pin{background:linear-gradient(140deg,rgba(248,251,255,.97),rgba(192,216,251,.94));color:#123b7a;box-shadow:0 5px 0 rgba(40,90,164,.85),0 12px 23px rgba(2,20,55,.44)}
+body:not(.theme-night) #dashboard .map-building-pin{border-color:#e7f2ff;background:rgba(241,247,255,.96);box-shadow:0 5px 0 #5386ce,0 11px 20px rgba(4,26,69,.39)}
+body:not(.theme-night) #dashboard .map-zone-pin :is(span,small),body:not(.theme-night) #dashboard .map-building-pin span{color:#163f7f}
+body:not(.theme-night) #dashboard .dashboard-detail-actions .detail-close{background:#e4efff;border-color:#a9c5ed;color:#174686}
+body:not(.theme-night) #dashboard .dashboard-detail-actions .detail-close:hover{background:#cbdfff}
+/* V8.43.8 — Distinct illuminated estate photos for the existing Light/Dark modes. */
+body:not(.theme-night)::before{background:url("estate-light-v8438.jpg") center center/cover no-repeat;filter:none}
+body.theme-night{background-color:#102b58;background-image:linear-gradient(110deg,rgba(6,20,48,.14),rgba(12,33,76,.08)),url("estate-night-v8438.jpg");background-position:center center;background-size:cover;background-attachment:fixed}
+body:not(.theme-night) .security-gate{background:linear-gradient(110deg,rgba(225,240,255,.24),rgba(208,229,255,.13)),url("estate-light-v8438.jpg") center/cover no-repeat}
+body.theme-night .security-gate{background:linear-gradient(110deg,rgba(6,24,61,.24),rgba(11,39,85,.13)),url("estate-night-v8438.jpg") center/cover no-repeat}
+body.theme-night .main .command-hero{background-image:linear-gradient(100deg,rgba(6,23,58,.75),rgba(13,41,88,.54) 54%,rgba(16,48,93,.18)),url("estate-night-v8438.jpg");background-position:center center;background-size:cover}
