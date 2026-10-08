@@ -2802,3 +2802,86 @@ body.theme-night .nav-item.active{background:linear-gradient(105deg,rgba(89,145,
 /* V8.44.4: user screensaver view with only a gentle night tint. */
 body.theme-night{background-image:linear-gradient(rgba(7,22,54,.12),rgba(7,22,54,.12)),url("scenic-screensaver-v8444.jpg")}
 body.theme-night .security-gate{background:linear-gradient(rgba(7,22,54,.14),rgba(7,22,54,.14)),url("scenic-screensaver-v8444.jpg") center/cover no-repeat}
+
+/* V8.44.5 — compact map layout; status and data styles remain unchanged. */
+#dashboard .zone-map-panel{max-width:960px;width:100%;margin-inline:auto;padding:17px 19px 13px}
+#dashboard .zone-map-heading{margin-bottom:10px}
+#dashboard .zone-map-heading h3{font-size:21px;line-height:1.15}
+#dashboard .zone-map-heading p{font-size:12px;line-height:1.4}
+#dashboard .zone-map-key{font-size:11px;padding:8px 12px}
+.map-zone-toolbar{margin:0 0 10px;overflow-x:auto;scrollbar-width:thin}
+#dashboard .map-zone-toolbar .map-zone-nav{position:static;left:auto;top:auto;transform:none;display:flex;flex-wrap:nowrap;justify-content:flex-start;width:max-content;max-width:none;gap:7px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+#dashboard .map-zone-toolbar .map-zone-nav button{min-width:78px;padding:9px 13px;border:1px solid rgba(143,183,219,.72);border-radius:11px;background:rgba(231,245,255,.84);color:#143f67;font-size:12px;font-weight:900;box-shadow:0 3px 8px rgba(14,58,100,.09)}
+#dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:linear-gradient(135deg,#1e569a,#347fba);color:#fff;border-color:#9ac9ed;box-shadow:0 5px 13px rgba(18,69,123,.22)}
+#dashboard .map-zone-toolbar .map-zone-nav button:hover{background:#d7efff;color:#0b416e}
+body.theme-night #dashboard .map-zone-toolbar .map-zone-nav button{background:rgba(25,67,119,.83);border-color:rgba(160,204,239,.6);color:#f3fbff}
+body.theme-night #dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:linear-gradient(135deg,#a6dcfa,#65acd7);color:#103c66}
+#dashboard .zone-map-stage{height:420px;min-height:420px;border-radius:15px}
+#dashboard .zone-map-tiles{filter:saturate(1.06) brightness(1.04) contrast(1.02)}
+#dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(7,34,57,.06),transparent 35%,rgba(7,34,57,.12))}
+#dashboard .map-zone-pin{padding:9px 12px;border-radius:12px;background:rgba(237,249,255,.96);border:2px solid #fff;color:#103f68;box-shadow:0 4px 0 #3b79a0,0 10px 16px rgba(0,26,51,.34)}
+#dashboard .map-zone-pin span{font-size:14px;letter-spacing:.02em}
+#dashboard .map-zone-pin small{font-size:10px;color:#265b7d}
+#dashboard .map-building-pin{padding:7px 10px;border:2px solid white;border-radius:10px;background:rgba(233,249,255,.97);color:#123f65;box-shadow:0 5px 0 #28739f,0 10px 18px rgba(0,24,46,.3)}
+#dashboard .map-building-pin span{font-size:13px!important;color:#123f65}
+#dashboard .zone-map-note{font-size:11px;margin-top:9px}
+@media(max-width:760px){#dashboard .zone-map-panel{padding:12px}#dashboard .zone-map-heading h3{font-size:18px}#dashboard .zone-map-stage{height:430px;min-height:430px}#dashboard .map-zone-toolbar .map-zone-nav button{min-width:66px;padding:8px 10px;font-size:11px}#dashboard .map-zone-pin span{font-size:12px}#dashboard .map-zone-pin small{font-size:9px}#dashboard .map-building-pin span{font-size:11px!important}}
+/* V8.44.5 — restrained sidebar and dashboard polish, excluding status colours. */
+body:not(.theme-night) .sidebar{background:linear-gradient(165deg,rgba(25,58,123,.96) 0%,rgba(34,80,155,.94) 52%,rgba(18,52,119,.97) 100%);box-shadow:9px 0 29px rgba(10,36,89,.25)}
+body.theme-night .sidebar{background:linear-gradient(165deg,rgba(17,39,89,.97),rgba(27,62,125,.95) 55%,rgba(13,34,80,.98));box-shadow:9px 0 27px rgba(2,18,50,.34)}
+.sidebar .brand{padding-bottom:17px;margin-bottom:6px;border-bottom:1px solid rgba(210,232,255,.25)}
+.sidebar .brand-mark{border-radius:14px;box-shadow:0 8px 20px rgba(1,23,63,.3),inset 0 1px rgba(255,255,255,.35)}
+.sidebar .nav-item{border-radius:12px;transition:background .18s,transform .18s,box-shadow .18s}
+.sidebar .nav-item:hover{transform:translateX(2px)}
+.sidebar .nav-item.active{box-shadow:inset 3px 0 #e8f4ff,0 7px 17px rgba(3,28,71,.22)}
+#dashboard .command-hero{border-radius:20px;border:1px solid rgba(220,241,255,.54);box-shadow:0 18px 37px rgba(8,36,83,.21),inset 0 1px rgba(255,255,255,.26)}
+#dashboard .command-kicker{letter-spacing:.12em;font-weight:900}
+#dashboard .dashboard-shortcuts{gap:10px;margin-bottom:15px}
+#dashboard .dashboard-shortcuts button{padding:11px 12px;border-radius:14px;box-shadow:0 8px 18px rgba(8,49,99,.14)}
+#dashboard .dashboard-shortcuts .shortcut-icon{border-radius:12px;background:linear-gradient(145deg,#357ebd,#1b5596);box-shadow:0 5px 13px rgba(13,58,116,.27)}
+#dashboard .dashboard-shortcuts strong{font-size:13px}
+#dashboard .dashboard-shortcuts small{font-size:11px}
+
+/* V8.44.6 — calmer satellite view and mature blue chrome. Map links unchanged. */
+#dashboard .zone-map-panel{border:1px solid rgba(189,217,238,.75);background:rgba(231,245,252,.84);box-shadow:0 12px 26px rgba(8,37,76,.16);backdrop-filter:blur(12px)}
+body.theme-night #dashboard .zone-map-panel{background:rgba(19,45,82,.84);border-color:rgba(149,190,223,.55)}
+#dashboard .zone-map-stage{border:1px solid rgba(206,231,247,.93);border-radius:12px;background:#406b85;box-shadow:0 8px 19px rgba(12,48,78,.21);overflow:hidden}
+body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(.88) brightness(1.03) contrast(1.04)}
+body.theme-night #dashboard .zone-map-tiles{filter:saturate(.83) brightness(.93) contrast(1.04)}
+#dashboard .zone-map-stage:after,body:not(.theme-night) #dashboard .zone-map-stage:after,body.theme-night #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(11,33,55,.05),transparent 30%,rgba(11,33,55,.08) 100%)}
+#dashboard .map-zone-pin{padding:7px 10px;border:1px solid rgba(212,232,247,.94);border-radius:8px;background:rgba(249,252,255,.96);color:#173e62;box-shadow:0 3px 11px rgba(7,32,57,.25);filter:none}
+#dashboard .map-zone-pin:hover,#dashboard .map-zone-pin:focus-visible{transform:translate(-50%,-55%);filter:none;background:#fff}
+#dashboard .map-zone-pin span{font-size:12px;letter-spacing:.03em}
+#dashboard .map-zone-pin small{font-size:9px;color:#416380}
+#dashboard .map-building-pin{padding:6px 9px;border:1px solid rgba(226,241,252,.94);border-radius:8px;background:rgba(246,251,255,.97);box-shadow:0 3px 9px rgba(4,28,54,.27);filter:none}
+#dashboard .map-building-pin:hover,#dashboard .map-building-pin:focus-visible{background:#fff;transform:translate(-50%,-104%) scale(1.05);filter:none}
+#dashboard .map-building-pin span{font-size:12px!important;letter-spacing:.02em!important}
+#dashboard .map-zone-toolbar .map-zone-nav button{border-radius:9px;background:rgba(246,251,255,.87);box-shadow:none}
+#dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:#245d9b;color:#fff;box-shadow:0 4px 10px rgba(23,73,126,.18)}
+body.theme-night #dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:#a9d9f3;color:#153f67}
+body:not(.theme-night) .sidebar{background:linear-gradient(180deg,rgba(30,66,129,.96),rgba(34,79,149,.94) 52%,rgba(24,58,117,.97))}
+body.theme-night .sidebar{background:linear-gradient(180deg,rgba(17,38,81,.97),rgba(27,62,118,.96) 52%,rgba(15,34,74,.98))}
+body:not(.theme-night) #dashboard .command-hero{background:rgba(247,252,255,.48);border-color:rgba(245,252,255,.76);color:#143d62}
+body.theme-night #dashboard .command-hero{background-image:linear-gradient(100deg,rgba(6,24,58,.65),rgba(9,38,80,.43) 55%,rgba(9,40,83,.19)),url("scenic-screensaver-v8444.jpg")}
+#dashboard .dashboard-shortcuts button{border-color:rgba(216,236,249,.75)}
+@media(max-width:760px){#dashboard .map-zone-pin{padding:6px 7px}#dashboard .map-zone-pin span{font-size:11px}#dashboard .map-building-pin{padding:5px 6px}#dashboard .map-building-pin span{font-size:11px!important}}
+
+/* V8.44.7 — dark royal-blue finish, preserving status indicators and map behavior. */
+body.theme-night{background-color:#102955;background-image:linear-gradient(rgba(7,25,66,.14),rgba(7,25,66,.14)),url("scenic-screensaver-v8444.jpg")}
+body.theme-night .security-gate{background:linear-gradient(rgba(8,29,72,.16),rgba(8,29,72,.16)),url("scenic-screensaver-v8444.jpg") center/cover no-repeat}
+body:not(.theme-night) .sidebar{background:linear-gradient(180deg,rgba(25,59,126,.97),rgba(34,80,157,.94) 54%,rgba(23,55,119,.98));border-right:1px solid rgba(170,203,246,.54)}
+body.theme-night .sidebar{background:linear-gradient(180deg,rgba(12,33,80,.98),rgba(24,57,122,.96) 54%,rgba(11,32,77,.99));border-right:1px solid rgba(138,183,237,.47)}
+body:not(.theme-night) .sidebar .nav-item.active,body.theme-night .sidebar .nav-item.active{background:linear-gradient(100deg,rgba(128,180,246,.39),rgba(83,140,225,.23));border-color:rgba(194,224,255,.61);box-shadow:inset 3px 0 #d5eaff,0 7px 16px rgba(2,22,63,.2)}
+body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(110deg,rgba(225,242,255,.62),rgba(202,230,252,.37));border-color:rgba(231,246,255,.74);box-shadow:0 15px 29px rgba(12,47,95,.19)}
+body.theme-night #dashboard .command-hero{background-image:linear-gradient(105deg,rgba(8,30,75,.7),rgba(14,49,105,.46) 57%,rgba(17,54,110,.2)),url("scenic-screensaver-v8444.jpg");border-color:rgba(161,201,247,.51);box-shadow:0 16px 33px rgba(2,20,55,.31)}
+body:not(.theme-night) #dashboard .zone-map-panel{background:rgba(216,235,251,.79);border-color:rgba(178,210,240,.73)}
+body.theme-night #dashboard .zone-map-panel{background:rgba(15,39,86,.82);border-color:rgba(138,181,232,.57)}
+body.theme-night #dashboard .zone-map-heading :is(h3,p),body.theme-night #dashboard .zone-map-note{color:#e4f3ff}
+body.theme-night #dashboard .zone-map-key{background:rgba(121,169,225,.2);color:#e7f5ff}
+body.theme-night #dashboard .zone-map-stage{border-color:rgba(148,192,232,.68);background:#244b76}
+body.theme-night #dashboard .zone-map-tiles{filter:saturate(.88) brightness(.9) contrast(1.06)}
+body.theme-night #dashboard .map-zone-pin,body.theme-night #dashboard .map-building-pin{background:rgba(220,238,253,.96);border-color:rgba(236,249,255,.92);color:#123c67}
+body.theme-night #dashboard .map-zone-pin span,body.theme-night #dashboard .map-building-pin span{color:#123c67}
+body.theme-night #dashboard .map-zone-pin small{color:#416587}
+body:not(.theme-night) #dashboard .dashboard-shortcuts button{background:linear-gradient(135deg,rgba(230,244,255,.88),rgba(194,223,249,.77));color:#123d68}
+body.theme-night #dashboard .dashboard-shortcuts button{background:linear-gradient(135deg,rgba(20,55,111,.85),rgba(29,76,141,.75));border-color:rgba(138,186,235,.45)}

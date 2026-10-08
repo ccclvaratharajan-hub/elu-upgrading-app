@@ -842,7 +842,7 @@ function renderZoneMapTiles(stage){
 function layoutMapBuildings(blocks,stage){
   const positions=blocks.map(b=>{const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);return{block:b,x:p.x,y:p.y}});
   const mobile=stage.clientWidth<650,sepX=mobile?58:72,sepY=mobile?48:58;
-  const minX=36,maxX=Math.max(minX,stage.clientWidth-minX),minY=mobile?145:105,maxY=Math.max(minY,stage.clientHeight-62);
+  const minX=36,maxX=Math.max(minX,stage.clientWidth-minX),minY=mobile?75:65,maxY=Math.max(minY,stage.clientHeight-62);
   for(let k=0;k<90;k++){
     for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++){
       const a=positions[i],b=positions[j],dx=b.x-a.x,dy=b.y-a.y;
@@ -871,10 +871,11 @@ function renderZoneMap(u){
     if(activeMapZone!=="all")return"";
     const points=ZONE_BLOCKS[z].map(b=>BLOCK_MAP_LOCATION[b]);
     const lat=points.reduce((sum,p)=>sum+p[0],0)/points.length,lon=points.reduce((sum,p)=>sum+p[1],0)/points.length;
-    const p=mapPixel(lat,lon,stage),safeX=Math.max(76,Math.min(stage.clientWidth-76,p.x)),safeY=Math.max(103,Math.min(stage.clientHeight-78,p.y));
+    const p=mapPixel(lat,lon,stage),safeX=Math.max(76,Math.min(stage.clientWidth-76,p.x)),safeY=Math.max(60,Math.min(stage.clientHeight-60,p.y));
     return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${safeX}px;top:${safeY}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${ZONE_BLOCKS[z].length} blocks · ${s.pct}% done</small></button>`;
   }).join("");
-  document.getElementById("zoneMap").innerHTML=nav+markers;
+  document.getElementById("mapZoneToolbar").innerHTML=nav;
+  document.getElementById("zoneMap").innerHTML=markers;
 }
 let zoneMapResizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>renderZoneMap(unitsArray()),140)});
