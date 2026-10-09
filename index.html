@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.20">
+  <link rel="stylesheet" href="styles.css?v=8.44.21">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -14,6 +14,8 @@
     <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M8 8h2m4 0h2M8 12h2m4 0h2M8 16h2m4 0h2M2 21h20"/></symbol>
     <symbol id="i-survey" viewBox="0 0 24 24"><path d="M7 3h10v4H7zM5 5H4v16h16V5h-1M8 12l2 2 5-5M8 18h8"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2ZM7 2v4m10-4v4M3 9h18M7 13h3v3H7z"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 8V3h12v5M6 17H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6zM18 11h.01"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
     <symbol id="i-register" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5M8 19h4"/></symbol>
     <symbol id="i-complaint" viewBox="0 0 24 24"><path d="M4 4h16v13H9l-5 4zM8 8h8M8 12h6"/></symbol>
     <symbol id="i-team" viewBox="0 0 24 24"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m2 0v-2a5 5 0 0 0-2-4m4-1a5 5 0 0 1 4 5v2"/></symbol>
@@ -240,7 +242,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">UPCOMING VISITS</span><h3>Survey Register</h3><p id="surveyScopeNote">Showing upcoming visits without a later appointment. Past and booked visits are in Show all.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="surveyZoneFilter"></select></label><button type="button" class="ghost-btn" id="surveyPrintBtn">Print upcoming</button><label class="mini-filter">Print date<input type="date" id="surveyPrintDate"></label><button type="button" class="ghost-btn" id="surveyPrintDateBtn">Print date</button><button type="button" class="ghost-btn" id="surveyPrintFullBtn">Print full</button><button type="button" class="ghost-btn" id="surveyShowAllBtn">Show all</button></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">UPCOMING VISITS</span><h3>Survey Register</h3><p id="surveyScopeNote">Showing upcoming visits without a later appointment. Past and booked visits are in Show all.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="surveyZoneFilter"></select></label><button type="button" class="ghost-btn survey-tool-btn" id="surveyPrintBtn"><svg aria-hidden="true"><use href="#i-print"/></svg>Print upcoming</button><label class="mini-filter">Print date<input type="date" id="surveyPrintDate"></label><button type="button" class="ghost-btn survey-tool-btn" id="surveyPrintDateBtn"><svg aria-hidden="true"><use href="#i-print"/></svg>Print date</button><button type="button" class="ghost-btn survey-tool-btn" id="surveyPrintFullBtn"><svg aria-hidden="true"><use href="#i-print"/></svg>Print full</button><button type="button" class="ghost-btn survey-tool-btn" id="surveyShowAllBtn"><svg aria-hidden="true"><use href="#i-list"/></svg><span>Show all</span></button></div></div>
             <div id="surveyTable" class="table-shell"></div>
           </article>
         </div>
@@ -741,7 +743,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.20"></script>
+  <script src="app.js?v=8.44.21"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 </body>

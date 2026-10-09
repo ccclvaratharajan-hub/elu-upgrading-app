@@ -1094,7 +1094,7 @@ function renderSurveyTable(){
   const upcoming=upcomingSurveyVisits(zone);
   const history=all.filter(s=>!upcoming.includes(s)).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
   const r=surveyRecentOnly?upcoming:[...upcoming,...history];
-  document.getElementById("surveyShowAllBtn").textContent=surveyRecentOnly?"Show all":"Upcoming only";
+  document.querySelector("#surveyShowAllBtn span").textContent=surveyRecentOnly?"Show all":"Upcoming only";
   document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} upcoming survey visit${r.length===1?"":"s"} without a later appointment. Past and booked visits are in Show all.`:`All ${all.length} survey visits shown, including past and booked visits.`;
   document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
 }
@@ -1108,20 +1108,10 @@ function printSurveyRegister(mode){
   if(!visits.length){toast(mode==="date"?"No survey visits on this date":mode==="full"?"No survey visits to print":"No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
   const printScope=mode==="date"?`Survey date ${safeDate(selectedDate)}`:mode==="full"?"Full register":"Upcoming visits";
-  const blockColors=[
-    {ink:"#155a99",tint:"#e5f1ff"},{ink:"#a34e13",tint:"#fff0df"},
-    {ink:"#7041a1",tint:"#f2eaff"},{ink:"#087369",tint:"#def6ee"},
-    {ink:"#a72d58",tint:"#ffe7ef"},{ink:"#786012",tint:"#fff5d4"},
-    {ink:"#16647f",tint:"#e0f5fb"}
-  ];
   const perPage=16,groups=[];
   for(let i=0;i<visits.length;i+=perPage)groups.push(visits.slice(i,i+perPage));
   const pages=groups.map((group,page)=>{
-    const rows=group.map((s,i)=>{
-      const z=String(s.zone||zoneOfBlock(s.block)),blockIndex=(ZONE_BLOCKS[z]||[]).indexOf(Number(s.block));
-      const color=blockColors[(blockIndex<0?Number(s.block):blockIndex)%blockColors.length];
-      return `<tr><td>${page*perPage+i+1}</td><td class="block-cell" style="--block-color:${color.ink};--block-tint:${color.tint}"><strong>Zone ${esc(z)} · Blk ${esc(s.block)}</strong></td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`
-    }).join("");
+    const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td><strong>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</strong></td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
     return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${esc(printScope)} · ${visits.length} visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE / TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
   }).join("");
   const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
@@ -1130,21 +1120,20 @@ function printSurveyRegister(mode){
     *{box-sizing:border-box}
     html,body{width:auto;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;color:#14283e;background:#fff}
-    .sheet{width:274mm;max-width:100%;margin:0 auto;break-after:page;page-break-after:always}
+    .sheet{width:274mm;max-width:100%;margin:0 auto;padding:3mm;border:2px solid #173e63;break-after:page;page-break-after:always}
     .sheet:last-child{break-after:auto;page-break-after:auto}
     header{background:#174f89;color:#fff;border:1px solid #103e70;border-radius:5px;padding:7px 10px;margin-bottom:8px}
     h1{text-align:center;font-size:19px;letter-spacing:.03em;color:#fff;margin:0 0 5px;font-weight:900}
     .meta{display:flex;justify-content:space-between;gap:10px;color:#f0f8ff;font-size:11px;font-weight:800}
-    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px;border:1.5px solid #4b6d8d}
+    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px;border:1px solid #6285a6}
     th,td{border:0;border-right:1px solid #6285a6;border-bottom:1px solid #6285a6;text-align:left;vertical-align:middle;padding:4px 5px;overflow-wrap:anywhere;background:#fff}
     tr>:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}
     th{height:9mm;background:#d4e8fa;color:#103e70;font-size:11px;font-weight:900}
-    td{height:9.5mm;color:#102c47;font-weight:650}
-    .block-cell{border-left:5px solid var(--block-color);background:var(--block-tint);color:var(--block-color);font-weight:900}
+    td{height:9mm;color:#102c47;font-weight:650}
     th:nth-child(1){width:6%}th:nth-child(2){width:15%}th:nth-child(3){width:10%}
     th:nth-child(4){width:17%}th:nth-child(5){width:17%}th:nth-child(6){width:17%}th:nth-child(7){width:18%}
     thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
-    @media print{header,th,.block-cell{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    @media print{header,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
   win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)} · ${esc(printScope)}</title><style>${printCss}</style></head><body>${pages}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
 }
