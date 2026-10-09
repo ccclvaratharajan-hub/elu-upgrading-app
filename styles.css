@@ -2987,3 +2987,128 @@ body:not(.theme-night) #dashboard .hero-tags .sync-tag{background:rgba(216,233,2
 body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(.92) brightness(1.04) contrast(1.08)}
 body:not(.theme-night) #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(22,71,122,.05),transparent 72%,rgba(12,47,91,.12))}
 body.theme-night #dashboard .zone-map-stage{border-color:rgba(151,192,243,.64);box-shadow:0 6px 18px rgba(4,24,58,.29)}
+
+/* V8.44.11 — keep the Block Board title and all six totals neatly aligned. */
+@media screen and (min-width:1700px){
+  body:has(#blockboard.view.active) .topbar{gap:10px;align-items:center}
+  body:has(#blockboard.view.active) .topbar>div:first-child{flex:0 0 auto}
+  body:has(#blockboard.view.active) .topbar h1{font-size:29px;white-space:nowrap}
+  body:has(#blockboard.view.active) .top-actions{gap:5px;flex-wrap:nowrap;min-width:0}
+  body:has(#blockboard.view.active) .top-actions>*{flex-shrink:0}
+  body:has(#blockboard.view.active) .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){padding:6px 8px;font-size:10px}
+  body:has(#blockboard.view.active) .lighting-mode-btn{padding:6px 7px}
+}
+@media screen and (min-width:1100px){
+  #blockboard .block-headline{gap:15px}
+  #blockboard .block-title-wrap{flex:0 0 215px;min-width:0}
+  #blockboard .block-summary-grid{grid-template-columns:repeat(6,minmax(0,1fr));width:auto;max-width:none;min-width:0;flex:1;gap:8px}
+  body.theme-night #blockboard .block-summary-grid{grid-template-columns:repeat(6,minmax(0,1fr));max-width:none}
+  #blockboard .block-summary-grid .summary-tile{min-width:0;padding:9px 8px}
+  #blockboard .block-summary-grid .summary-tile span{white-space:normal;line-height:1.15}
+}
+@media screen and (min-width:761px) and (max-width:1699px){
+  body:has(#blockboard.view.active) .topbar{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+  body:has(#blockboard.view.active) .topbar h1{white-space:nowrap}
+  body:has(#blockboard.view.active) .top-actions{justify-content:flex-start;gap:6px}
+}
+@media screen and (min-width:761px) and (max-width:1099px){
+  #blockboard .block-headline{flex-direction:column!important;gap:10px}
+  #blockboard .block-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;width:100%}
+  body.theme-night #blockboard .block-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none}
+}
+@media screen and (max-width:760px){
+  #blockboard .block-headline{flex-direction:column!important;gap:10px}
+  #blockboard .block-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none;width:100%}
+  body.theme-night #blockboard .block-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}
+}
+
+/* Shared alignment: titles, controls and cards keep their own rows. */
+@media screen{
+  .topbar>div:first-child,.panel-head>div:first-child,.report-hero>div:first-child,
+  .planner-hero>div:first-child,.section-toolbar>.filter-group{min-width:0}
+  .top-actions,.register-tools,.toolbar-actions,.report-actions{row-gap:7px}
+  .section-toolbar{flex-wrap:wrap;align-items:end}
+  .section-toolbar>.filter-group,.section-toolbar>.toolbar-actions{min-width:0}
+  .panel-head,.register-head{gap:10px;flex-wrap:wrap}
+  .panel-head h3,.report-hero h2,.planner-hero h2{overflow-wrap:normal;word-break:normal}
+  .report-summary-cards,.kpi-grid,.premium-kpis,.dashboard-shortcuts{min-width:0}
+  :is(.report-mini-card,.kpi-card,.zone-summary-tile,.summary-tile){min-width:0}
+  .zone-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0}
+  .zone-summary-tile span{white-space:normal;line-height:1.15}
+  #blockboard .zone-summary-title{flex:0 0 360px;min-width:0}
+  #blockboard .zone-summary-title strong{line-height:1.4}
+  .table-shell{max-width:100%;overflow-x:auto}
+}
+@media screen and (min-width:761px) and (max-width:1200px){
+  #blockboard .zone-headline{flex-direction:column;gap:9px}
+  #blockboard .zone-summary-title{flex-basis:auto}
+  .zone-summary-grid{width:100%}
+}
+@media screen and (max-width:760px){
+  #blockboard .zone-headline{flex-direction:column;gap:9px}
+  #blockboard .zone-summary-title{flex-basis:auto}
+  .zone-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .register-tools,.toolbar-actions,.report-actions{max-width:100%;flex-wrap:wrap}
+}
+
+/* V8.44.11 — field atlas map layout; the same geographic pins and links remain live. */
+#dashboard .zone-map-panel{max-width:1060px;padding:16px;background:rgba(236,247,255,.9);border:1px solid rgba(162,198,232,.84);border-radius:18px}
+#dashboard .zone-map-heading{align-items:center;margin-bottom:12px}
+#dashboard .zone-map-key{border-radius:999px;background:#e0efff;color:#194c7c}
+#dashboard .map-atlas-layout{display:grid;grid-template-columns:168px minmax(0,1fr);gap:10px;min-width:0;align-items:stretch}
+#dashboard .map-atlas-rail{min-width:0;padding:14px 10px;display:flex;flex-direction:column;gap:9px;border-radius:13px;background:linear-gradient(155deg,#103663,#1f5890);color:#eaf5ff;border:1px solid #689cd0;box-shadow:0 8px 17px rgba(15,55,103,.16)}
+#dashboard .map-atlas-rail>strong{padding:0 5px;font-size:10px;letter-spacing:.12em;white-space:nowrap}
+#dashboard .map-atlas-rail>small{margin-top:auto;padding:0 5px;color:#c8e0f8;font-size:10px;line-height:1.35}
+#dashboard .map-zone-toolbar{margin:0;overflow:visible}
+#dashboard .map-zone-toolbar .map-zone-nav{display:grid;grid-template-columns:1fr;width:100%;gap:6px;justify-items:stretch}
+#dashboard .map-zone-toolbar .map-zone-nav button{width:100%;min-width:0;text-align:left;padding:9px 10px;border-radius:9px;border:1px solid rgba(184,215,247,.27);background:rgba(225,240,255,.12);color:#ecf7ff;box-shadow:none;font-size:11px}
+#dashboard .map-zone-toolbar .map-zone-nav button:hover{background:rgba(179,215,252,.29);color:#fff}
+#dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:#edf6ff;color:#143f70;border-color:#fff;box-shadow:0 3px 9px rgba(2,20,56,.18)}
+#dashboard .zone-map-stage{height:376px;min-height:376px;border:3px solid #eef7ff;border-radius:13px;background:#78a6c2;box-shadow:0 0 0 1px #a8c5df,0 8px 20px rgba(16,48,85,.22)}
+body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(.93) brightness(1.08) contrast(1.08)}
+#dashboard .zone-map-stage:after,body:not(.theme-night) #dashboard .zone-map-stage:after,body.theme-night #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(14,60,101,.16),transparent 20%,transparent 75%,rgba(9,48,91,.18));pointer-events:none}
+#dashboard .map-zone-pin,body.theme-night #dashboard .map-zone-pin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:78px;height:78px;padding:6px;border-radius:50%;border:3px solid #fff;background:linear-gradient(150deg,#164e86,#267db1);color:#fff;box-shadow:0 0 0 4px rgba(82,178,227,.28),0 8px 18px rgba(4,28,59,.32)}
+#dashboard .map-zone-pin span,body.theme-night #dashboard .map-zone-pin span{color:#fff;font-size:11px;line-height:1.1}
+#dashboard .map-zone-pin small,body.theme-night #dashboard .map-zone-pin small{color:#e3f5ff;font-size:8px;line-height:1.15;white-space:normal}
+#dashboard .map-zone-pin:hover,#dashboard .map-zone-pin:focus-visible{background:linear-gradient(150deg,#216da2,#3994c5);transform:translate(-50%,-55%) scale(1.05)}
+#dashboard .map-building-pin,body.theme-night #dashboard .map-building-pin{min-width:65px;padding:7px 9px;border-radius:999px;border:2px solid #fff;background:#f4fbff;color:#164c7b;box-shadow:0 0 0 3px rgba(34,119,179,.35),0 7px 15px rgba(3,30,61,.3)}
+#dashboard .map-building-pin span,body.theme-night #dashboard .map-building-pin span{color:#164c7b;font-size:12px!important}
+#dashboard .map-building-pin:hover,#dashboard .map-building-pin:focus-visible{background:#fff;transform:translate(-50%,-110%) scale(1.05)}
+body.theme-night #dashboard .zone-map-panel{background:rgba(19,46,85,.91);border-color:rgba(124,177,225,.65)}
+body.theme-night #dashboard .map-atlas-rail{background:linear-gradient(155deg,#081d43,#174477);border-color:#6e9bcc}
+body.theme-night #dashboard .map-zone-toolbar .map-zone-nav button{background:rgba(188,222,255,.13);border-color:rgba(187,218,250,.31);color:#ecf7ff}
+body.theme-night #dashboard .map-zone-toolbar .map-zone-nav button[aria-pressed="true"]{background:#e8f5ff;color:#103e6e;border-color:#fff}
+body.theme-night #dashboard .zone-map-tiles{filter:saturate(.92) brightness(.98) contrast(1.09)}
+body.theme-night #dashboard .zone-map-stage{border-color:#9cc6e6;box-shadow:0 0 0 1px #6c9ec9,0 9px 23px rgba(0,15,43,.3)}
+@media screen and (max-width:760px){
+  #dashboard .map-atlas-layout{display:flex;flex-direction:column;gap:8px}
+  #dashboard .map-atlas-rail{padding:9px 10px;gap:6px}
+  #dashboard .map-atlas-rail>small{display:none}
+  #dashboard .map-zone-toolbar{overflow-x:auto}
+  #dashboard .map-zone-toolbar .map-zone-nav{display:flex;flex-wrap:nowrap;width:max-content;gap:5px}
+  #dashboard .map-zone-toolbar .map-zone-nav button{width:auto;min-width:64px;text-align:center;padding:7px 9px}
+  #dashboard .zone-map-stage{height:370px;min-height:370px}
+  #dashboard .map-zone-pin,body.theme-night #dashboard .map-zone-pin{width:65px;height:65px}
+  #dashboard .map-zone-pin small,body.theme-night #dashboard .map-zone-pin small{font-size:7px}
+}
+
+/* 100% browser zoom: appointment entry stays compact; register uses full width. */
+@media screen{
+  #appointments .form-layout{grid-template-columns:minmax(0,1fr);gap:10px}
+  #appointments .form-card{position:static}
+  #appointments .premium-form label{font-size:12px;font-weight:850}
+  #appointments .premium-form :is(input,select,textarea){font-size:13px}
+  #appointments .table-shell{width:100%;max-width:100%}
+  #appointments .table-shell :is(th,td){font-size:12px;line-height:1.3;padding:8px 7px}
+  #appointments .register-head{align-items:flex-start}
+}
+@media screen and (min-width:1250px){
+  #appointmentForm{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px 13px;align-items:end}
+  #appointmentForm>.form-row.three,#appointmentForm>.form-row.two,
+  #appointmentForm>.planned-schedule-card,#appointmentForm>.inline-sync-note,
+  #appointmentForm>.form-actions,#appointmentForm>.form-hint,
+  #appointmentForm>label{grid-column:span 2;min-width:0}
+  #appointmentForm>.planner-custom-time{grid-column:1/-1}
+  #appointmentForm>.form-row{min-width:0}
+  #appointmentForm textarea{min-height:42px;max-height:80px}
+}

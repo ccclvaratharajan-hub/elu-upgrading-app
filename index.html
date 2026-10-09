@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
-  <link rel="stylesheet" href="styles.css?v=8.44.9">
+  <link rel="stylesheet" href="styles.css?v=8.44.11">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -153,16 +153,18 @@
 
         <article class="panel zone-map-panel" id="zoneMapPanel" data-mode="map" aria-labelledby="zoneMapTitle">
           <div class="panel-head zone-map-heading">
-            <div><span class="section-label">PROJECT COVERAGE</span><h3 id="zoneMapTitle">Pasir Ris project map</h3><p>Choose a zone, then select a block label to open its board.</p></div>
+            <div><span class="section-label">FIELD ATLAS · PASIR RIS</span><h3 id="zoneMapTitle">Project location atlas</h3><p>Select a zone, then open its block directly from the map.</p></div>
             <span class="zone-map-key">6 zones · 38 blocks</span>
           </div>
-          <div id="mapZoneToolbar" class="map-zone-toolbar" aria-label="Select a project zone"></div>
-          <div class="zone-map-stage">
-            <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
-            <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone or block"></div>
-            <div class="zone-map-attribution">Imagery © <a href="https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank" rel="noopener noreferrer">Esri</a>, Maxar, Earthstar Geographics &amp; GIS User Community · Fallback © <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a> contributors / SLA</div>
+          <div class="map-atlas-layout">
+            <aside class="map-atlas-rail"><strong>EXPLORE ZONES</strong><div id="mapZoneToolbar" class="map-zone-toolbar" aria-label="Select a project zone"></div><small>Choose a zone to reveal its blocks.</small></aside>
+            <div class="zone-map-stage">
+              <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
+              <div id="zoneMap" class="zone-map-grid" aria-label="Choose a zone or block"></div>
+              <div class="zone-map-attribution">Imagery © <a href="https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank" rel="noopener noreferrer">Esri</a>, Maxar, Earthstar Geographics &amp; GIS User Community · Fallback © <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a> contributors / SLA</div>
+            </div>
           </div>
-          <p class="zone-map-note" id="zoneMapNote">Pasir Ris Drive 1 &amp; Street 51 · real satellite imagery from above, with approximate block labels.</p>
+          <p class="zone-map-note" id="zoneMapNote">Pasir Ris Drive 1 &amp; Street 51 · satellite locations with approximate block labels.</p>
         </article>
 
         <div class="dashboard-grid dashboard-grid-wow">
@@ -737,7 +739,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.9"></script>
+  <script src="app.js?v=8.44.11"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 </body>

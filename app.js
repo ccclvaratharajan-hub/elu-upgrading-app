@@ -1034,9 +1034,25 @@ document.getElementById("surveyPrintBtn").addEventListener("click",()=>{
   const zone=document.getElementById("surveyZoneFilter").value,visits=upcomingSurveyVisits(zone);
   if(!visits.length){toast("No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
-  const rows=visits.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.zone||zoneOfBlock(s.block))}</td><td>${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td class="write"></td><td class="write"></td></tr>`).join("");
+  const rows=visits.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.zone||zoneOfBlock(s.block))}</td><td>${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td></tr>`).join("");
   const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
-  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#12263c;margin:0}h1{font-size:17px;margin:0 0 3px}p{font-size:11px;margin:0 0 10px}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}th,td{border:1px solid #8196a9;padding:5px 4px;text-align:left;vertical-align:middle;overflow-wrap:anywhere}th{background:#dceaf6;font-weight:800}td{height:17mm}th:nth-child(1){width:5%}th:nth-child(2){width:6%}th:nth-child(3){width:7%}th:nth-child(4){width:9%}th:nth-child(5){width:13%}th:nth-child(6){width:12%}th:nth-child(7){width:12%}th:nth-child(8){width:18%}th:nth-child(9){width:18%}.write{background:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#e0e7ef 22px)}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}@media print{th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><h1>ELU · Survey Visit Register</h1><p>${esc(scope)} · Printed ${esc(safeDate(isoTodaySG()))} · ${visits.length} upcoming visit${visits.length===1?"":"s"}</p><table><thead><tr><th>S/N</th><th>Zone</th><th>Blk</th><th>Unit</th><th>Visit date / time</th><th>Owner</th><th>Contact</th><th>Visit outcome</th><th>Appointment / remarks</th></tr></thead><tbody>${rows}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
+  const printCss=`
+    @page{size:A4 landscape;margin:8mm}
+    *{box-sizing:border-box}
+    html,body{width:100%;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
+    h1{font-size:16px;line-height:1.2;margin:0 0 4px;padding-left:8px;border-left:4px solid #db761b;color:#111}
+    p{font-size:10px;margin:0 0 8px;color:#333}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5px}
+    th,td{border:1px solid #333;text-align:left;vertical-align:middle;padding:4px 4px;overflow-wrap:anywhere;word-break:break-word;background:#fff;color:#111}
+    th{border-top:2px solid #db761b;font-weight:700;height:9mm}
+    td{height:11mm}
+    th:nth-child(1){width:6%}th:nth-child(2){width:8%}th:nth-child(3){width:10%}
+    th:nth-child(4){width:12%}th:nth-child(5){width:18%}th:nth-child(6){width:23%}
+    th:nth-child(7){width:23%}
+    thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
+  `;
+  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>${printCss}</style></head><body><h1>ELU · Survey Visit Register</h1><p>${esc(scope)} · Printed ${esc(safeDate(isoTodaySG()))} · ${visits.length} upcoming visit${visits.length===1?"":"s"}</p><table><thead><tr><th>S/N</th><th>Zone</th><th>Blk</th><th>Unit</th><th>Visit date / time</th><th>Owner</th><th>Contact</th></tr></thead><tbody>${rows}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
 });
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
