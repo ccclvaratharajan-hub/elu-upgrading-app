@@ -916,8 +916,7 @@ async function ensureSatellite3DMap(){
   if(satellite3DMap||satellite3DLoading||!container||!container.clientWidth)return;
   satellite3DLoading=true;
   try{
-    const {default:maplibregl}=await import("https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs");
-    if(!maplibregl.supported())throw Error("WebGL unavailable");
+    const maplibregl=await import("https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs");
     const map=new maplibregl.Map({
       container,center:[ZONE_MAP_CENTER[1],ZONE_MAP_CENTER[0]],zoom:16.1,pitch:58,bearing:-24,
       maxPitch:70,antialias:true,attributionControl:true,
