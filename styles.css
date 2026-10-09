@@ -3199,13 +3199,7 @@ body.theme-night #survey .survey-tool-btn{background:rgba(22,65,107,.88);border-
 body.theme-night #survey .register-tools #surveyZoneFilter{background-color:#17436b;color:#ecf7ff}
 @media(max-width:760px){#survey .register-tools{flex-direction:row;align-items:end}#survey .survey-tool-btn{flex:1 1 auto}}
 
-/* V8.44.23 — select individual complaint cases across dates for the Excel report. */
-#complaints .complaint-export-picker{margin:12px 0;border:1px solid #a7c9e5;border-radius:12px;background:rgba(241,249,255,.9);padding:11px 13px;color:#183e62}
-#complaints .complaint-export-picker h4{margin:0;font-size:14px;font-weight:850}
-#complaints .complaint-export-list{display:grid;gap:5px;max-height:310px;overflow:auto;margin-top:10px}
-#complaints .complaint-export-row{display:grid;grid-template-columns:22px 115px 170px minmax(0,1fr);align-items:center;gap:8px;padding:8px 9px;border:1px solid #c8dfef;border-radius:8px;background:rgba(255,255,255,.9);font-size:13px;cursor:pointer}
-#complaints .complaint-export-row input{width:16px;height:16px;accent-color:#18558b}
-#complaints .complaint-export-row .complaint-export-description{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body.theme-night #complaints .complaint-export-picker{background:rgba(19,55,91,.87);color:#e9f6ff}
-body.theme-night #complaints .complaint-export-row{background:rgba(20,61,99,.94);color:#e9f6ff;border-color:#5689b4}
-@media(max-width:760px){#complaints .complaint-export-row{grid-template-columns:22px 85px minmax(0,1fr)}#complaints .complaint-export-description{grid-column:2 / -1}}
+/* V8.44.25 — selection lives in each complaint row, with no duplicate list. */
+#complaints .complaint-pick-cell{text-align:center;min-width:66px}
+#complaints .complaint-pick-cell input{width:20px;height:20px;accent-color:#18558b;cursor:pointer}
+#complaints .complaint-register-shell table{min-width:1020px}

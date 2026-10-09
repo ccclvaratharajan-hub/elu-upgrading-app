@@ -20,8 +20,8 @@
   function reportRecords(asOf,mode){
     const zone=document.getElementById('complaintZoneFilter').value;
     const block=document.getElementById('complaintBlockFilter').value;
-    return state.complaints.filter(c=>isTownCouncilCase(c)&&
-      (mode==='selected'?selectedIds.has(String(c.id)):
+    return state.complaints.filter(c=>
+      (mode==='selected'?selectedIds.has(String(c.id)):isTownCouncilCase(c)&&
         (mode!=='date'||c.date===asOf)&&
         (zone==='all'||Number(c.zone||zoneOfBlock(c.block))===Number(zone))&&
         (block==='all'||Number(c.block)===Number(block))))
@@ -82,18 +82,15 @@
     return zip.generateAsync({type:'blob',compression:'DEFLATE'});
   }
   function renderSelection(){
-    const zone=document.getElementById('complaintZoneFilter').value,block=document.getElementById('complaintBlockFilter').value;
     const existing=new Set(state.complaints.map(c=>String(c.id)));for(const id of selectedIds)if(!existing.has(id))selectedIds.delete(id);
-    const records=state.complaints.filter(c=>isTownCouncilCase(c)&&(zone==='all'||Number(c.zone||zoneOfBlock(c.block))===Number(zone))&&(block==='all'||Number(c.block)===Number(block)))
-      .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Number(a.block)-Number(b.block));
-    document.getElementById('complaintExportCount').textContent=`${selectedIds.size} selected`;
-    document.getElementById('complaintExportSelection').innerHTML=records.length?`<div class="complaint-export-list">${records.map(c=>`<label class="complaint-export-row"><input type="checkbox" data-complaint-export-id="${xml(c.id)}" ${selectedIds.has(String(c.id))?'checked':''}><strong>${xml(enDate(c.date))}</strong><strong>Blk ${xml(c.block)} ${xml(c.unitDisplay||unitDisplay(c.floor,c.unit))}</strong><span class="complaint-export-description">${xml(tcCaseId(c)||'TC')} · ${xml(c.complaint||'')}</span></label>`).join('')}</div>`:'<p>No Town Council complaints in this filter.</p>';
+    document.getElementById('complaintExportCount').textContent=String(selectedIds.size);
+    document.querySelectorAll('#complaintTable [data-complaint-export-id]').forEach(input=>{input.checked=selectedIds.has(input.dataset.complaintExportId)});
   }
   window.renderComplaintExportSelection=renderSelection;
-  document.getElementById('complaintExportSelection').addEventListener('change',e=>{
+  document.getElementById('complaintTable').addEventListener('change',e=>{
     const input=e.target.closest('[data-complaint-export-id]');if(!input)return;
     if(input.checked)selectedIds.add(input.dataset.complaintExportId);else selectedIds.delete(input.dataset.complaintExportId);
-    document.getElementById('complaintExportCount').textContent=`${selectedIds.size} selected`;
+    document.getElementById('complaintExportCount').textContent=String(selectedIds.size);
   });
   renderSelection();
   for(const [mode,button] of Object.entries(buttons))button.addEventListener('click',async()=>{

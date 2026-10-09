@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.24">
+  <link rel="stylesheet" href="styles.css?v=8.44.25">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -363,8 +363,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Unit complaint register</h3><p>One clear row per unit. Open it to see complaints and visits side by side.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label><label class="mini-filter">Report date<input type="date" id="complaintReportDate"></label><button type="button" class="ghost-btn" id="complaintExcelDateBtn">Date-wise Excel</button><button type="button" class="ghost-btn" id="complaintExcelFullBtn">Full Excel</button><button type="button" class="ghost-btn" id="complaintExcelSelectedBtn">Selected Excel</button><button type="button" class="primary-btn" id="complaintNewBtn">+ New complaint</button></div></div>
-            <div class="complaint-export-picker"><h4>Town Council complaints · tick cases to print <span id="complaintExportCount">0 selected</span></h4><div id="complaintExportSelection"></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Complaint register</h3><p>Each complaint appears once. Tick the Town Council cases you want in the Excel report.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label><label class="mini-filter">Report date<input type="date" id="complaintReportDate"></label><button type="button" class="ghost-btn" id="complaintExcelDateBtn">Date-wise Excel</button><button type="button" class="ghost-btn" id="complaintExcelFullBtn">Full Excel</button><button type="button" class="ghost-btn" id="complaintExcelSelectedBtn">Selected Excel (<span id="complaintExportCount">0</span>)</button><button type="button" class="primary-btn" id="complaintNewBtn">+ New complaint</button></div></div>
             <div id="complaintTable" class="table-shell"></div>
           </article>
           <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
@@ -744,9 +743,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.24"></script>
+  <script src="app.js?v=8.44.25"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
-<script src="complaint-excel-report.js?v=8.44.24"></script>
+<script src="complaint-excel-report.js?v=8.44.25"></script>
 </body>
 </html>
