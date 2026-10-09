@@ -3155,3 +3155,32 @@ body.theme-night #dashboard .zone-map-tiles{filter:saturate(.56) brightness(1.04
 #dashboard .satellite-map-marker:hover,#dashboard .satellite-map-marker:focus-visible{
   outline:2px solid #97dcff;outline-offset:2px;filter:brightness(1.12)
 }
+
+/* V8.44.18 — move the zone selector above the full-width satellite map. */
+#dashboard .map-atlas-layout{display:flex;flex-direction:column;gap:9px}
+#dashboard .map-atlas-rail,body.theme-night #dashboard .map-atlas-rail{
+  display:flex;flex-direction:row;align-items:center;gap:15px;width:100%;padding:9px 12px;
+  background:linear-gradient(100deg,#103663,#205d9a);border:1px solid #719ed0;border-radius:11px
+}
+#dashboard .map-atlas-rail>strong{flex:none;padding:0;font-size:11px}
+#dashboard .map-zone-toolbar{flex:1;min-width:0;overflow-x:auto}
+#dashboard .map-zone-toolbar .map-zone-nav{
+  display:flex;flex-wrap:nowrap;gap:6px;width:max-content;max-width:none;align-items:center
+}
+#dashboard .map-zone-toolbar .map-zone-nav button{
+  width:auto;min-width:75px;text-align:center;padding:8px 11px;white-space:nowrap
+}
+#dashboard .zone-map-stage{width:100%}
+@media(max-width:760px){
+  #dashboard .map-atlas-rail,body.theme-night #dashboard .map-atlas-rail{gap:8px;padding:8px}
+  #dashboard .map-atlas-rail>strong{font-size:9px}
+  #dashboard .map-zone-toolbar .map-zone-nav button{min-width:64px;padding:7px 9px}
+}
+
+/* V8.44.20 — restore the separate appointment entry and register panels on desktop. */
+@media screen and (min-width:1180px){
+  #appointments .form-layout{grid-template-columns:minmax(330px,390px) minmax(0,1fr);gap:14px;align-items:start}
+  #appointments .form-layout>article{min-width:0}
+  #appointments #appointmentForm{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #appointments .table-shell{min-width:0;overflow-x:auto}
+}

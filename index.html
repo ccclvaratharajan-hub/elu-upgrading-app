@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.17">
+  <link rel="stylesheet" href="styles.css?v=8.44.20">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -158,7 +158,7 @@
             <span class="zone-map-key">6 zones · 38 blocks</span>
           </div>
           <div class="map-atlas-layout">
-            <aside class="map-atlas-rail"><strong>EXPLORE ZONES</strong><div id="mapZoneToolbar" class="map-zone-toolbar" aria-label="Select a project zone"></div><small>Choose a zone to reveal its blocks.</small></aside>
+            <nav class="map-atlas-rail" aria-label="Project zones"><strong>EXPLORE ZONES</strong><div id="mapZoneToolbar" class="map-zone-toolbar" aria-label="Select a project zone"></div></nav>
             <div class="zone-map-stage">
               <div id="zoneMapTiles" class="zone-map-tiles" aria-hidden="true"></div>
               <div id="satellite3DMap" class="satellite-3d-map" aria-label="Interactive satellite map"></div>
@@ -240,7 +240,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">UPCOMING VISITS</span><h3>Survey Register</h3><p id="surveyScopeNote">Showing upcoming visits without a later appointment. Past and booked visits are in Show all.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="surveyZoneFilter"></select></label><button type="button" class="ghost-btn" id="surveyPrintBtn">Print upcoming</button><button type="button" class="ghost-btn" id="surveyShowAllBtn">Show all</button></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">UPCOMING VISITS</span><h3>Survey Register</h3><p id="surveyScopeNote">Showing upcoming visits without a later appointment. Past and booked visits are in Show all.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="surveyZoneFilter"></select></label><button type="button" class="ghost-btn" id="surveyPrintBtn">Print upcoming</button><label class="mini-filter">Print date<input type="date" id="surveyPrintDate"></label><button type="button" class="ghost-btn" id="surveyPrintDateBtn">Print date</button><button type="button" class="ghost-btn" id="surveyPrintFullBtn">Print full</button><button type="button" class="ghost-btn" id="surveyShowAllBtn">Show all</button></div></div>
             <div id="surveyTable" class="table-shell"></div>
           </article>
         </div>
@@ -741,7 +741,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.17"></script>
+  <script src="app.js?v=8.44.20"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 </body>

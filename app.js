@@ -911,7 +911,7 @@ function updateSatellite3DMarkers(u){
     const west=Math.min(...points.map(p=>p[1])),east=Math.max(...points.map(p=>p[1]));
     const south=Math.min(...points.map(p=>p[0])),north=Math.max(...points.map(p=>p[0]));
     satellite3DMap.fitBounds([[west,south],[east,north]],{
-      padding:activeMapZone==="all"?32:24,maxZoom:activeMapZone==="all"?16.9:18.35,
+      padding:activeMapZone==="all"?18:12,maxZoom:activeMapZone==="all"?17.15:18.5,
       pitch:0,bearing:0,duration:satellite3DZone===null?0:650,linear:true
     });
     satellite3DZone=activeMapZone;
@@ -1098,38 +1098,59 @@ function renderSurveyTable(){
   document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} upcoming survey visit${r.length===1?"":"s"} without a later appointment. Past and booked visits are in Show all.`:`All ${all.length} survey visits shown, including past and booked visits.`;
   document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
 }
-document.getElementById("surveyPrintBtn").addEventListener("click",()=>{
-  const zone=document.getElementById("surveyZoneFilter").value,visits=upcomingSurveyVisits(zone);
-  if(!visits.length){toast("No upcoming survey visits to print");return}
+function printSurveyRegister(mode){
+  const zone=document.getElementById("surveyZoneFilter").value;
+  const selectedDate=document.getElementById("surveyPrintDate").value;
+  if(mode==="date"&&!selectedDate){toast("Choose a survey print date");return}
+  const all=state.surveys.filter(s=>zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone));
+  const visits=(mode==="upcoming"?upcomingSurveyVisits(zone):mode==="date"?all.filter(s=>(s.visitDate||s.followUpDate||"")===selectedDate):all)
+    .slice().sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||Number(a.block)-Number(b.block)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.floor)-Number(b.floor)||Number(a.unit)-Number(b.unit));
+  if(!visits.length){toast(mode==="date"?"No survey visits on this date":mode==="full"?"No survey visits to print":"No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
+  const printScope=mode==="date"?`Survey date ${safeDate(selectedDate)}`:mode==="full"?"Full register":"Upcoming visits";
+  const blockColors=[
+    {ink:"#155a99",tint:"#e5f1ff"},{ink:"#a34e13",tint:"#fff0df"},
+    {ink:"#7041a1",tint:"#f2eaff"},{ink:"#087369",tint:"#def6ee"},
+    {ink:"#a72d58",tint:"#ffe7ef"},{ink:"#786012",tint:"#fff5d4"},
+    {ink:"#16647f",tint:"#e0f5fb"}
+  ];
   const perPage=16,groups=[];
   for(let i=0;i<visits.length;i+=perPage)groups.push(visits.slice(i,i+perPage));
   const pages=groups.map((group,page)=>{
-    const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
-    return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${visits.length} upcoming visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE / TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
+    const rows=group.map((s,i)=>{
+      const z=String(s.zone||zoneOfBlock(s.block)),blockIndex=(ZONE_BLOCKS[z]||[]).indexOf(Number(s.block));
+      const color=blockColors[(blockIndex<0?Number(s.block):blockIndex)%blockColors.length];
+      return `<tr><td>${page*perPage+i+1}</td><td class="block-cell" style="--block-color:${color.ink};--block-tint:${color.tint}"><strong>Zone ${esc(z)} · Blk ${esc(s.block)}</strong></td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`
+    }).join("");
+    return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${esc(printScope)} · ${visits.length} visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE / TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
   }).join("");
   const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
   const printCss=`
-    @page{size:A4 landscape;margin:8mm}
+    @page{size:A4 landscape;margin:10mm}
     *{box-sizing:border-box}
-    html,body{width:100%;margin:0;padding:0}
+    html,body{width:auto;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;color:#14283e;background:#fff}
-    .sheet{width:100%;break-after:page;page-break-after:always}
+    .sheet{width:274mm;max-width:100%;margin:0 auto;break-after:page;page-break-after:always}
     .sheet:last-child{break-after:auto;page-break-after:auto}
     header{background:#174f89;color:#fff;border:1px solid #103e70;border-radius:5px;padding:7px 10px;margin-bottom:8px}
     h1{text-align:center;font-size:19px;letter-spacing:.03em;color:#fff;margin:0 0 5px;font-weight:900}
     .meta{display:flex;justify-content:space-between;gap:10px;color:#f0f8ff;font-size:11px;font-weight:800}
-    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
-    th,td{border:1px solid #6285a6;text-align:left;vertical-align:middle;padding:4px 5px;overflow-wrap:anywhere;background:#fff}
+    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px;border:1.5px solid #4b6d8d}
+    th,td{border:0;border-right:1px solid #6285a6;border-bottom:1px solid #6285a6;text-align:left;vertical-align:middle;padding:4px 5px;overflow-wrap:anywhere;background:#fff}
+    tr>:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}
     th{height:9mm;background:#d4e8fa;color:#103e70;font-size:11px;font-weight:900}
     td{height:9.5mm;color:#102c47;font-weight:650}
+    .block-cell{border-left:5px solid var(--block-color);background:var(--block-tint);color:var(--block-color);font-weight:900}
     th:nth-child(1){width:6%}th:nth-child(2){width:15%}th:nth-child(3){width:10%}
     th:nth-child(4){width:17%}th:nth-child(5){width:17%}th:nth-child(6){width:17%}th:nth-child(7){width:18%}
     thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
-    @media print{header,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    @media print{header,th,.block-cell{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
-  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>${printCss}</style></head><body>${pages}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
-});
+  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)} · ${esc(printScope)}</title><style>${printCss}</style></head><body>${pages}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
+}
+document.getElementById("surveyPrintBtn").addEventListener("click",()=>printSurveyRegister("upcoming"));
+document.getElementById("surveyPrintDateBtn").addEventListener("click",()=>printSurveyRegister("date"));
+document.getElementById("surveyPrintFullBtn").addEventListener("click",()=>printSurveyRegister("full"));
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
   setView("appointments");resetAppointmentForm();
@@ -2975,6 +2996,7 @@ function startApp(){
   appStarted=true;
   document.getElementById("todayChip").textContent=fmtDate.format(new Date());
   document.getElementById("complaintDate").value=isoTodaySG();
+  document.getElementById("surveyPrintDate").value=isoTodaySG();
   document.getElementById("teamDate").value=isoTodaySG();
   configureAppointmentYearInputs();
   initSelectors();
