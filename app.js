@@ -1569,7 +1569,8 @@ function renderPlanner(){
   document.getElementById("plannerUnassigned").innerHTML="";
 }
 function renderTodayTeamBoard(){
-  const date=isoTodaySG(),active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date);
+  // Dashboard follows the existing unit-level saved appointment selection, not stale duplicate rows.
+  const date=isoTodaySG(),active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&preferredMasterAppointment(a.unitKey)===a);
   const zoneCards=[1,2,3,4,5,6].map(z=>{
     const za=active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z);if(!za.length)return"";
     const custom=[...new Set(za.map(a=>a.slot).filter(s=>s&&!SLOTS.includes(s)))];
