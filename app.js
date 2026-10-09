@@ -1084,16 +1084,29 @@ document.getElementById("surveyZoneFilter").addEventListener("change",renderSurv
 function surveyHasLaterAppointment(s){
   return state.appointments.some(a=>a.unitKey===s.unitKey&&Number(a.id)>Number(s.id)&&Boolean(a.date)&&!isInactiveSchedule(a))
 }
+function surveyVisitMinutes(value){
+  const m=String(value||"").trim().match(/^(\d{1,2})(?:(?::|\.)(\d{1,2}))?\s*(am|pm)?/i);
+  if(!m)return 9999;
+  let hour=Number(m[1]),minute=Number(m[2]||0);
+  if(minute>59||hour>(m[3]?12:23)||hour<0)return 9999;
+  if(m[3])return normalizeTimeToken(hour,minute,m[3]);
+  return hour*60+minute
+}
+function compareSurveyVisits(a,b){
+  return (a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||
+    surveyVisitMinutes(a.visitTime)-surveyVisitMinutes(b.visitTime)||
+    Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||
+    Number(a.block)-Number(b.block)||Number(a.floor)-Number(b.floor)||Number(a.unit)-Number(b.unit)
+}
 function upcomingSurveyVisits(zone="all"){
   const today=isoTodaySG();
   return state.surveys.filter(s=>(zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone))&&(s.visitDate||s.followUpDate||"")>=today&&!surveyHasLaterAppointment(s))
-    .sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.block)-Number(b.block))
+    .sort(compareSurveyVisits)
 }
 function renderSurveyTable(){
   const today=isoTodaySG(),zone=document.getElementById("surveyZoneFilter").value,all=state.surveys.filter(s=>zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone));
   const upcoming=upcomingSurveyVisits(zone);
-  const history=all.filter(s=>!upcoming.includes(s)).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
-  const r=surveyRecentOnly?upcoming:[...upcoming,...history];
+  const r=surveyRecentOnly?upcoming:all.slice().sort(compareSurveyVisits);
   document.querySelector("#surveyShowAllBtn span").textContent=surveyRecentOnly?"Show all":"Upcoming only";
   document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} upcoming survey visit${r.length===1?"":"s"} without a later appointment. Past and booked visits are in Show all.`:`All ${all.length} survey visits shown, including past and booked visits.`;
   document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
@@ -1104,7 +1117,7 @@ function printSurveyRegister(mode){
   if(mode==="date"&&!selectedDate){toast("Choose a survey print date");return}
   const all=state.surveys.filter(s=>zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone));
   const visits=(mode==="upcoming"?upcomingSurveyVisits(zone):mode==="date"?all.filter(s=>(s.visitDate||s.followUpDate||"")===selectedDate):all)
-    .slice().sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||Number(a.block)-Number(b.block)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.floor)-Number(b.floor)||Number(a.unit)-Number(b.unit));
+    .slice().sort(compareSurveyVisits);
   if(!visits.length){toast(mode==="date"?"No survey visits on this date":mode==="full"?"No survey visits to print":"No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
   const printScope=mode==="date"?`Survey date ${safeDate(selectedDate)}`:mode==="full"?"Full register":"Upcoming visits";
@@ -1512,8 +1525,8 @@ function renderPlanner(){
 
   rows=[...latest.values()].sort((a,b)=>
     a.date.localeCompare(b.date)||
-    slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
     String(a.team||"").localeCompare(String(b.team||""))||
+    slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
     Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||
     Number(a.block)-Number(b.block)||
     Number(b.floor||0)-Number(a.floor||0)||
@@ -1535,14 +1548,14 @@ function renderPlanner(){
   }
 
   document.getElementById("plannerTable").innerHTML=`<table>
-    <thead><tr><th>Date</th><th>Time</th><th>Zone</th><th>Team</th><th>Block</th><th>Unit</th><th>Owner / Contact</th><th>Remarks</th><th>Open</th></tr></thead>
+    <thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Owner / Contact</th><th>Remarks</th><th>Open</th></tr></thead>
     <tbody>${rows.map(a=>{
       const u=getUnit(a.unitKey),owner=a.ownerName||u?.ownerName||"—",contact=a.contact||u?.contact||"—";
       return `<tr>
         <td><strong>${safeDate(a.date)}</strong></td>
-        <td><strong>${esc(a.slot||"—")}</strong></td>
         <td>Zone ${a.zone||zoneOfBlock(a.block)}</td>
         <td>${esc(a.team||"—")}</td>
+        <td>${esc(a.slot||"—")}</td>
         <td>Blk ${a.block}</td>
         <td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td>
         <td><div class="planner-person"><strong>${esc(owner)}</strong><span>${esc(contact)}</span></div></td>
@@ -2335,9 +2348,8 @@ function masterScheduleRows(){
     if(!liveScheduleRecord(a)||!a.date||!inCycle(a.date,c))return false;
     const z=Number(a.zone||zoneOfBlock(a.block));
     return zf==="all"||z===Number(zf)
-  }).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
-    (Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
-    String(a.team||"").localeCompare(String(b.team||""))||
+  }).sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
+    String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
     Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
 }
 function renderMasterSchedule(){
@@ -2346,8 +2358,8 @@ function renderMasterSchedule(){
   document.getElementById("masterCycleTitle").textContent=`${formatCycle(c)} Schedule`;
   const rows=masterScheduleRows();
   if(!rows.length){table.innerHTML=`<div class="empty-state">No appointments in this cycle / zone yet.</div>`;return}
-  table.innerHTML=`<table class="master-schedule-table"><thead><tr><th>Date</th><th>Time</th><th>Zone</th><th>Team</th><th>Block</th><th>Unit</th><th>Remarks</th><th>Action</th></tr></thead><tbody>
-  ${rows.map(a=>`<tr><td>${safeDate(a.date)}</td><td><strong>${esc(a.slot||"—")}</strong></td><td>Zone ${a.zone||zoneOfBlock(a.block)}</td><td>${esc(a.team||"—")}</td><td>Blk ${a.block}</td><td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td><td>${esc(a.remarks||"")}</td><td><button class="table-action" data-master-open="${a.id}">Open</button><button class="table-action delete" data-master-delete="${a.id}">Delete</button></td></tr>`).join("")}
+  table.innerHTML=`<table class="master-schedule-table"><thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Remarks</th><th>Action</th></tr></thead><tbody>
+  ${rows.map(a=>`<tr><td>${safeDate(a.date)}</td><td>Zone ${a.zone||zoneOfBlock(a.block)}</td><td>${esc(a.team||"—")}</td><td>${esc(a.slot||"—")}</td><td>Blk ${a.block}</td><td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td><td>${esc(a.remarks||"")}</td><td><button class="table-action" data-master-open="${a.id}">Open</button><button class="table-action delete" data-master-delete="${a.id}">Delete</button></td></tr>`).join("")}
   </tbody></table>`
 }
 function saveMasterScheduleEntry(){
