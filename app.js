@@ -912,7 +912,7 @@ function updateSatellite3DMarkers(u){
     const south=Math.min(...points.map(p=>p[0])),north=Math.max(...points.map(p=>p[0]));
     satellite3DMap.fitBounds([[west,south],[east,north]],{
       padding:activeMapZone==="all"?32:24,maxZoom:activeMapZone==="all"?16.9:18.35,
-      pitch:60,bearing:-20,duration:satellite3DZone===null?0:650,linear:true
+      pitch:0,bearing:0,duration:satellite3DZone===null?0:650,linear:true
     });
     satellite3DZone=activeMapZone;
   }
@@ -924,20 +924,12 @@ async function ensureSatellite3DMap(){
   try{
     const maplibregl=await import("https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs");
     const map=new maplibregl.Map({
-      container,center:[ZONE_MAP_CENTER[1],ZONE_MAP_CENTER[0]],zoom:16.6,pitch:60,bearing:-20,
+      container,center:[ZONE_MAP_CENTER[1],ZONE_MAP_CENTER[0]],zoom:16.6,pitch:0,bearing:0,
       maxPitch:70,antialias:true,attributionControl:true,
       style:{version:8,sources:{
-        imagery:{type:"raster",tiles:["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,attribution:"Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community"},
-        buildings:{type:"vector",url:"https://tiles.openfreemap.org/planet",attribution:"Building data © OpenStreetMap contributors"}
+        imagery:{type:"raster",tiles:["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,attribution:"Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community"}
       },layers:[
-        {id:"satellite-imagery",type:"raster",source:"imagery"},
-        {id:"osm-buildings-3d",type:"fill-extrusion",source:"buildings","source-layer":"building",minzoom:14,paint:{
-          "fill-extrusion-color":"#c5c7c2",
-          "fill-extrusion-height":["interpolate",["linear"],["zoom"],14,0,15,["coalesce",["get","render_height"],["get","height"],12]],
-          "fill-extrusion-base":["coalesce",["get","render_min_height"],0],
-          "fill-extrusion-opacity":0.87,
-          "fill-extrusion-vertical-gradient":true
-        }}
+        {id:"satellite-imagery",type:"raster",source:"imagery"}
       ]}
     });
     map._eluMarkerClass=maplibregl.Marker;
