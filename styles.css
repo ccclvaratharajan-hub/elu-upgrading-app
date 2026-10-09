@@ -3203,3 +3203,24 @@ body.theme-night #survey .register-tools #surveyZoneFilter{background-color:#174
 #complaints .complaint-pick-cell{text-align:center;min-width:66px}
 #complaints .complaint-pick-cell input{width:20px;height:20px;accent-color:#18558b;cursor:pointer}
 #complaints .complaint-register-shell table{min-width:1020px}
+
+/* V8.44.29: palette and electrical background ONLY; layout and behavior unchanged */
+body:not(.theme-night){--bg:#e2f3eb;--bg2:#d5ebe1;--card:#f8fffa;--ink:#103b31;--muted:#456e61;--line:#b8dcca;--blue:#078f68;--blue2:#39cda0;--blueSoft:#dff8eb;--navy:#0a5143;--green:#078d69;--greenSoft:#ddf7e9;background:linear-gradient(110deg,rgba(238,255,246,.95),rgba(213,243,228,.92)),url('electrical-circuit.svg') center/650px repeat fixed!important;color:#103b31}
+body:not(.theme-night)::before{opacity:.10!important}
+body:not(.theme-night) .sidebar{background:rgba(239,255,247,.97)!important;border-color:#b5dfcc!important}
+body:not(.theme-night) .nav-item.active{background:linear-gradient(90deg,#087c5a,#12a979)!important;color:white!important;box-shadow:0 5px 18px rgba(7,105,77,.18)!important}
+body:not(.theme-night) .nav-item:hover{background:#d6f4e6!important;color:#075f46!important}
+body:not(.theme-night) .brand-mark{background:linear-gradient(145deg,#1dd9a2,#076c54)!important}
+body:not(.theme-night) .panel,body:not(.theme-night) .kpi-card,body:not(.theme-night) .today-chip{background:rgba(247,255,250,.97)!important;border-color:#b8dfcf!important;color:#173f35!important}
+body:not(.theme-night) .topbar h1,body:not(.theme-night) .panel-head h3{color:#064c39!important}
+body:not(.theme-night) .primary-btn{background:linear-gradient(135deg,#1cb98a,#077c5c)!important}
+body:not(.theme-night) #dashboard .command-hero{background-image:linear-gradient(95deg,rgba(3,67,51,.93),rgba(4,99,72,.80) 55%,rgba(7,108,82,.45)),url('electrical-circuit.svg')!important;background-size:cover,520px!important;border-color:rgba(60,207,151,.45)!important}
+body.theme-night{--bg:#061527;--bg2:#0a2540;--card:#102c45;--ink:#eefaff;--muted:#a9ccdf;--line:#29536e;--blue:#35baff;--blue2:#63d9ff;--blueSoft:#143d59;--navy:#09243b;--green:#3fe2aa;--greenSoft:#103d36;background:linear-gradient(110deg,rgba(2,12,29,.95),rgba(5,34,57,.90)),url('electrical-circuit.svg') center/650px repeat fixed!important;color:#eaf7ff}
+body.theme-night .sidebar{background:rgba(4,19,36,.97)!important;border-color:#244d6c!important}
+body.theme-night .nav-item.active{background:linear-gradient(90deg,#07518a,#0879a9)!important;color:#f5fcff!important;box-shadow:inset 3px 0 #55e1ff,0 0 16px rgba(43,187,241,.12)!important}
+body.theme-night .nav-item:hover{background:#123b56!important;color:#d9f8ff!important}
+body.theme-night .brand-mark{background:linear-gradient(145deg,#29baf3,#07639a)!important}
+body.theme-night .panel,body.theme-night .kpi-card,body.theme-night .today-chip{background:rgba(10,35,56,.95)!important;border-color:#295675!important;color:#eaf7ff!important}
+body.theme-night .topbar h1,body.theme-night .panel-head h3{color:#d5f7ff!important}
+body.theme-night .primary-btn{background:linear-gradient(135deg,#087fb5,#07518c)!important}
+body.theme-night #dashboard .command-hero{background-image:linear-gradient(95deg,rgba(3,15,38,.95),rgba(5,38,66,.84) 55%,rgba(4,51,75,.52)),url('electrical-circuit.svg')!important;background-size:cover,520px!important;border-color:rgba(73,198,249,.45)!important}
