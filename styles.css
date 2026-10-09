@@ -2885,3 +2885,82 @@ body.theme-night #dashboard .map-zone-pin span,body.theme-night #dashboard .map-
 body.theme-night #dashboard .map-zone-pin small{color:#416587}
 body:not(.theme-night) #dashboard .dashboard-shortcuts button{background:linear-gradient(135deg,rgba(230,244,255,.88),rgba(194,223,249,.77));color:#123d68}
 body.theme-night #dashboard .dashboard-shortcuts button{background:linear-gradient(135deg,rgba(20,55,111,.85),rgba(29,76,141,.75));border-color:rgba(138,186,235,.45)}
+
+/* V8.44.8 — screen density and legibility. Status/data/print rules untouched. */
+@media screen {
+  .main{padding:15px 20px 30px}
+  .topbar{gap:14px;margin-bottom:10px;align-items:center}
+  .topbar h1{font-size:clamp(26px,2vw,32px);margin:3px 0}
+  .topbar p{font-size:13px;line-height:1.35}
+  .top-actions{gap:6px}
+  .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){padding:7px 9px;font-size:11px}
+  .panel{padding:15px}
+  .panel-head{margin-bottom:10px}
+  .panel-head h3{font-size:18px}
+  .panel-head p{font-size:12px;line-height:1.35;margin-top:3px}
+  .view>.hero,.view>.report-hero,.view>.block-headline{padding:17px 20px;margin-bottom:12px}
+  .view>.hero h2,.view>.report-hero h2{font-size:24px}
+  .section-label,.eyebrow{font-size:11px}
+  .sidebar .nav-item{font-size:14px}
+  .kpi-card span{font-size:12px;line-height:1.25;letter-spacing:0}
+  .kpi-card small{font-size:11px;line-height:1.25}
+  .kpi-card strong{font-size:23px}
+  .table-shell :is(th,td),.unit-register-table :is(th,td){font-size:12px;line-height:1.35}
+  .section-toolbar :is(label,button,select,input),.mini-filter :is(label,select){font-size:12px}
+  .premium-form :is(label,input,select,textarea){font-size:13px}
+  #dashboard .command-hero{min-height:0;padding:14px 19px;margin-bottom:0;gap:16px}
+  #dashboard .command-hero p{font-size:13px;line-height:1.35}
+  #dashboard .hero-tags{margin-top:7px;gap:5px}
+  #dashboard .hero-tags span{padding:4px 7px;font-size:10px}
+  #dashboard .hero-mini-actions{margin-top:7px}
+  #dashboard .hero-mini-actions button{padding:5px 9px;font-size:12px}
+  #dashboard .premium-kpis{gap:7px;margin-bottom:0}
+  #dashboard .premium-kpis .kpi-card{min-height:76px;padding:8px 9px;gap:7px}
+  #dashboard .kpi-icon{width:30px;height:30px;flex-basis:30px}
+  #dashboard .dashboard-shortcuts{gap:8px;margin-bottom:0}
+  #dashboard .dashboard-shortcuts button{min-height:45px;padding:6px 10px;gap:8px}
+  #dashboard .dashboard-shortcuts .shortcut-icon{width:30px;height:30px;flex-basis:30px}
+  #dashboard .dashboard-shortcuts strong{font-size:13px}
+  #dashboard .dashboard-shortcuts small{font-size:11px}
+  #dashboard .zone-map-panel{max-width:none;padding:11px 13px;margin-inline:0}
+  #dashboard .zone-map-heading{margin-bottom:6px}
+  #dashboard .zone-map-heading h3{font-size:19px}
+  #dashboard .zone-map-heading p{font-size:12px}
+  #dashboard .map-zone-toolbar{margin-bottom:7px}
+  #dashboard .map-zone-toolbar .map-zone-nav{gap:5px}
+  #dashboard .map-zone-toolbar .map-zone-nav button{min-width:auto;padding:7px 9px;font-size:11px}
+  #dashboard .zone-map-stage{height:310px;min-height:310px;border-radius:10px;box-shadow:0 5px 13px rgba(10,37,73,.19)}
+  #dashboard .zone-map-note{font-size:11px;margin-top:5px}
+  #dashboard .map-zone-pin{padding:6px 8px;box-shadow:0 3px 9px rgba(7,32,57,.22)}
+  #dashboard .map-zone-pin span{font-size:12px}
+  #dashboard .map-zone-pin small{font-size:9px}
+  #dashboard .map-building-pin{padding:6px 8px}
+  #dashboard .map-building-pin span{font-size:12px!important}
+  #dashboard .dashboard-grid-wow>.panel{padding:11px 13px}
+  #dashboard .zone-card-grid{gap:6px}
+  #dashboard .zone-card-grid .zone-line{padding:7px 8px}
+}
+@media screen and (min-width:1251px){
+  #dashboard.view.active{gap:9px 12px}
+  #dashboard .hero-orbit{width:78px;height:78px}
+  #dashboard .hero-orbit:before{width:59px;height:59px}
+  #dashboard .hero-orbit-wrap{min-width:190px}
+  #dashboard .hero-orbit-caption strong{font-size:20px}
+  #dashboard>.zone-map-panel{grid-column:1;grid-row:auto}
+  #dashboard>.dashboard-grid-wow{grid-column:2;grid-row:auto}
+}
+@media screen and (min-width:761px) and (max-width:1250px){
+  #dashboard .zone-map-stage{height:330px;min-height:330px}
+  #dashboard .dashboard-grid-wow{gap:9px}
+}
+@media screen and (max-width:760px){
+  .main{padding:12px 12px 26px}
+  .topbar{align-items:stretch}
+  .top-actions{overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start;padding-bottom:5px}
+  .top-actions>*{flex-shrink:0}
+  #dashboard .command-hero{padding:13px 15px}
+  #dashboard .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #dashboard .dashboard-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #dashboard .zone-map-stage{height:370px;min-height:370px}
+  #dashboard .map-zone-toolbar .map-zone-nav button{min-width:65px}
+}
