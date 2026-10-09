@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.21">
+  <link rel="stylesheet" href="styles.css?v=8.44.23">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -363,8 +363,9 @@
           </article>
 
           <article class="panel">
-            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Unit complaint register</h3><p>One clear row per unit. Open it to see complaints and visits side by side.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label><button type="button" class="primary-btn" id="complaintNewBtn">+ New complaint</button></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">COMPLAINT REGISTER</span><h3>Unit complaint register</h3><p>One clear row per unit. Open it to see complaints and visits side by side.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="complaintZoneFilter"></select></label><label class="mini-filter">Block<select id="complaintBlockFilter"></select></label><label class="mini-filter">Report date<input type="date" id="complaintReportDate"></label><button type="button" class="ghost-btn" id="complaintExcelDateBtn">Date-wise Excel</button><button type="button" class="ghost-btn" id="complaintExcelFullBtn">Full Excel</button><button type="button" class="ghost-btn" id="complaintExcelSelectedBtn">Selected Excel</button><button type="button" class="primary-btn" id="complaintNewBtn">+ New complaint</button></div></div>
             <div id="complaintTable" class="table-shell"></div>
+            <details class="complaint-export-picker"><summary>Choose complaints for Excel · <span id="complaintExportCount">0 selected</span></summary><div id="complaintExportSelection"></div></details>
           </article>
           <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
             <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div>
@@ -743,8 +744,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.21"></script>
+  <script src="app.js?v=8.44.23"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
+<script src="complaint-excel-report.js?v=8.44.23"></script>
 </body>
 </html>

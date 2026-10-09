@@ -1475,8 +1475,9 @@ function renderComplaintTable(){
   const units=[...grouped.values()].map(rows=>{const ordered=rows.sort((a,b)=>(a.date||"").localeCompare(b.date||"")||a.id-b.id),latest=ordered.at(-1),visits=ordered.flatMap(c=>complaintEvents(c).filter(v=>!isComplaintOpening(v)));return {latest,ordered,visits}}).sort((a,b)=>(b.latest.date||"").localeCompare(a.latest.date||"")||a.latest.block-b.latest.block);
   const row=({latest:c,ordered,visits})=>{const open=ordered.filter(k=>complaintState(k)!=="Closed").length,summary=String(c.complaint||"—");return `<tr><td><strong>Zone ${esc(c.zone||zoneOfBlock(c.block))}</strong></td><td><button type="button" class="complaint-unit-link" data-comp-open="${c.id}">Blk ${esc(c.block)} <strong>${esc(c.unitDisplay||unitDisplay(c.floor,c.unit))}</strong></button></td><td><b>${ordered.length}</b></td><td><b>${visits.length}</b></td><td class="complaint-summary-cell" title="${esc(summary)}">${esc(summary.length>96?summary.slice(0,96)+"…":summary)}</td><td>${esc(safeDate(c.date))}</td><td><span class="pill ${open?"d":"completed"}">${open?`${open} Open`:"Closed"}</span></td><td><button class="table-action" data-comp-open="${c.id}">Open record</button></td></tr>`};
   const table=x=>`<div class="table-shell zone-table-shell complaint-register-shell"><table><thead><tr><th>Zone</th><th>Block / Unit</th><th>Complaints</th><th>Visits</th><th>Latest complaint</th><th>Latest date</th><th>Status</th><th>Record</th></tr></thead><tbody>${x.map(row).join("")}</tbody></table></div>`;
-  if(!units.length){document.getElementById("complaintTable").innerHTML=`<div class="empty-state">No complaint records for this filter.</div>`;return}
+  if(!units.length){document.getElementById("complaintTable").innerHTML=`<div class="empty-state">No complaint records for this filter.</div>`;window.renderComplaintExportSelection?.();return}
   document.getElementById("complaintTable").innerHTML=(zf==="all"&&bf==="all")?`<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,units.filter(x=>Number(x.latest.zone||zoneOfBlock(x.latest.block))===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`:table(units)
+  window.renderComplaintExportSelection?.()
 }
 document.getElementById("complaintZoneFilter").addEventListener("change",()=>{const z=document.getElementById("complaintZoneFilter").value;document.getElementById("complaintBlockFilter").innerHTML=filterBlockOptions(z,true);renderComplaintTable()});
 document.getElementById("complaintBlockFilter").addEventListener("change",renderComplaintTable);
@@ -1509,8 +1510,8 @@ function renderPlanner(){
 
   rows=[...latest.values()].sort((a,b)=>
     a.date.localeCompare(b.date)||
-    String(a.team||"").localeCompare(String(b.team||""))||
     slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+    String(a.team||"").localeCompare(String(b.team||""))||
     Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block))||
     Number(a.block)-Number(b.block)||
     Number(b.floor||0)-Number(a.floor||0)||
@@ -1532,14 +1533,14 @@ function renderPlanner(){
   }
 
   document.getElementById("plannerTable").innerHTML=`<table>
-    <thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Owner / Contact</th><th>Remarks</th><th>Open</th></tr></thead>
+    <thead><tr><th>Date</th><th>Time</th><th>Zone</th><th>Team</th><th>Block</th><th>Unit</th><th>Owner / Contact</th><th>Remarks</th><th>Open</th></tr></thead>
     <tbody>${rows.map(a=>{
       const u=getUnit(a.unitKey),owner=a.ownerName||u?.ownerName||"—",contact=a.contact||u?.contact||"—";
       return `<tr>
         <td><strong>${safeDate(a.date)}</strong></td>
+        <td><strong>${esc(a.slot||"—")}</strong></td>
         <td>Zone ${a.zone||zoneOfBlock(a.block)}</td>
         <td>${esc(a.team||"—")}</td>
-        <td>${esc(a.slot||"—")}</td>
         <td>Blk ${a.block}</td>
         <td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td>
         <td><div class="planner-person"><strong>${esc(owner)}</strong><span>${esc(contact)}</span></div></td>
@@ -2332,8 +2333,9 @@ function masterScheduleRows(){
     if(!liveScheduleRecord(a)||!a.date||!inCycle(a.date,c))return false;
     const z=Number(a.zone||zoneOfBlock(a.block));
     return zf==="all"||z===Number(zf)
-  }).sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
-    String(a.team||"").localeCompare(String(b.team||""))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+  }).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||
+    (Number(a.zone||zoneOfBlock(a.block))-Number(b.zone||zoneOfBlock(b.block)))||
+    String(a.team||"").localeCompare(String(b.team||""))||
     Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit))
 }
 function renderMasterSchedule(){
@@ -2342,8 +2344,8 @@ function renderMasterSchedule(){
   document.getElementById("masterCycleTitle").textContent=`${formatCycle(c)} Schedule`;
   const rows=masterScheduleRows();
   if(!rows.length){table.innerHTML=`<div class="empty-state">No appointments in this cycle / zone yet.</div>`;return}
-  table.innerHTML=`<table class="master-schedule-table"><thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Remarks</th><th>Action</th></tr></thead><tbody>
-  ${rows.map(a=>`<tr><td>${safeDate(a.date)}</td><td>Zone ${a.zone||zoneOfBlock(a.block)}</td><td>${esc(a.team||"—")}</td><td>${esc(a.slot||"—")}</td><td>Blk ${a.block}</td><td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td><td>${esc(a.remarks||"")}</td><td><button class="table-action" data-master-open="${a.id}">Open</button><button class="table-action delete" data-master-delete="${a.id}">Delete</button></td></tr>`).join("")}
+  table.innerHTML=`<table class="master-schedule-table"><thead><tr><th>Date</th><th>Time</th><th>Zone</th><th>Team</th><th>Block</th><th>Unit</th><th>Remarks</th><th>Action</th></tr></thead><tbody>
+  ${rows.map(a=>`<tr><td>${safeDate(a.date)}</td><td><strong>${esc(a.slot||"—")}</strong></td><td>Zone ${a.zone||zoneOfBlock(a.block)}</td><td>${esc(a.team||"—")}</td><td>Blk ${a.block}</td><td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td><td>${esc(a.remarks||"")}</td><td><button class="table-action" data-master-open="${a.id}">Open</button><button class="table-action delete" data-master-delete="${a.id}">Delete</button></td></tr>`).join("")}
   </tbody></table>`
 }
 function saveMasterScheduleEntry(){
