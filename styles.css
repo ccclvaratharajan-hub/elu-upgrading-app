@@ -2964,3 +2964,26 @@ body.theme-night #dashboard .dashboard-shortcuts button{background:linear-gradie
   #dashboard .zone-map-stage{height:370px;min-height:370px}
   #dashboard .map-zone-toolbar .map-zone-nav button{min-width:65px}
 }
+
+/* V8.44.9 — royal blue dashboard header and calmer, readable map frame. */
+body:not(.theme-night):has(#dashboard.view.active) .topbar{
+  background:linear-gradient(112deg,rgba(12,34,81,.96),rgba(26,70,138,.94));
+  border-color:rgba(142,189,247,.55);
+  box-shadow:0 12px 26px rgba(8,32,76,.29),inset 0 1px rgba(230,243,255,.22)
+}
+body:not(.theme-night) .topbar>div:first-child:before{
+  background:linear-gradient(180deg,#9cceff,#497ed9 68%,#e8d39d);
+  box-shadow:0 0 10px rgba(140,190,255,.42)
+}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .eyebrow{color:#b5d7ff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar h1{color:#fff;text-shadow:0 2px 12px rgba(3,17,46,.45)}
+body:not(.theme-night):has(#dashboard.view.active) .topbar p{color:#e2efff}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .top-actions :is(.ghost-btn,.today-chip,.user-name-chip){
+  background:rgba(222,237,255,.15);border-color:rgba(179,211,252,.48);color:#fff
+}
+body:not(.theme-night):has(#dashboard.view.active) .topbar .top-actions .ghost-btn:hover{background:rgba(126,178,242,.31)}
+body:not(.theme-night) #dashboard .hero-tags .sync-tag{background:rgba(216,233,255,.24);border-color:rgba(130,182,241,.53)}
+#dashboard .zone-map-stage{border:1px solid rgba(156,197,234,.88);box-shadow:0 6px 18px rgba(12,48,88,.2);background:#649dc5}
+body:not(.theme-night) #dashboard .zone-map-tiles{filter:saturate(.92) brightness(1.04) contrast(1.08)}
+body:not(.theme-night) #dashboard .zone-map-stage:after{background:linear-gradient(180deg,rgba(22,71,122,.05),transparent 72%,rgba(12,47,91,.12))}
+body.theme-night #dashboard .zone-map-stage{border-color:rgba(151,192,243,.64);box-shadow:0 6px 18px rgba(4,24,58,.29)}

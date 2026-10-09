@@ -882,7 +882,7 @@ window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapRe
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
-  const noResponse=nr+p,openFollowups=state.surveys.length,donePct=total?Math.round(done/total*100):0;
+  const noResponse=nr+p,openFollowups=upcomingSurveyVisits().length,donePct=total?Math.round(done/total*100):0;
   document.getElementById("heroTotalUnits").textContent=total.toLocaleString();const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
   document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${total?Math.round(agree/total*100):0}% · A + C`;
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
@@ -893,7 +893,7 @@ function renderDashboard(){
   renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
-  const follow=state.surveys.filter(s=>s.visitDate&&s.visitDate>=isoTodaySG()).sort((a,b)=>a.visitDate.localeCompare(b.visitDate)||String(a.visitTime||"").localeCompare(String(b.visitTime||""))).slice(0,6);
+  const follow=upcomingSurveyVisits().slice(0,6);
   document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Name not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.visitDate)}${s.visitTime?` · ${esc(s.visitTime)}`:""}</b></div>`).join(""):`<div class="empty-state">No upcoming survey visits.</div>`;
   renderTodayTeamBoard();
 }
@@ -1013,15 +1013,31 @@ function deleteSurvey(id){
 let surveyRecentOnly=true;
 document.getElementById("surveyShowAllBtn").addEventListener("click",()=>{surveyRecentOnly=!surveyRecentOnly;renderSurveyTable()});
 document.getElementById("surveyZoneFilter").addEventListener("change",renderSurveyTable);
+function surveyHasLaterAppointment(s){
+  return state.appointments.some(a=>a.unitKey===s.unitKey&&Number(a.id)>Number(s.id)&&Boolean(a.date)&&!isInactiveSchedule(a))
+}
+function upcomingSurveyVisits(zone="all"){
+  const today=isoTodaySG();
+  return state.surveys.filter(s=>(zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone))&&(s.visitDate||s.followUpDate||"")>=today&&!surveyHasLaterAppointment(s))
+    .sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.block)-Number(b.block))
+}
 function renderSurveyTable(){
   const today=isoTodaySG(),zone=document.getElementById("surveyZoneFilter").value,all=state.surveys.filter(s=>zone==="all"||Number(s.zone||zoneOfBlock(s.block))===Number(zone));
-  const upcoming=all.filter(s=>(s.visitDate||s.followUpDate||"")>=today).sort((a,b)=>(a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||String(a.visitTime||"").localeCompare(String(b.visitTime||""))||Number(a.block)-Number(b.block));
-  const past=all.filter(s=>(s.visitDate||s.followUpDate||"")<today).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
-  const r=surveyRecentOnly?upcoming:[...upcoming,...past];
+  const upcoming=upcomingSurveyVisits(zone);
+  const history=all.filter(s=>!upcoming.includes(s)).sort((a,b)=>(b.visitDate||b.followUpDate||"").localeCompare(a.visitDate||a.followUpDate||"")||String(b.visitTime||"").localeCompare(String(a.visitTime||"")));
+  const r=surveyRecentOnly?upcoming:[...upcoming,...history];
   document.getElementById("surveyShowAllBtn").textContent=surveyRecentOnly?"Show all":"Upcoming only";
-  document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} survey visit${r.length===1?"":"s"} from today onward. Past visits are in Show all.`:`All ${all.length} survey visits shown, including past dates.`;
+  document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} upcoming survey visit${r.length===1?"":"s"} without a later appointment. Past and booked visits are in Show all.`:`All ${all.length} survey visits shown, including past and booked visits.`;
   document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
 }
+document.getElementById("surveyPrintBtn").addEventListener("click",()=>{
+  const zone=document.getElementById("surveyZoneFilter").value,visits=upcomingSurveyVisits(zone);
+  if(!visits.length){toast("No upcoming survey visits to print");return}
+  const scope=zone==="all"?"All Zones":`Zone ${zone}`;
+  const rows=visits.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.zone||zoneOfBlock(s.block))}</td><td>${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td class="write"></td><td class="write"></td></tr>`).join("");
+  const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
+  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#12263c;margin:0}h1{font-size:17px;margin:0 0 3px}p{font-size:11px;margin:0 0 10px}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}th,td{border:1px solid #8196a9;padding:5px 4px;text-align:left;vertical-align:middle;overflow-wrap:anywhere}th{background:#dceaf6;font-weight:800}td{height:17mm}th:nth-child(1){width:5%}th:nth-child(2){width:6%}th:nth-child(3){width:7%}th:nth-child(4){width:9%}th:nth-child(5){width:13%}th:nth-child(6){width:12%}th:nth-child(7){width:12%}th:nth-child(8){width:18%}th:nth-child(9){width:18%}.write{background:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#e0e7ef 22px)}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}@media print{th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><h1>ELU · Survey Visit Register</h1><p>${esc(scope)} · Printed ${esc(safeDate(isoTodaySG()))} · ${visits.length} upcoming visit${visits.length===1?"":"s"}</p><table><thead><tr><th>S/N</th><th>Zone</th><th>Blk</th><th>Unit</th><th>Visit date / time</th><th>Owner</th><th>Contact</th><th>Visit outcome</th><th>Appointment / remarks</th></tr></thead><tbody>${rows}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
+});
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
   setView("appointments");resetAppointmentForm();
