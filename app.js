@@ -827,18 +827,6 @@ function mapPixel(lat,lon,stage){
   const {zoom,center}=zoneMapViewport(stage),p=mapWorld(lat,lon,zoom),c=mapWorld(...center,zoom);
   return{x:Math.round(stage.clientWidth/2+p.x-c.x),y:Math.round(stage.clientHeight/2+p.y-c.y)};
 }
-function renderZoneMapTiles(stage){
-  const layer=document.getElementById("zoneMapTiles"),w=stage.clientWidth,h=stage.clientHeight,{zoom,center}=zoneMapViewport(stage);
-  if(!w||!h)return;
-  const key=`${w}x${h}z${zoom}-${center.map(v=>v.toFixed(6)).join(",")}`;
-  if(layer.dataset.size===key)return;
-  layer.dataset.size=key;
-  const c=mapWorld(...center,zoom),left=c.x-w/2,top=c.y-h/2;
-  const x0=Math.floor(left/256),x1=Math.floor((left+w)/256),y0=Math.floor(top/256),y1=Math.floor((top+h)/256);
-  let tiles="";
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles+=`<img alt="" loading="eager" src="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}" onerror="this.onerror=null;this.src='https://www.onemap.gov.sg/maps/tiles/Night/${zoom}/${x}/${y}.png'" style="left:${Math.round(x*256-left)}px;top:${Math.round(y*256-top)}px">`;
-  layer.innerHTML=tiles;
-}
 function layoutMapBuildings(blocks,stage){
   const positions=blocks.map(b=>{const loc=BLOCK_MAP_LOCATION[b],p=mapPixel(loc[0],loc[1],stage);return{block:b,x:p.x,y:p.y}});
   const mobile=stage.clientWidth<650,sepX=mobile?58:72,sepY=mobile?48:58;
@@ -856,25 +844,49 @@ function layoutMapBuildings(blocks,stage){
   }
   return positions;
 }
+function siteBuildingSvg(x,y,height=48){
+  const h=height;
+  return `<g transform="translate(${Math.round(x)} ${Math.round(y)})"><ellipse cx="7" cy="7" rx="31" ry="11" fill="#193b69" opacity=".23"/>
+    <path d="M-22 ${-h-9} L0 ${-h-20} L26 ${-h-9} L3 ${-h+3} Z" fill="#e7f5ff" stroke="#87afd3" stroke-width="1.4"/>
+    <path d="M-22 ${-h-9} L3 ${-h+3} L3 0 L-22 -12 Z" fill="#6ba9d2" stroke="#427eaf" stroke-width="1.2"/>
+    <path d="M3 ${-h+3} L26 ${-h-9} L26 -12 L3 0 Z" fill="#2872aa" stroke="#245b8d" stroke-width="1.2"/>
+    <path d="M-17 ${-h+2} L-3 ${-h+9} M-17 ${-h+16} L-3 ${-h+23} M9 ${-h+10} L20 ${-h+5} M9 ${-h+24} L20 ${-h+19} M-17 ${-h+30} L-3 ${-h+37}" stroke="#d6f5ff" stroke-width="4" stroke-dasharray="4 3" opacity=".88"/>
+    <path d="M9 ${-h+36} L20 ${-h+31} M9 ${-h+48} L20 ${-h+43}" stroke="#bfeaff" stroke-width="4" stroke-dasharray="4 3" opacity=".8"/>
+    <path d="M-22 ${-h-9} L0 ${-h-20} L26 ${-h-9}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/></g>`
+}
+function siteSceneSvg(width,height,buildings){
+  const w=Math.max(width,320),h=Math.max(height,300);
+  const road=(path,outer=30)=>`<path d="${path}" fill="none" stroke="#b5c8d9" stroke-width="${outer+6}"/><path d="${path}" fill="none" stroke="#f9fcff" stroke-width="${outer}"/><path d="${path}" fill="none" stroke="#d5e2ed" stroke-width="1.4" stroke-dasharray="12 12"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="siteSky" x2="1" y2="1"><stop stop-color="#dceaf6"/><stop offset="1" stop-color="#abcde6"/></linearGradient><pattern id="siteGrid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M34 0H0V34" fill="none" stroke="#84abca" opacity=".15"/></pattern></defs><rect width="${w}" height="${h}" fill="url(#siteSky)"/><rect width="${w}" height="${h}" fill="url(#siteGrid)"/>
+    <path d="M${w*.84} 0 Q${w*.72} ${h*.24} ${w*.87} ${h*.49} T${w*.88} ${h} H${w} V0Z" fill="#6fb1d7" opacity=".75"/><path d="M${w*.86} 0 Q${w*.74} ${h*.24} ${w*.89} ${h*.49} T${w*.9} ${h}" fill="none" stroke="#e7f8ff" stroke-width="4" opacity=".7"/>
+    ${road(`M-20 ${h*.55} Q${w*.35} ${h*.39} ${w+20} ${h*.61}`,28)}
+    ${road(`M${w*.36} -20 Q${w*.3} ${h*.47} ${w*.57} ${h+20}`,24)}
+    ${road(`M-20 ${h*.16} Q${w*.34} ${h*.24} ${w*.8} ${h*.08}`,18)}
+    <g opacity=".57">${[.09,.18,.32,.45,.59,.7].map((a,i)=>siteBuildingSvg(w*a,h*(i%2?.33:.28),22+i%3*5)).join("")}</g>
+    ${buildings.map(({x,y,h:bh})=>siteBuildingSvg(x,y,bh)).join("")}
+    <text x="18" y="${h-17}" fill="#285f8d" font-size="12" font-weight="800" letter-spacing="2">PASIR RIS · ELU SITE MODEL</text></svg>`
+}
 function renderZoneMap(u){
-  const zoneStats=z=>{
-    const units=u.filter(x=>x.zone===Number(z)),completed=units.filter(x=>x.workStatus==="Completed").length;
-    return{units:units.length,completed,pct:units.length?Math.round(completed/units.length*100):0};
-  };
-  const stage=document.querySelector(".zone-map-stage");renderZoneMapTiles(stage);
+  const zoneStats=z=>{const units=u.filter(x=>x.zone===Number(z)),completed=units.filter(x=>x.workStatus==="Completed").length;return{pct:units.length?Math.round(completed/units.length*100):0}};
+  const stage=document.querySelector(".zone-map-stage"),w=stage.clientWidth||800,h=stage.clientHeight||376;
   const nav=`<div class="map-zone-nav" aria-label="Project zones"><button type="button" data-map-zone="all" aria-pressed="${activeMapZone==="all"}">All zones</button>${Object.keys(ZONE_BLOCKS).map(z=>`<button type="button" data-map-zone="${z}" aria-pressed="${activeMapZone===z}">Zone ${z}</button>`).join("")}</div>`;
-  const markers=Object.keys(ZONE_BLOCKS).map(z=>{
-    const s=zoneStats(z),active=z===activeMapZone;
-    if(active)return layoutMapBuildings(ZONE_BLOCKS[z],stage).map(({block:b,x,y})=>{
-      return `<button class="map-building-pin" type="button" data-map-zone="${z}" data-map-block="${b}" style="left:${Math.round(x)}px;top:${Math.round(y)}px" title="Open Blk ${b} · ${BLOCK_MAP_LOCATION[b][2]}" aria-label="Open Block ${b} in Zone ${z}"><span class="map-block-number">BLK ${b}</span></button>`;
-    }).join("");
-    if(activeMapZone!=="all")return"";
-    const points=ZONE_BLOCKS[z].map(b=>BLOCK_MAP_LOCATION[b]);
-    const lat=points.reduce((sum,p)=>sum+p[0],0)/points.length,lon=points.reduce((sum,p)=>sum+p[1],0)/points.length;
-    const p=mapPixel(lat,lon,stage),safeX=Math.max(76,Math.min(stage.clientWidth-76,p.x)),safeY=Math.max(60,Math.min(stage.clientHeight-60,p.y));
-    return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${safeX}px;top:${safeY}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${ZONE_BLOCKS[z].length} blocks · ${s.pct}% done</small></button>`;
-  }).join("");
+  let buildings=[],markers="";
+  if(activeMapZone==="all"){
+    const slots=[[.16,.31],[.38,.29],[.62,.29],[.18,.83],[.43,.82],[.68,.82]];
+    markers=Object.keys(ZONE_BLOCKS).map((z,i)=>{
+      const [rx,ry]=slots[i],x=w*rx,y=h*ry,s=zoneStats(z);
+      buildings.push({x,y:y-13,h:53+i%3*8},{x:x+30,y:y-6,h:38+i%2*6});
+      return `<button class="map-zone-pin map-zone-pin-${z}" type="button" data-map-zone="${z}" style="left:${Math.round(x+6)}px;top:${Math.round(y+11)}px" aria-label="Show Zone ${z} blocks"><span>ZONE ${z}</span><small>${ZONE_BLOCKS[z].length} blocks · ${s.pct}% done</small></button>`
+    }).join("")
+  }else{
+    markers=layoutMapBuildings(ZONE_BLOCKS[activeMapZone],stage).map(({block:b,x,y},i)=>{
+      const px=Math.max(44,Math.min(w-55,x)),py=Math.max(92,Math.min(h-53,y));
+      buildings.push({x:px,y:py-5,h:56+i%3*7});
+      return `<button class="map-building-pin" type="button" data-map-zone="${activeMapZone}" data-map-block="${b}" style="left:${Math.round(px)}px;top:${Math.round(py+5)}px" title="Open Blk ${b}" aria-label="Open Block ${b} in Zone ${activeMapZone}"><span class="map-block-number">BLK ${b}</span></button>`
+    }).join("")
+  }
   document.getElementById("mapZoneToolbar").innerHTML=nav;
+  document.getElementById("mapScene").innerHTML=siteSceneSvg(w,h,buildings);
   document.getElementById("zoneMap").innerHTML=markers;
 }
 let zoneMapResizeTimer;
@@ -1034,25 +1046,33 @@ document.getElementById("surveyPrintBtn").addEventListener("click",()=>{
   const zone=document.getElementById("surveyZoneFilter").value,visits=upcomingSurveyVisits(zone);
   if(!visits.length){toast("No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
-  const rows=visits.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.zone||zoneOfBlock(s.block))}</td><td>${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td></tr>`).join("");
+  const perPage=16,groups=[];
+  for(let i=0;i<visits.length;i+=perPage)groups.push(visits.slice(i,i+perPage));
+  const pages=groups.map((group,page)=>{
+    const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
+    return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${visits.length} upcoming visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE / TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
+  }).join("");
   const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
   const printCss=`
     @page{size:A4 landscape;margin:8mm}
     *{box-sizing:border-box}
     html,body{width:100%;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
-    h1{font-size:16px;line-height:1.2;margin:0 0 4px;padding-left:8px;border-left:4px solid #db761b;color:#111}
-    p{font-size:10px;margin:0 0 8px;color:#333}
-    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5px}
-    th,td{border:1px solid #333;text-align:left;vertical-align:middle;padding:4px 4px;overflow-wrap:anywhere;word-break:break-word;background:#fff;color:#111}
-    th{border-top:2px solid #db761b;font-weight:700;height:9mm}
-    td{height:11mm}
-    th:nth-child(1){width:6%}th:nth-child(2){width:8%}th:nth-child(3){width:10%}
-    th:nth-child(4){width:12%}th:nth-child(5){width:18%}th:nth-child(6){width:23%}
-    th:nth-child(7){width:23%}
+    body{font-family:Arial,Helvetica,sans-serif;color:#14283e;background:#fff}
+    .sheet{width:100%;break-after:page;page-break-after:always}
+    .sheet:last-child{break-after:auto;page-break-after:auto}
+    header{background:#174f89;color:#fff;border:1px solid #103e70;border-radius:5px;padding:7px 10px;margin-bottom:8px}
+    h1{text-align:center;font-size:19px;letter-spacing:.03em;color:#fff;margin:0 0 5px;font-weight:900}
+    .meta{display:flex;justify-content:space-between;gap:10px;color:#f0f8ff;font-size:11px;font-weight:800}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+    th,td{border:1px solid #6285a6;text-align:left;vertical-align:middle;padding:4px 5px;overflow-wrap:anywhere;background:#fff}
+    th{height:9mm;background:#d4e8fa;color:#103e70;font-size:11px;font-weight:900}
+    td{height:9.5mm;color:#102c47;font-weight:650}
+    th:nth-child(1){width:6%}th:nth-child(2){width:15%}th:nth-child(3){width:10%}
+    th:nth-child(4){width:17%}th:nth-child(5){width:17%}th:nth-child(6){width:17%}th:nth-child(7){width:18%}
     thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
+    @media print{header,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
-  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>${printCss}</style></head><body><h1>ELU · Survey Visit Register</h1><p>${esc(scope)} · Printed ${esc(safeDate(isoTodaySG()))} · ${visits.length} upcoming visit${visits.length===1?"":"s"}</p><table><thead><tr><th>S/N</th><th>Zone</th><th>Blk</th><th>Unit</th><th>Visit date / time</th><th>Owner</th><th>Contact</th></tr></thead><tbody>${rows}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
+  win.document.open();win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ELU Survey Register · ${esc(scope)}</title><style>${printCss}</style></head><body>${pages}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close()
 });
 function startAppointmentFromSurvey(id){
   const s=state.surveys.find(x=>x.id===id);if(!s)return;
