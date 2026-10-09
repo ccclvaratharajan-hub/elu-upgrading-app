@@ -3200,8 +3200,8 @@ body.theme-night #survey .register-tools #surveyZoneFilter{background-color:#174
 @media(max-width:760px){#survey .register-tools{flex-direction:row;align-items:end}#survey .survey-tool-btn{flex:1 1 auto}}
 
 /* V8.44.23 — select individual complaint cases across dates for the Excel report. */
-#complaints .complaint-export-picker{margin-top:12px;border:1px solid #a7c9e5;border-radius:12px;background:rgba(241,249,255,.9);padding:11px 13px;color:#183e62}
-#complaints .complaint-export-picker summary{cursor:pointer;font-weight:850}
+#complaints .complaint-export-picker{margin:12px 0;border:1px solid #a7c9e5;border-radius:12px;background:rgba(241,249,255,.9);padding:11px 13px;color:#183e62}
+#complaints .complaint-export-picker h4{margin:0;font-size:14px;font-weight:850}
 #complaints .complaint-export-list{display:grid;gap:5px;max-height:310px;overflow:auto;margin-top:10px}
 #complaints .complaint-export-row{display:grid;grid-template-columns:22px 115px 170px minmax(0,1fr);align-items:center;gap:8px;padding:8px 9px;border:1px solid #c8dfef;border-radius:8px;background:rgba(255,255,255,.9);font-size:13px;cursor:pointer}
 #complaints .complaint-export-row input{width:16px;height:16px;accent-color:#18558b}

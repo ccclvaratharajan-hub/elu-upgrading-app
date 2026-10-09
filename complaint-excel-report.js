@@ -14,10 +14,13 @@
   const enDate=iso=>iso?`${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(2,4)}`:'';
   const footerDate=iso=>iso?`${iso.slice(8,10)}.${iso.slice(5,7)}.${iso.slice(0,4)}`:'';
   const monthTitle=iso=>new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T00:00:00Z')).toUpperCase();
+  const tcCaseId=c=>String(c.tcCaseId||c.townCouncilCaseId||c.referenceNo||c.caseReference||'').trim()||
+    (String(c.remarks||'')+' '+String(c.complaint||'')).match(/\bTS[\s:#-]*[A-Z0-9][A-Z0-9/-]*\b/i)?.[0]||'';
+  const isTownCouncilCase=c=>/^(town council|tc|ts)$/i.test(String(c.source||c.receivedVia||'').trim())||/^TS[\s:#-]*[A-Z0-9]/i.test(tcCaseId(c));
   function reportRecords(asOf,mode){
     const zone=document.getElementById('complaintZoneFilter').value;
     const block=document.getElementById('complaintBlockFilter').value;
-    return state.complaints.filter(c=>
+    return state.complaints.filter(c=>isTownCouncilCase(c)&&
       (mode==='selected'?selectedIds.has(String(c.id)):
         (mode!=='date'||c.date===asOf)&&
         (zone==='all'||Number(c.zone||zoneOfBlock(c.block))===Number(zone))&&
@@ -28,9 +31,10 @@
     return records.map((c,index)=>{
       const u=getUnit(c.unitKey),events=complaintEvents(c).filter(e=>!isComplaintOpening(e)&&(mode!=='date'||e.date<=asOf))
         .sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
-      const action=events.map(e=>`${enDate(e.date)}${e.time?' '+e.time:''}: ${e.action||''}${e.attendedBy?' ('+e.attendedBy+')':''}${e.outcome==='Closed'?' — CLOSED':''}`).join('\n');
+      const action=events.map((e,i)=>`${enDate(e.date)}${e.time?' '+e.time:''}: ${e.action||''}${e.attendedBy?' ('+e.attendedBy+')':''}${i===events.length-1&&e.outcome==='Closed'?' — CLOSED':''}`).join('\n');
       const address=`Blk ${c.block} ${c.unitDisplay||unitDisplay(c.floor,c.unit)}`;
-      return [index+1,c.source==='Town Council'?'TC':c.source==='Resident / Owner'?'Resident':c.source||'',enDate(c.date),c.ownerName||u?.ownerName||'',address,c.contact||u?.contact||'',c.complaint||'',action,'','',''];
+      const ref=tcCaseId(c),description=ref&&!String(c.complaint||'').includes(ref)?`${ref} · ${c.complaint||''}`:c.complaint||'';
+      return [index+1,'TC',enDate(c.date),c.ownerName||u?.ownerName||'',address,c.contact||u?.contact||'',description,action,'','',''];
     });
   }
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="${ns}">
@@ -79,10 +83,11 @@
   }
   function renderSelection(){
     const zone=document.getElementById('complaintZoneFilter').value,block=document.getElementById('complaintBlockFilter').value;
-    const records=state.complaints.filter(c=>(zone==='all'||Number(c.zone||zoneOfBlock(c.block))===Number(zone))&&(block==='all'||Number(c.block)===Number(block)))
+    const existing=new Set(state.complaints.map(c=>String(c.id)));for(const id of selectedIds)if(!existing.has(id))selectedIds.delete(id);
+    const records=state.complaints.filter(c=>isTownCouncilCase(c)&&(zone==='all'||Number(c.zone||zoneOfBlock(c.block))===Number(zone))&&(block==='all'||Number(c.block)===Number(block)))
       .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Number(a.block)-Number(b.block));
     document.getElementById('complaintExportCount').textContent=`${selectedIds.size} selected`;
-    document.getElementById('complaintExportSelection').innerHTML=records.length?`<div class="complaint-export-list">${records.map(c=>`<label class="complaint-export-row"><input type="checkbox" data-complaint-export-id="${xml(c.id)}" ${selectedIds.has(String(c.id))?'checked':''}><strong>${xml(enDate(c.date))}</strong><strong>Blk ${xml(c.block)} ${xml(c.unitDisplay||unitDisplay(c.floor,c.unit))}</strong><span class="complaint-export-description">${xml(c.complaint||'')}</span></label>`).join('')}</div>`:'<p>No complaints in this filter.</p>';
+    document.getElementById('complaintExportSelection').innerHTML=records.length?`<div class="complaint-export-list">${records.map(c=>`<label class="complaint-export-row"><input type="checkbox" data-complaint-export-id="${xml(c.id)}" ${selectedIds.has(String(c.id))?'checked':''}><strong>${xml(enDate(c.date))}</strong><strong>Blk ${xml(c.block)} ${xml(c.unitDisplay||unitDisplay(c.floor,c.unit))}</strong><span class="complaint-export-description">${xml(tcCaseId(c)||'TC')} · ${xml(c.complaint||'')}</span></label>`).join('')}</div>`:'<p>No Town Council complaints in this filter.</p>';
   }
   window.renderComplaintExportSelection=renderSelection;
   document.getElementById('complaintExportSelection').addEventListener('change',e=>{
