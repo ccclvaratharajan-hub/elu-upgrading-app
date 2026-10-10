@@ -7,7 +7,7 @@
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css?v=8.44.27">
-  <link rel="stylesheet" href="dashboard-layout-trial.css?v=trial-a">
+  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.30" media="screen">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -90,8 +90,8 @@
       <header class="topbar">
         <div>
           <div class="eyebrow">ELU UPGRADING · PASIR RIS</div>
-          <h1 id="pageTitle">Executive Dashboard</h1>
-          <p id="pageSubtitle">One view of resident response, appointments and completed work.</p>
+          <h1 id="pageTitle">ELU Dashboard</h1>
+          <p id="pageSubtitle">A clear starting point for field work.</p>
         </div>
 
         <div class="top-actions">
@@ -112,7 +112,8 @@
         <div class="command-hero">
           <div class="command-copy">
             <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
-            <p>Survey, appointment, unit status and weekly progress — connected to one master register across all 6 zones.</p>
+            <h2>One project. One clear starting point.</h2>
+            <p>Survey → Appointment → Unit work → Report. Your records stay connected across every zone.</p>
             <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
             <div class="hero-mini-actions" aria-label="Open dashboard details">
               <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Today's plan</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
@@ -149,11 +150,16 @@
         </div>
 
         <div class="dashboard-shortcuts" aria-label="Quick access">
-          <button type="button" data-go="survey"><span class="shortcut-icon"><svg><use href="#i-survey"/></svg></span><span><strong>Survey Visit</strong><small>Open visit register</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" data-go="appointments"><span class="shortcut-icon"><svg><use href="#i-calendar"/></svg></span><span><strong>Appointments</strong><small>Check the schedule</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" data-go="blockboard"><span class="shortcut-icon"><svg><use href="#i-building"/></svg></span><span><strong>Block Board</strong><small>View units by floor</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" data-go="photos"><span class="shortcut-icon"><svg><use href="#i-photo"/></svg></span><span><strong>Photo Report</strong><small>Open photo workflow</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" id="dashboardQuickJump"><span class="shortcut-icon"><svg><use href="#i-search"/></svg></span><span><strong>Find a Unit</strong><small>Block and unit search</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" data-go="survey"><span class="shortcut-icon"><svg><use href="#i-survey"/></svg></span><span><strong>Survey Register</strong><small>Open upcoming visits</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" id="dashboardMapShortcut" aria-expanded="false" aria-controls="zoneMapPanel"><span class="shortcut-icon"><svg><use href="#i-map"/></svg></span><span><strong>Zone Map</strong><small>Explore blocks</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
+          <button type="button" data-go="blockboard"><span class="shortcut-icon"><svg><use href="#i-building"/></svg></span><span><strong>Block Chart</strong><small>See unit progress</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
         </div>
+
+        <section class="dashboard-today" aria-labelledby="dashboardTodayTitle">
+          <div class="dashboard-today-summary"><span class="dashboard-today-icon"><svg aria-hidden="true"><use href="#i-calendar"/></svg></span><div><span class="section-label">TODAY · APPOINTMENTS</span><h3 id="dashboardTodayTitle">Today's appointments</h3></div><strong id="dashboardTodayCount" aria-live="polite">0</strong><button type="button" id="dashboardTodayToggle" class="ghost-btn" aria-expanded="false" aria-controls="dashboardTodayList">View list</button></div>
+          <div class="dashboard-today-list" id="dashboardTodayList" hidden><div id="dashboardTodayRows"></div><button type="button" class="text-btn" data-go="appointments">Open full appointment schedule</button></div>
+        </section>
 
         <article class="panel zone-map-panel" id="zoneMapPanel" data-mode="map" aria-labelledby="zoneMapTitle">
           <div class="panel-head zone-map-heading">
@@ -744,7 +750,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.28"></script>
+  <script src="app.js?v=8.44.31"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>

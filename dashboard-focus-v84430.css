@@ -1,0 +1,67 @@
+/* V8.44.30: dashboard presentation only. Data, registers, and exports retain V8.44.28 behavior. */
+#dashboard.view.active{display:flex!important;flex-direction:column;gap:15px;min-width:0}
+#dashboard>.command-hero,#dashboard>.dashboard-shortcuts,#dashboard>.dashboard-today,#dashboard>.zone-map-panel{width:100%;margin:0;grid-column:auto;grid-row:auto}
+#dashboard>.kpi-grid,#dashboard>.dashboard-grid-wow,#dashboard>.dashboard-detail-tray{display:none!important}
+#dashboard>.zone-map-panel{display:none!important}
+#dashboard.dashboard-map-open>.zone-map-panel{display:block!important}
+#dashboard .command-hero{min-height:154px;padding:25px 30px;gap:20px;border-radius:19px;align-items:center}
+#dashboard .command-hero:before{width:230px;height:230px;right:-70px;top:-115px}
+#dashboard .command-copy{position:relative;z-index:1}
+#dashboard .command-hero h2{font-size:clamp(21px,2.3vw,31px);line-height:1.13;margin:11px 0 8px;letter-spacing:-.025em}
+#dashboard .command-hero p{font-size:14px;line-height:1.45;max-width:620px}
+#dashboard .command-hero .hero-tags,#dashboard .command-hero .hero-mini-actions{display:none}
+#dashboard .hero-orbit-wrap{position:relative;z-index:1;min-width:170px;gap:10px}
+#dashboard .hero-orbit{width:80px;height:80px}
+#dashboard .hero-orbit:before{width:61px;height:61px}
+#dashboard .hero-orbit-inner strong{font-size:23px}
+#dashboard .hero-orbit-caption strong{font-size:20px}
+#dashboard .dashboard-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#dashboard .dashboard-shortcuts button{min-height:103px;padding:15px;border-radius:15px;align-items:flex-start;gap:12px;transition:transform .16s ease,box-shadow .16s ease}
+#dashboard .dashboard-shortcuts .shortcut-icon{width:45px;height:45px;flex:0 0 45px;border-radius:12px}
+#dashboard .dashboard-shortcuts strong{font-size:15px;line-height:1.25}
+#dashboard .dashboard-shortcuts small{font-size:12px;line-height:1.35;margin-top:6px}
+#dashboard .dashboard-shortcuts .shortcut-arrow{align-self:flex-end}
+#dashboard .dashboard-shortcuts button:nth-child(1) .shortcut-icon{background:linear-gradient(140deg,#3163d7,#263e94)}
+#dashboard .dashboard-shortcuts button:nth-child(2) .shortcut-icon{background:linear-gradient(140deg,#8054cb,#523e95)}
+#dashboard .dashboard-shortcuts button:nth-child(3) .shortcut-icon{background:linear-gradient(140deg,#e99539,#bc582d)}
+#dashboard .dashboard-shortcuts button:nth-child(4) .shortcut-icon{background:linear-gradient(140deg,#209fae,#176486)}
+#dashboard .dashboard-today{border:1px solid var(--hub-line);border-radius:16px;background:var(--hub-glass);box-shadow:0 9px 26px var(--hub-shadow);backdrop-filter:blur(12px);overflow:hidden}
+#dashboard .dashboard-today-summary{display:flex;align-items:center;gap:15px;padding:14px 19px;min-height:78px;color:var(--hub-ink)}
+#dashboard .dashboard-today-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:11px;background:var(--hub-icon);color:var(--hub-highlight)}
+#dashboard .dashboard-today-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+#dashboard .dashboard-today-summary h3{font-size:18px;margin:3px 0 0;color:var(--hub-ink)}
+#dashboard .dashboard-today-summary .section-label{color:var(--hub-muted);font-size:11px}
+#dashboard .dashboard-today-summary>strong{margin-left:auto;font-size:28px;line-height:1;color:var(--hub-highlight);font-variant-numeric:tabular-nums}
+#dashboard .dashboard-today-summary>button{font-size:13px;font-weight:800;white-space:nowrap;color:var(--hub-ink);border:1px solid var(--hub-line);background:var(--hub-button);padding:9px 13px;border-radius:9px}
+#dashboard .dashboard-today-summary>button:hover,#dashboard .dashboard-today-summary>button:focus-visible{border-color:var(--hub-highlight);box-shadow:0 0 0 2px var(--hub-icon)}
+#dashboard .dashboard-today-list{border-top:1px solid var(--hub-line);padding:8px 18px 15px;color:var(--hub-ink)}
+#dashboard .dashboard-today-list[hidden]{display:none!important}
+#dashboard .dashboard-today-row{display:grid;grid-template-columns:minmax(140px,.9fr) minmax(150px,1.3fr) minmax(110px,.8fr);gap:12px;align-items:center;padding:10px 5px;border-bottom:1px solid var(--hub-line);font-size:13px}
+#dashboard .dashboard-today-row strong{font-size:13px;color:var(--hub-ink)}
+#dashboard .dashboard-today-time{color:var(--hub-highlight);font-weight:800}
+#dashboard .dashboard-today-row>span:last-child{color:var(--hub-muted)}
+#dashboard .dashboard-today-list>.text-btn{margin-top:13px;color:var(--hub-highlight);font-size:13px}
+#dashboard:not(.dashboard-map-open) #dashboardMapShortcut[aria-expanded="false"]{border-color:var(--hub-line)}
+#dashboard #dashboardMapShortcut[aria-expanded="true"]{outline:2px solid var(--hub-highlight);outline-offset:1px}
+body:not(.theme-night) #dashboard{
+  --hub-line:rgba(44,93,153,.34);--hub-glass:rgba(248,252,255,.83);--hub-shadow:rgba(18,62,114,.17);
+  --hub-ink:#16375d;--hub-muted:#465f7d;--hub-highlight:#1d5caa;--hub-icon:rgba(60,130,226,.15);--hub-button:rgba(238,247,255,.88)
+}
+body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(105deg,rgba(246,251,255,.86),rgba(222,240,255,.67) 62%,rgba(187,221,253,.52));border:1px solid rgba(241,250,255,.87);color:#123a65;box-shadow:0 16px 35px rgba(18,63,118,.2),inset 0 1px rgba(255,255,255,.93)}
+body:not(.theme-night) #dashboard .command-kicker,body:not(.theme-night) #dashboard .command-hero p{color:#264d77}
+body:not(.theme-night) #dashboard .command-hero:after{background:rgba(95,172,255,.19);box-shadow:0 0 55px rgba(98,183,255,.22)}
+body:not(.theme-night) #dashboard .dashboard-shortcuts button{background:linear-gradient(145deg,rgba(252,254,255,.91),rgba(224,241,255,.84));border:1px solid rgba(225,243,255,.92);color:#16375d;box-shadow:0 9px 23px rgba(22,68,120,.18)}
+body:not(.theme-night) #dashboard .dashboard-shortcuts small{color:#526b85}
+body.theme-night #dashboard{
+  --hub-line:rgba(139,195,251,.37);--hub-glass:rgba(12,31,69,.82);--hub-shadow:rgba(0,10,39,.38);
+  --hub-ink:#f0f7ff;--hub-muted:#bdd1ea;--hub-highlight:#8bd7ff;--hub-icon:rgba(97,193,255,.17);--hub-button:rgba(29,68,120,.87)
+}
+body.theme-night #dashboard .command-hero{background:linear-gradient(103deg,rgba(5,20,54,.91),rgba(10,41,93,.73) 58%,rgba(23,73,137,.54)),url("scenic-screensaver-v8444.jpg") center/cover;border:1px solid rgba(118,186,247,.55);color:#f3faff;box-shadow:0 17px 36px rgba(0,12,46,.39),inset 0 1px rgba(151,208,255,.2)}
+body.theme-night #dashboard .command-kicker,body.theme-night #dashboard .command-hero p{color:#d5eaff}
+body.theme-night #dashboard .command-hero:after{background:rgba(55,173,255,.24);box-shadow:0 0 80px rgba(65,174,255,.3)}
+body.theme-night #dashboard .dashboard-shortcuts button{background:linear-gradient(145deg,rgba(15,38,81,.91),rgba(20,64,123,.82));border:1px solid rgba(119,183,241,.5);color:#f4faff;box-shadow:0 11px 25px rgba(0,13,48,.34)}
+body.theme-night #dashboard .dashboard-shortcuts small{color:#c9def2}
+body.theme-night #dashboard .dashboard-shortcuts .shortcut-icon{box-shadow:0 0 0 1px rgba(210,240,255,.32),0 0 18px rgba(74,159,240,.3)}
+@media(max-width:1150px){#dashboard .dashboard-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}#dashboard .dashboard-shortcuts button{min-height:82px}}
+@media(max-width:640px){#dashboard .command-hero{padding:20px;align-items:flex-start}#dashboard .hero-orbit-wrap{display:none}#dashboard .dashboard-shortcuts{gap:9px}#dashboard .dashboard-shortcuts button{padding:12px;min-height:95px;display:flex;flex-direction:column}#dashboard .dashboard-shortcuts .shortcut-icon{width:36px;height:36px;flex:0 0 36px}#dashboard .dashboard-shortcuts .shortcut-arrow{display:none}#dashboard .dashboard-today-summary{gap:9px;padding:12px}#dashboard .dashboard-today-summary h3{font-size:15px}#dashboard .dashboard-today-summary>strong{font-size:23px}#dashboard .dashboard-today-summary>button{padding:8px;font-size:12px}#dashboard .dashboard-today-row{grid-template-columns:1fr 1fr;gap:4px}#dashboard .dashboard-today-row>span:last-child{grid-column:2}}
+@media(max-width:370px){#dashboard .dashboard-shortcuts strong{font-size:13px}#dashboard .dashboard-shortcuts small{font-size:11px}#dashboard .dashboard-today-icon{display:none}}

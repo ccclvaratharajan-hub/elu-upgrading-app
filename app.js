@@ -565,7 +565,7 @@ function autoCompleteAppointments(showToast=false){
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
 function viewTitle(view){return {
-dashboard:["Executive Dashboard","One view of A, C, D, NR, appointments and completed work."],
+dashboard:["ELU Dashboard","A clear starting point for field work."],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
 survey:["Survey Visit Register","Visit diary for resident calls: date, exact time and contact reference."],
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
@@ -582,6 +582,12 @@ function setView(view){
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(view).classList.add("active");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   const [t,s]=viewTitle(view);document.getElementById("pageTitle").textContent=t;document.getElementById("pageSubtitle").textContent=s;
+  const today=isoTodaySG();
+  const entryDates={survey:["surveyEditId","surveyVisitDate"],appointments:["appointmentEditId","appointmentDate"],complaints:["complaintEditId","complaintDate"]};
+  if(entryDates[view]){
+    const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
+    if(!document.getElementById(editId).value&&(!dateInput.value||dateInput.value<today))dateInput.value=today;
+  }
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
   else if(view==="survey")renderSurveyTable();
@@ -683,6 +689,7 @@ function jumpToQuickBlock(openUnit){
   if(openUnit&&selectedBoardUnitKey)openDrawer(selectedBoardUnitKey);
 }
 document.getElementById("quickJumpBtn").addEventListener("click",openQuickJump);
+document.getElementById("dashboardQuickJump").addEventListener("click",openQuickJump);
 document.getElementById("quickJumpClose").addEventListener("click",closeQuickJump);
 document.getElementById("quickJumpBackdrop").addEventListener("click",e=>{if(e.target===e.currentTarget)closeQuickJump()});
 document.getElementById("quickJumpZone").addEventListener("change",syncQuickJumpBlocks);
@@ -692,7 +699,27 @@ document.getElementById("quickJumpUnitBtn").addEventListener("click",()=>jumpToQ
 document.getElementById("mapJumpBtn").addEventListener("click",()=>{
   if(document.body.classList.contains("secure-locked"))return;
   setView("dashboard");
-  requestAnimationFrame(()=>document.getElementById("zoneMapPanel").scrollIntoView({behavior:"smooth",block:"start"}));
+  openDashboardMap();
+});
+function openDashboardMap(){
+  const section=document.getElementById("dashboard"),button=document.getElementById("dashboardMapShortcut");
+  section.classList.add("dashboard-map-open");
+  button.setAttribute("aria-expanded","true");
+  requestAnimationFrame(()=>{
+    renderZoneMap(unitsArray());
+    document.getElementById("zoneMapPanel").scrollIntoView({behavior:"smooth",block:"start"});
+  });
+}
+document.getElementById("dashboardMapShortcut").addEventListener("click",()=>{
+  const section=document.getElementById("dashboard"),open=section.classList.contains("dashboard-map-open");
+  if(open){section.classList.remove("dashboard-map-open");document.getElementById("dashboardMapShortcut").setAttribute("aria-expanded","false");return}
+  openDashboardMap();
+});
+document.getElementById("dashboardTodayToggle").addEventListener("click",()=>{
+  const list=document.getElementById("dashboardTodayList"),button=document.getElementById("dashboardTodayToggle");
+  list.hidden=!list.hidden;
+  button.setAttribute("aria-expanded",String(!list.hidden));
+  button.textContent=list.hidden?"View list":"Hide list";
 });
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&!document.getElementById("quickJumpBackdrop").hidden){e.preventDefault();closeQuickJump();return}
@@ -958,12 +985,26 @@ function renderDashboard(){
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
   document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=openFollowups.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,zp=zu.filter(x=>x.response==="P").length,pct=zu.length?Math.round(zc/zu.length*100):0;return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in · ${zp} pending</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
-  renderZoneMap(u);
+  if(document.getElementById("dashboard").classList.contains("dashboard-map-open"))renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
   const follow=upcomingSurveyVisits().slice(0,6);
   document.getElementById("followupAttention").innerHTML=follow.length?follow.map(s=>`<div class="attention-card"><strong>Blk ${s.block} · ${esc(s.unitDisplay)}</strong><span>${esc(s.ownerName||"Name not entered")} · ${esc(s.contact||"No contact")}</span><b>${safeDate(s.visitDate)}${s.visitTime?` · ${esc(s.visitTime)}`:""}</b></div>`).join(""):`<div class="empty-state">No upcoming survey visits.</div>`;
   renderTodayTeamBoard();
+  renderDashboardToday();
+}
+function renderDashboardToday(){
+  const today=isoTodaySG();
+  const startMinutes=slot=>{
+    const start=String(slot||"").trim().split(/[-–—]/)[0].trim(),twelveHour=slotStartMinutes(start);
+    if(twelveHour!==9999)return twelveHour;
+    const twentyFourHour=start.match(/^(\d{1,2}):(\d{2})$/);
+    return twentyFourHour?Number(twentyFourHour[1])*60+Number(twentyFourHour[2]):9999;
+  };
+  const active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===today&&preferredMasterAppointment(a.unitKey)===a)
+    .sort((a,b)=>startMinutes(a.slot)-startMinutes(b.slot)||String(a.slot||"").localeCompare(String(b.slot||""))||Number(a.block)-Number(b.block)||String(a.unitDisplay||"").localeCompare(String(b.unitDisplay||"")));
+  document.getElementById("dashboardTodayCount").textContent=active.length.toLocaleString();
+  document.getElementById("dashboardTodayRows").innerHTML=active.length?active.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong><span>${esc(a.team||"Team not assigned")}</span></div>`).join(""):`<div class="empty-state">No appointments scheduled for today.</div>`;
 }
 let selectedBoardUnitKey="";
 function classicBlockBoardHtml(units,floorFilter,q){
@@ -1029,7 +1070,7 @@ function resetSurveyForm(){
   document.getElementById("surveyEditId").value="";
   document.getElementById("surveySaveBtn").textContent="Save Survey Visit";
   document.getElementById("surveyCancelEdit").classList.add("hidden");
-  document.getElementById("surveyVisitDate").value="";
+  document.getElementById("surveyVisitDate").value=isoTodaySG();
   document.getElementById("surveyVisitTime").value="";
   document.getElementById("surveyRemarks").value="";
   autofillSurvey()
@@ -3002,7 +3043,9 @@ function startApp(){
   appStarted=true;
   document.getElementById("todayChip").textContent=fmtDate.format(new Date());
   document.getElementById("complaintDate").value=isoTodaySG();
+  document.getElementById("surveyVisitDate").value=isoTodaySG();
   document.getElementById("surveyPrintDate").value=isoTodaySG();
+  document.getElementById("complaintReportDate").value=isoTodaySG();
   document.getElementById("teamDate").value=isoTodaySG();
   configureAppointmentYearInputs();
   initSelectors();
