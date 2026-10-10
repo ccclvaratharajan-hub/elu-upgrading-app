@@ -1,0 +1,117 @@
+/* Isolated dashboard layout trial, based on approved V8.44.28.
+   It changes presentation only: no status, schedule, report, map or photo logic. */
+@media screen {
+  body:has(#dashboard.view.active) .main { padding: 16px clamp(16px, 1.9vw, 28px) 32px; }
+  body:has(#dashboard.view.active) .topbar { margin-bottom: 12px; min-width: 0; }
+  body:has(#dashboard.view.active) .topbar h1 { font-size: clamp(23px, 2.1vw, 30px); line-height: 1.18; }
+  body:has(#dashboard.view.active) .topbar p { font-size: 13px; line-height: 1.45; }
+
+  #dashboard .command-hero { border-radius: 17px; min-height: 112px; padding: 17px 20px; }
+  #dashboard .command-copy { min-width: 0; }
+  #dashboard .command-kicker { font-size: 12px; letter-spacing: .09em; }
+  #dashboard .command-hero p { font-size: 14px; line-height: 1.4; max-width: 740px; }
+  #dashboard .hero-tags span { font-size: 11px; line-height: 1.2; }
+  #dashboard .hero-mini-actions button { min-height: 36px; font-size: 13px; }
+
+  /* The live figures stay live. Four readable columns replace seven tiny cards. */
+  #dashboard .premium-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  #dashboard .premium-kpis .kpi-card { min-width: 0; min-height: 82px; padding: 12px 14px; border-radius: 14px; }
+  #dashboard .premium-kpis .kpi-card span { font-size: 12px; line-height: 1.24; font-weight: 850; letter-spacing: 0; }
+  #dashboard .premium-kpis .kpi-card strong { font-size: 24px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  #dashboard .premium-kpis .kpi-card small { font-size: 11px; line-height: 1.3; }
+  #dashboard .premium-kpis .kpi-icon { width: 37px; height: 37px; flex: 0 0 37px; }
+  #dashboard .dashboard-shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  #dashboard .dashboard-shortcuts button { min-width: 0; min-height: 58px; padding: 10px 12px; border-radius: 13px; }
+  #dashboard .dashboard-shortcuts strong { font-size: 14px; line-height: 1.2; }
+  #dashboard .dashboard-shortcuts small { font-size: 11px; line-height: 1.25; }
+
+  #dashboard .zone-map-panel { padding: 14px 16px; border-radius: 16px; }
+  #dashboard .zone-map-heading { gap: 12px; }
+  #dashboard .zone-map-heading h3 { font-size: 18px; }
+  #dashboard .zone-map-heading p, #dashboard .zone-map-note { font-size: 12px; line-height: 1.35; }
+  #dashboard .zone-map-stage { height: 334px; min-height: 334px; }
+  #dashboard .dashboard-grid-wow .panel-head h3 { font-size: 17px; }
+  #dashboard .zone-card-grid .zone-line { min-width: 0; }
+  #dashboard .zone-card-grid .zone-name, #dashboard .zone-card-grid .zone-pct { font-size: 12px; }
+
+  /* Existing theme images remain; text gets its own solid reading surface. */
+  body:not(.theme-night) #dashboard .premium-kpis .kpi-card,
+  body:not(.theme-night) #dashboard .dashboard-grid-wow .panel {
+    background: rgba(255,255,255,.96);
+    border-color: rgba(184,210,235,.86);
+  }
+  body.theme-night #dashboard .premium-kpis .kpi-card,
+  body.theme-night #dashboard .dashboard-grid-wow .panel {
+    background: rgba(235,248,255,.88);
+    border-color: rgba(177,221,244,.84);
+  }
+}
+
+@media screen and (min-width: 1251px) {
+  body:has(#dashboard.view.active) .sidebar { width: 230px; }
+  body:has(#dashboard.view.active) .main { margin-left: 230px; }
+  #dashboard.view.active { grid-template-columns: minmax(0, 1.16fr) minmax(0, 1fr); gap: 11px 14px; }
+  #dashboard > .zone-map-panel { grid-column: 1; grid-row: 4; }
+  #dashboard > .dashboard-grid-wow { grid-column: 2; grid-row: 4; }
+  #dashboard .map-atlas-layout { grid-template-columns: 134px minmax(0, 1fr); }
+  #dashboard .map-atlas-rail { padding: 10px 7px; }
+  #dashboard .map-zone-toolbar .map-zone-nav button { min-height: 36px; font-size: 11px; }
+}
+
+@media screen and (min-width: 761px) and (max-width: 1250px) {
+  #dashboard .premium-kpis { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  #dashboard .dashboard-shortcuts { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  #dashboard .zone-map-stage { height: 330px; min-height: 330px; }
+}
+
+@media screen and (max-width: 760px) {
+  /* Keep every existing destination available in a compact horizontal dock. */
+  body:has(#dashboard.view.active) .sidebar {
+    position: fixed; inset: auto 0 0; width: 100%; height: 76px;
+    z-index: 60; padding: 6px 7px max(6px, env(safe-area-inset-bottom));
+    border-right: 0; border-top: 1px solid rgba(157,205,244,.65);
+    overflow: hidden; display: block;
+  }
+  body:has(#dashboard.view.active) .sidebar .brand,
+  body:has(#dashboard.view.active) .sidebar .project-badge,
+  body:has(#dashboard.view.active) .sidebar .sidebar-note { display: none; }
+  body:has(#dashboard.view.active) .sidebar .nav { display: flex; flex-wrap: nowrap; gap: 3px; width: 100%; height: 100%;
+    overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+    scrollbar-width: thin; padding: 0 0 2px; align-items: stretch; }
+  body:has(#dashboard.view.active) .sidebar .nav-item {
+    flex: 0 0 79px; min-width: 79px; min-height: 0; padding: 5px 4px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 3px; font-size: 10px; line-height: 1.06;
+  }
+  body:has(#dashboard.view.active) .sidebar .nav-item svg {
+    flex: 0 0 20px; width: 20px; height: 20px; padding: 0;
+  }
+  body:has(#dashboard.view.active) .sidebar .nav-item span { display: block; max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body:has(#dashboard.view.active) .main { margin-left: 0; padding: 12px 12px 100px; }
+  body:has(#dashboard.view.active) .topbar { padding: 12px; }
+  body:has(#dashboard.view.active) .topbar h1 { font-size: 23px; }
+  body:has(#dashboard.view.active) .topbar p { font-size: 12px; }
+  #dashboard .command-hero { padding: 14px; min-height: 0; }
+  #dashboard .command-hero p { font-size: 13px; }
+  #dashboard .hero-orbit-wrap { display: none; }
+  #dashboard .premium-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  #dashboard .premium-kpis .kpi-card { padding: 10px; min-height: 82px; gap: 7px; }
+  #dashboard .premium-kpis .kpi-card span { font-size: 11px; }
+  #dashboard .premium-kpis .kpi-card strong { font-size: 21px; }
+  #dashboard .premium-kpis .kpi-card small { font-size: 10px; }
+  #dashboard .premium-kpis .kpi-icon { width: 30px; height: 30px; flex-basis: 30px; }
+  #dashboard .dashboard-shortcuts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  #dashboard .dashboard-shortcuts button { padding: 9px; min-height: 54px; }
+  #dashboard .dashboard-shortcuts strong { font-size: 12px; }
+  #dashboard .zone-map-panel { padding: 11px; }
+  #dashboard .map-atlas-layout { display: flex; flex-direction: column; }
+  #dashboard .zone-map-stage { height: 338px; min-height: 338px; }
+  #dashboard .zone-map-heading h3 { font-size: 17px; }
+  #dashboard .zone-map-key { font-size: 10px; }
+}
+
+@media screen and (max-width: 390px) {
+  #dashboard .premium-kpis .kpi-card { align-items: flex-start; }
+  #dashboard .premium-kpis .kpi-icon { display: none; }
+  #dashboard .dashboard-shortcuts .shortcut-icon { display: none; }
+}
