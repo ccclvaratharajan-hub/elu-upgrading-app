@@ -587,8 +587,10 @@ function setView(view){
   const entryDates={survey:["surveyEditId","surveyVisitDate"],appointments:["appointmentEditId","appointmentDate"],complaints:["complaintEditId","complaintDate"]};
   if(entryDates[view]){
     const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
-    if(!document.getElementById(editId).value&&(!dateInput.value||dateInput.value<today))dateInput.value=today;
+    if(!document.getElementById(editId).value)dateInput.value=today;
   }
+  if(view==="teams"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=today;plannerDisplayMode="day"}
+  if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
   else if(view==="survey")renderSurveyTable();
@@ -807,7 +809,7 @@ function fillAppointmentScheduleInputs(a){
       document.getElementById("appointmentCustomEnd").value=t.end;
     }
   }else{
-    date.value=date.value||isoTodaySG();
+    date.value=isoTodaySG();
     slot.value=SLOTS[0];
     team.value="Team 1";
     document.getElementById("appointmentCustomStart").value="";
@@ -836,7 +838,7 @@ function autofillPair(prefix){
     }else{
       document.getElementById("appointmentRemarks").value="";
     }
-    fillAppointmentScheduleInputs(a);
+    fillAppointmentScheduleInputs(document.getElementById("appointmentEditId").value?a:null);
     renderAppointmentPlan(a)
   }
 }
@@ -2459,7 +2461,7 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
   let b=e.target.closest("[data-master-open]");
   if(b){
     const a=state.appointments.find(x=>x.id===Number(b.dataset.masterOpen));if(!a)return;
-    document.getElementById("teamDate").value=a.date;setView("teams");renderPlanner();return
+    setView("teams");document.getElementById("teamDate").value=a.date;renderPlanner();return
   }
   b=e.target.closest("[data-master-delete]");if(b)deleteAppointment(Number(b.dataset.masterDelete))
 });
