@@ -721,6 +721,12 @@ document.getElementById("dashboardTodayToggle").addEventListener("click",()=>{
   button.setAttribute("aria-expanded",String(!list.hidden));
   button.textContent=list.hidden?"View list":"Hide list";
 });
+document.getElementById("dashboardTodayRows").addEventListener("click",e=>{
+  const button=e.target.closest("[data-today-photo-zone]");if(!button)return;
+  document.getElementById("photoZone").value=button.dataset.todayPhotoZone;
+  document.getElementById("photoDate").value=isoTodaySG();
+  setView("photos");
+});
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&!document.getElementById("quickJumpBackdrop").hidden){e.preventDefault();closeQuickJump();return}
   if(e.key!=="/"||e.altKey||e.ctrlKey||e.metaKey||e.target.closest("input,textarea,select,[contenteditable]"))return;
@@ -1004,7 +1010,10 @@ function renderDashboardToday(){
   const active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===today&&preferredMasterAppointment(a.unitKey)===a)
     .sort((a,b)=>startMinutes(a.slot)-startMinutes(b.slot)||String(a.slot||"").localeCompare(String(b.slot||""))||Number(a.block)-Number(b.block)||String(a.unitDisplay||"").localeCompare(String(b.unitDisplay||"")));
   document.getElementById("dashboardTodayCount").textContent=active.length.toLocaleString();
-  document.getElementById("dashboardTodayRows").innerHTML=active.length?active.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong><span>${esc(a.team||"Team not assigned")}</span></div>`).join(""):`<div class="empty-state">No appointments scheduled for today.</div>`;
+  document.getElementById("dashboardTodayRows").innerHTML=Array.from({length:6},(_,i)=>{
+    const zone=i+1,rows=active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===zone);
+    return `<section class="dashboard-today-zone" aria-label="Zone ${zone} appointments"><div class="dashboard-today-zone-head"><strong>Zone ${zone}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div>${rows.length?rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong><span>${esc(a.team||"Team not assigned")}</span></div>`).join(""):`<div class="dashboard-today-empty">No appointments today</div>`}</section>`;
+  }).join("");
 }
 let selectedBoardUnitKey="";
 function classicBlockBoardHtml(units,floorFilter,q){
