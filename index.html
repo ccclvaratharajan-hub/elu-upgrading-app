@@ -489,7 +489,7 @@
           <div>
             <span class="section-label">PHOTO INBOX · 22 → 21 CYCLE</span>
             <h2>Zone-wise Photo Report</h2>
-            <p>Choose one Zone + Date. Enter that day's units, then attach photos unit-by-unit. Photo work stays separate from all project appointment records.</p>
+            <p>Choose a Zone + Date. Appointed units appear automatically for that zone and day. Add missing units, remove unwanted rows, then attach photos.</p>
           </div>
           <div class="photo-cycle-controls">
             <label>Zone<select id="photoZone"></select></label>
@@ -513,7 +513,7 @@
               <div>
                 <span class="section-label">PHOTO DAILY REGISTER</span>
                 <h3 id="photoScheduleContextTitle">Daily Photo Schedule</h3>
-                <p>Only the selected Zone + Date is shown here. Change Zone / Date above to prepare another day. This register stays separate from all project records.</p>
+                <p>Appointments for this Zone + Date fill automatically. You can add missing units or remove cancelled rows here without changing appointment records.</p>
               </div>
               <span id="photoScheduleCount" class="panel-badge">0 units</span>
             </div>
@@ -526,7 +526,7 @@
               <button class="primary-btn" type="submit">Add Unit</button>
             </form>
 
-            <div class="photo-rule-note">Type one day at a time. For a week, change the Date above and enter that day's units. Remove deletes only this daily schedule line — not photos.</div>
+            <div class="photo-rule-note">Change the Date to prepare another day. Remove hides this daily schedule row from automatic import; stored photos stay safe. Add Unit restores a removed unit.</div>
             <div id="photoScheduleTable" class="table-shell photo-schedule-table photo-schedule-table-compact"></div>
           </article>
 
@@ -750,7 +750,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.31"></script>
+  <script src="app.js?v=8.44.32"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>

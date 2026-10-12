@@ -2584,6 +2584,33 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
   finally{backupBusy=false}
 });
 function photoScheduleRowId(date,unitKey){return `${date}|${unitKey}`}
+function photoScheduleSkipKey(date,unitKey){return `photo-skip:${photoScheduleRowId(date,unitKey)}`}
+
+async function syncPhotoAppointmentsForDay(date,zone){
+  const byUnit=new Map();
+  for(const a of state.appointments){
+    if(a.date!==date||isInactiveSchedule(a)||Number(a.zone||zoneOfBlock(a.block))!==Number(zone))continue;
+    const previous=byUnit.get(a.unitKey);
+    if(!previous||Number(a.id)>Number(previous.id))byUnit.set(a.unitKey,a);
+  }
+  const bookings=[...byUnit.values()];
+  if(!bookings.length)return;
+  const [saved,meta]=await Promise.all([photoDbAll("schedule"),photoDbAll("meta")]);
+  const byId=new Map(saved.map(row=>[row.id,row]));
+  const skipped=new Set(meta.map(item=>item.key));
+  for(const a of bookings){
+    const u=getUnit(a.unitKey),id=photoScheduleRowId(date,a.unitKey);
+    if(!u||skipped.has(photoScheduleSkipKey(date,a.unitKey)))continue;
+    const existing=byId.get(id);
+    if(existing&&existing.source!=="appointment")continue; // Manual photo entries belong to the user.
+    if(existing&&existing.appointmentId===a.id&&existing.team===a.team&&existing.slot===a.slot)continue;
+    await photoDbPut("schedule",{
+      ...(existing||{}),id,date,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitKey:a.unitKey,
+      unitDisplay:unitDisplay(u.floor,u.unit),team:a.team||"",slot:a.slot||"",
+      source:"appointment",appointmentId:a.id,updatedAt:new Date().toISOString()
+    });
+  }
+}
 
 async function photoSchedule(date,zone){
   const rows=(await photoDbAll("schedule")).filter(r=>r.date===date&&Number(r.zone)===Number(zone));
@@ -2657,7 +2684,7 @@ async function renderPhotoScheduleTable(){
       return `<tr>
         <td>Blk ${r.block}</td>
         <td><strong>${esc(r.unitDisplay)}</strong></td>
-        <td>${esc(r.team||"")}</td>
+        <td>${esc(r.team||"")}${r.source==="appointment"?"<br><small>From appointment</small>":""}</td>
         <td>${esc(r.slot||"—")}</td>
         <td><span class="photo-count-chip ${n>=3?"ready":""}">${n}</span></td>
         <td><button class="table-action delete" type="button" data-photo-schedule-delete="${esc(r.id)}">Remove</button></td>
@@ -2675,6 +2702,7 @@ async function syncPhotoTargetUnits(){
   const zone=Number(document.getElementById("photoZone").value||1);
   const date=document.getElementById("photoDate").value||isoTodaySG();
   const sel=document.getElementById("photoTargetUnit"),prev=sel?.value||"";
+  await syncPhotoAppointmentsForDay(date,zone);
   const rows=await photoDisplayRows(date,zone);
 
   syncPhotoZoneTabs();
@@ -2703,10 +2731,12 @@ async function savePhotoScheduleEntry(){
     unitDisplay:unitDisplay(u.floor,u.unit),
     team:document.getElementById("photoScheduleTeam").value||"Team 1",
     slot:document.getElementById("photoScheduleTime").value.trim(),
+    source:"manual",
     updatedAt:new Date().toISOString()
   };
 
   await photoDbPut("schedule",row);
+  await photoDbDelete("meta",photoScheduleSkipKey(date,key));
   document.getElementById("photoScheduleTime").value="";
   await syncPhotoTargetUnits();
   document.getElementById("photoTargetUnit").value=key;
@@ -2815,6 +2845,8 @@ document.getElementById("photoScheduleBlock").addEventListener("change",syncPhot
 document.getElementById("photoScheduleTable").addEventListener("click",async e=>{
   const b=e.target.closest("[data-photo-schedule-delete]");if(!b)return;
   if(!confirm("Remove this unit from this day's Photo Register? Stored photos will NOT be deleted."))return;
+  const row=(await photoDbAll("schedule")).find(r=>String(r.id)===b.dataset.photoScheduleDelete);
+  if(row)await photoDbPut("meta",{key:photoScheduleSkipKey(row.date,row.unitKey),date:row.date,unitKey:row.unitKey,reason:"Removed from Photo Daily Register",updatedAt:new Date().toISOString()});
   await photoDbDelete("schedule",b.dataset.photoScheduleDelete);
   await syncPhotoTargetUnits();
   toast("Daily photo schedule line removed")
@@ -3037,7 +3069,7 @@ function initPhotoCenter(){
   renderBlockPhotoSummary().catch(console.error)
 }
 
-function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))renderPhotoCenter()}
+function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))syncPhotoTargetUnits().catch(console.error)}
 function startApp(){
   if(appStarted)return;
   appStarted=true;
