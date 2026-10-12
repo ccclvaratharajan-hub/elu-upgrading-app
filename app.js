@@ -17,6 +17,9 @@ function isoTodaySG(){
   const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
   const o=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${o.year}-${o.month}-${o.day}`;
 }
+function dashboardScheduleDate(){
+  const clock=sgClock();return clock.minutes>=18*60?addDaysISO(clock.date,1):clock.date
+}
 function sgClock(){
   const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
   const o=Object.fromEntries(p.map(x=>[x.type,x.value]));return {date:`${o.year}-${o.month}-${o.day}`,minutes:Number(o.hour)*60+Number(o.minute)}
@@ -589,7 +592,7 @@ function setView(view){
     const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
     if(!document.getElementById(editId).value)dateInput.value=today;
   }
-  if(view==="teams"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=today;plannerDisplayMode="day"}
+  if(view==="teams"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
@@ -738,7 +741,7 @@ document.getElementById("dashboardTodayToggle").addEventListener("click",()=>{
 document.getElementById("dashboardTodayRows").addEventListener("click",e=>{
   const button=e.target.closest("[data-today-photo-zone]");if(!button)return;
   document.getElementById("photoZone").value=button.dataset.todayPhotoZone;
-  document.getElementById("photoDate").value=isoTodaySG();
+  document.getElementById("photoDate").value=dashboardScheduleDate();
   setView("photos");
 });
 document.addEventListener("keydown",e=>{
@@ -997,14 +1000,17 @@ window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapRe
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
-  const noResponse=nr+p,openFollowups=upcomingSurveyVisits().length,donePct=total?Math.round(done/total*100):0;
-  document.getElementById("heroTotalUnits").textContent=total.toLocaleString();const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
-  document.getElementById("kpiOptIn").textContent=agree.toLocaleString();document.getElementById("kpiOptInPct").textContent=`${total?Math.round(agree/total*100):0}% · A + C`;
+  const noResponse=nr,remaining=Math.max(0,total-done),donePct=total?Math.round(done/total*100):0;
+  document.getElementById("heroTotalUnits").textContent=total.toLocaleString();document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
+
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
   document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
-  document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiOptOut").textContent=d.toLocaleString();document.getElementById("kpiFollowups").textContent=openFollowups.toLocaleString();
-  document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{const zu=u.filter(x=>x.zone===Number(z)),zc=zu.filter(x=>x.workStatus==="Completed").length,za=zu.filter(x=>x.response==="A"||x.response==="C").length,zp=zu.filter(x=>x.response==="P").length,pct=zu.length?Math.round(zc/zu.length*100):0;return`<div class="zone-line"><div><div><div class="zone-name">Zone ${z}</div><div class="zone-pct">${pct}% complete</div></div><div class="zone-mini">${zc}/${zu.length}<br>${za} opt-in · ${zp} pending</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`}).join("");
+  document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiRemaining").textContent=remaining.toLocaleString();
+  document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
+    const group=rows.filter(r=>r.zone===Number(z)),summary=reportTotals(group),confirmed=group.reduce((n,r)=>n+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0),left=Math.max(0,summary.total-summary.done),pct=summary.total?Math.round(summary.done/summary.total*100):0;
+    return `<button type="button" class="zone-pulse-card" data-overview-zone="${z}" aria-label="Open Zone ${z} block board"><span class="zone-pulse-top"><span class="zone-pulse-icon"><svg aria-hidden="true"><use href="#i-building"/></svg></span><strong>Zone ${z}</strong><em>${group.length} blocks</em></span><span class="zone-pulse-total">${summary.total.toLocaleString()} <small>units</small></span><span class="zone-pulse-progress"><i style="width:${pct}%"></i></span><span class="zone-pulse-metrics"><span><b>${summary.done}</b> Done</span><span><b>${left}</b> Left</span><span><b>${confirmed}</b> C</span><span><b>${summary.nr}</b> NR</span><span><b>${summary.p}</b> P</span></span></button>`
+  }).join("");
   if(document.getElementById("dashboard").classList.contains("dashboard-map-open"))renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
   document.getElementById("upcomingAppointments").innerHTML=upcoming.length?upcoming.map(x=>`<div class="compact-item"><div><strong>Blk ${x.block} · ${esc(x.unitDisplay)}</strong><span>${esc(getUnit(x.unitKey)?.ownerName||"Owner not entered")} · ${esc(x.team||"Unassigned")}</span></div><small>C · ${safeDate(x.date)}<br>${esc(x.slot)}</small></div>`).join(""):`<div class="empty-state">No upcoming confirmations.</div>`;
@@ -1013,8 +1019,11 @@ function renderDashboard(){
   renderTodayTeamBoard();
   renderDashboardToday();
 }
+document.getElementById("zoneProgress").addEventListener("click",e=>{const card=e.target.closest("[data-overview-zone]");if(!card)return;setView("blockboard");document.getElementById("boardZone").value=card.dataset.overviewZone;syncBoardBlocks()});
 function renderDashboardToday(){
-  const today=isoTodaySG();
+  const today=dashboardScheduleDate(),tomorrow=today!==isoTodaySG(),label=tomorrow?"Tomorrow":"Today";
+  document.querySelector(".dashboard-today .section-label").textContent=`${label.toUpperCase()} · APPOINTMENTS`;
+  document.getElementById("dashboardTodayTitle").textContent=`${label}'s appointments · ${safeDate(today)}`;
   const startMinutes=slot=>{
     const start=String(slot||"").trim().split(/[-–—]/)[0].trim(),twelveHour=slotStartMinutes(start);
     if(twelveHour!==9999)return twelveHour;
@@ -1028,7 +1037,7 @@ function renderDashboardToday(){
     zone:i+1,rows:active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===i+1)
   })).filter(group=>group.rows.length).map(({zone,rows})=>
     `<section class="dashboard-today-zone" aria-label="Zone ${zone} appointments"><div class="dashboard-today-zone-head"><strong>Zone ${zone}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div><div class="dashboard-today-zone-units">${rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong></div>`).join("")}</div></section>`
-  ).join(""):`<div class="empty-state">No appointments scheduled for today.</div>`;
+  ).join(""):`<div class="empty-state">No appointments scheduled for ${label.toLowerCase()}.</div>`;
 }
 let selectedBoardUnitKey="";
 function classicBlockBoardHtml(units,floorFilter,q){
@@ -1635,15 +1644,17 @@ function renderPlanner(){
 }
 function renderTodayTeamBoard(){
   // Dashboard follows the existing unit-level saved appointment selection, not stale duplicate rows.
-  const date=isoTodaySG(),active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&preferredMasterAppointment(a.unitKey)===a);
+  const date=dashboardScheduleDate(),tomorrow=date!==isoTodaySG(),label=tomorrow?"Tomorrow":"Today";
+  const panel=document.getElementById("todayTeamPanel");panel.querySelector(".section-label").textContent=`${label.toUpperCase()} · TEAM SCHEDULE`;panel.querySelector("h3").textContent=`${label}'s appointment deployment · ${safeDate(date)}`;
+  const active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&preferredMasterAppointment(a.unitKey)===a);
   const zoneCards=[1,2,3,4,5,6].map(z=>{
     const za=active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z);if(!za.length)return"";
     const custom=[...new Set(za.map(a=>a.slot).filter(s=>s&&!SLOTS.includes(s)))];
     const slots=[...new Set([...SLOTS,...custom])].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||String(a).localeCompare(String(b)));
     const teamCol=team=>{const ta=za.filter(a=>a.team===team);return `<div class="today-team-col"><div class="today-team-head"><strong>${team}</strong><span>${ta.length} appointment${ta.length===1?"":"s"}</span></div>${slots.map(slot=>{const arr=ta.filter(a=>a.slot===slot).map(appointmentForPlanner);return `<div class="today-slot ${!SLOTS.includes(slot)?"today-custom-slot":""}"><div class="today-slot-time">${esc(slot)}</div><div class="today-slot-work">${arr.length?arr.map(a=>`<div class="today-appt-chip"><strong>Blk ${a.block} · ${esc(a.unitDisplay)}</strong>${a.remarks?` · ${esc(a.remarks)}`:""}</div>`).join(""):`<div class="today-empty">No appointment</div>`}</div></div>`}).join("")}</div>`};
-    return `<section class="today-zone-card"><div class="today-zone-head"><div><span>ZONE ${z}</span><strong>Blocks ${(ZONE_BLOCKS[z]||[]).join(", ")}</strong></div><em>${za.length} today</em></div><div class="today-zone-teams">${teamCol("Team 1")}${teamCol("Team 2")}</div></section>`
+    return `<section class="today-zone-card"><div class="today-zone-head"><div><span>ZONE ${z}</span><strong>Blocks ${(ZONE_BLOCKS[z]||[]).join(", ")}</strong></div><em>${za.length} ${label.toLowerCase()}</em></div><div class="today-zone-teams">${teamCol("Team 1")}${teamCol("Team 2")}</div></section>`
   }).filter(Boolean).join("");
-  document.getElementById("todayTeamBoard").innerHTML=zoneCards||`<div class="empty-state">No team appointments scheduled for today.</div>`;
+  document.getElementById("todayTeamBoard").innerHTML=zoneCards||`<div class="empty-state">No team appointments scheduled for ${label.toLowerCase()}.</div>`;
 }
 function togglePlannerCustomTime(){
   const row=document.getElementById("plannerCustomTimeRow");
@@ -1745,7 +1756,7 @@ document.getElementById("plannerViewBlock").addEventListener("change",renderPlan
 document.getElementById("teamDate").addEventListener("change",()=>{plannerDisplayMode="day";renderPlanner()});
 document.getElementById("plannerPrevDay").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),-1);renderPlanner()});
 document.getElementById("plannerNextDay").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),1);renderPlanner()});
-document.getElementById("plannerToday").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
+document.getElementById("plannerToday").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()});
 document.getElementById("plannerTomorrow").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(isoTodaySG(),1);renderPlanner()});
 document.getElementById("plannerNext7").addEventListener("click",()=>{plannerDisplayMode="week";document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
 document.getElementById("plannerTable").addEventListener("click",e=>{const b=e.target.closest("[data-planner-open]");if(b)return editAppointment(Number(b.dataset.plannerOpen))});
@@ -2937,7 +2948,7 @@ function photoImageP(p,rId,docId,maxW,maxH){
 }
 function photoTc(width,content,heading=false){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="center"/>${heading?'<w:shd w:fill="DCECF4"/>':''}<w:tcMar><w:top w:w="45" w:type="dxa"/><w:left w:w="45" w:type="dxa"/><w:bottom w:w="45" w:type="dxa"/><w:right w:w="45" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`}
 function photoPageTable(rows,refs){
-  const w=[1032,2580,3909,3909];let x=`<w:tbl><w:tblPr><w:tblW w:w="11430" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="5" w:color="94B7CB"/><w:left w:val="single" w:sz="5" w:color="94B7CB"/><w:bottom w:val="single" w:sz="5" w:color="94B7CB"/><w:right w:val="single" w:sz="5" w:color="94B7CB"/><w:insideH w:val="single" w:sz="4" w:color="BAD2DF"/><w:insideV w:val="single" w:sz="4" w:color="BAD2DF"/></w:tblBorders></w:tblPr><w:tblGrid>${w.map(n=>`<w:gridCol w:w="${n}"/>`).join("")}</w:tblGrid>`;
+  const w=[1032,2580,3909,3909];let x=`<w:tbl><w:tblPr><w:tblW w:w="11430" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders></w:tblPr><w:tblGrid>${w.map(n=>`<w:gridCol w:w="${n}"/>`).join("")}</w:tblGrid>`;
   for(let i=0;i<6;i++){const r=rows[i];if(r){x+=`<w:tr><w:trPr><w:trHeight w:val="330" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP("DATE",true,16),true)}${photoTc(w[1],photoP(`Blk ${r.block} ${r.unitDisplay}`,true,16),true)}${photoTc(w[2],photoP("BEFORE",true,16),true)}${photoTc(w[3],photoP("AFTER",true,16),true)}</w:tr>`;
     const rr=refs[i]||[],p1=rr[0]?photoImageP(rr[0].photo,rr[0].rId,rr[0].docId,1.70,1.38):photoP(""),p2=rr[1]?photoImageP(rr[1].photo,rr[1].rId,rr[1].docId,2.62,1.38):photoP(""),p3=rr[2]?photoImageP(rr[2].photo,rr[2].rId,rr[2].docId,2.62,1.38):photoP("");
     x+=`<w:tr><w:trPr><w:trHeight w:val="2110" w:hRule="exact"/></w:trPr>${photoTc(w[0],photoP(safeDate(r.date),true,14))}${photoTc(w[1],p1)}${photoTc(w[2],p2)}${photoTc(w[3],p3)}</w:tr>`}
@@ -3029,7 +3040,7 @@ async function generateBlockPhotoPdf(){
   const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
   const label=block==='all'?`ZONE ${zone} · ALL BLOCKS`:`BLOCK ${block}`;
   const urls=[],cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${photoReportCells(g.photos).map(ph=>{if(!ph)return"<div></div>";const u=URL.createObjectURL(ph.blob);urls.push(u);return `<div><img src="${u}"></div>`}).join("")}</div></div>`).join("");
-  win.document.write(`<!doctype html><html><head><title>ELU ${label} Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0}.sub{text-align:center;font-size:8px;margin-bottom:4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT ${label} PASIR RIS STREET 51</div><div class="sub">${safeDate(from)} TO ${safeDate(to)}</div>${cards}<script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);win.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),60000)
+  win.document.write(`<!doctype html><html><head><title>ELU ${label} Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0}.sub{text-align:center;font-size:8px;margin-bottom:4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT ${label} PASIR RIS STREET 51</div><div class="sub">${safeDate(from)} TO ${safeDate(to)}</div>${cards}<script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);win.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),60000)
 }
 
 async function markPhotoExport(zone,cycle,type){
@@ -3059,7 +3070,7 @@ async function generateMonthlyPhotoPdf(){
   if(!groups.length){toast("No stored photos for this Zone / Cycle");return}
   const win=window.open("","_blank","width=1100,height=900");if(!win){toast("Allow pop-ups for Print / PDF");return}
   const cards=groups.map(g=>`<div class="r"><div class="h"><b>${safeDate(g.date)}</b><b>Blk${g.block}${g.unitDisplay}</b><b>BEFORE</b><b>AFTER</b></div><div class="p"><div>${safeDate(g.date)}</div>${photoReportCells(g.photos).map(ph=>ph?`<div><img src="${URL.createObjectURL(ph.blob)}"></div>`:`<div></div>`).join("")}</div></div>`).join("");
-  win.document.write(`<!doctype html><html><head><title>ELU Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0 4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{border:1px solid #000;padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51 · Zone ${zone}</div>${cards}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close();
+  win.document.write(`<!doctype html><html><head><title>ELU Photo Report</title><style>@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:Arial;margin:0}.title{text-align:center;font-weight:700;font-size:10px;margin:2px 0 4px}.r{break-inside:avoid}.h,.p{display:grid;grid-template-columns:9% 23% 34% 34%}.h>*,.p>*{padding:2px;text-align:center;font-size:8px}.p>*{height:43mm;display:flex;align-items:center;justify-content:center}.p img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><div class="title">ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 PASIR RIS STREET 51 · Zone ${zone}</div>${cards}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);win.document.close();
   await markPhotoExport(zone,cycle,"PDF");await renderPhotoCenter()
 }
 document.getElementById("photoWordBtn").addEventListener("click",()=>generateMonthlyPhotoWord().catch(e=>{console.error(e);toast("Word report generation failed")}));
@@ -3107,7 +3118,7 @@ function startApp(){
   document.getElementById("surveyVisitDate").value=isoTodaySG();
   document.getElementById("surveyPrintDate").value=isoTodaySG();
   document.getElementById("complaintReportDate").value=isoTodaySG();
-  document.getElementById("teamDate").value=isoTodaySG();
+  document.getElementById("teamDate").value=dashboardScheduleDate();
   configureAppointmentYearInputs();
   initSelectors();
   initMasterSchedule();
@@ -3119,7 +3130,7 @@ function startApp(){
   renderAll();
   autoCompleteAppointments();
   photoAutoCleanup();
-  autoCompleteTimer=setInterval(()=>autoCompleteAppointments(true),60000)
+  autoCompleteTimer=setInterval(()=>{autoCompleteAppointments(true);if(document.getElementById("dashboard").classList.contains("active")){renderTodayTeamBoard();renderDashboardToday()}if(document.getElementById("teams").classList.contains("active")&&plannerDisplayMode==="day"&&!document.getElementById("plannerEditId").value&&document.getElementById("teamDate").value===isoTodaySG()&&dashboardScheduleDate()!==isoTodaySG()){document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()}},60000)
 }
 let scenePeekTimer;
 const scenePeekBtn=document.getElementById("scenePeekBtn");

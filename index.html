@@ -112,9 +112,9 @@
         <div class="command-hero">
           <div class="command-copy">
             <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
-            <h2>One project. One clear starting point.</h2>
-            <p>Survey → Appointment → Unit work → Report. Your records stay connected across every zone.</p>
-            <div class="hero-tags"><span>6 Zones</span><span>38 Blocks</span><span id="heroTagUnits">2,341 Units</span><span class="sync-tag">Excel schedule synced</span></div>
+            <h2>ELU Upgrading</h2>
+            <p>Project progress · Pasir Ris</p>
+            <div class="hero-tags"><span id="heroTagZones">6 Zones</span><span id="heroTagBlocks">38 Blocks</span><span id="heroTagUnits">2,341 Units</span></div>
             <div class="hero-mini-actions" aria-label="Open dashboard details">
               <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Today's plan</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
               <button type="button" data-dashboard-detail="visits" aria-expanded="false" aria-controls="upcomingVisitsPanel"><svg aria-hidden="true"><use href="#i-survey"/></svg><span>Survey visits</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
@@ -125,6 +125,13 @@
               <div class="hero-orbit-inner"><strong id="heroCompletionPct">0%</strong><span>Completed</span></div>
             </div>
             <div class="hero-orbit-caption"><strong id="heroTotalUnits">0</strong><span>Total project units</span></div>
+          </div>
+          <div class="dashboard-glance" aria-label="Overall project status">
+            <div><span>Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div>
+            <div><span>Remaining</span><strong id="kpiRemaining">0</strong><small>units to finish</small></div>
+            <div><span>Confirmation</span><strong id="kpiAppointments">0</strong><small>Status C</small></div>
+            <div><span>No Response</span><strong id="kpiNR">0</strong><small>Status NR</small></div>
+            <div><span>Pending</span><strong id="kpiPending">0</strong><small>Status P</small></div>
           </div>
         </div>
 
@@ -139,15 +146,13 @@
           </article>
         </div>
 
-        <div class="kpi-grid premium-kpis">
-          <article class="kpi-card accent-green"><div class="kpi-icon green"><svg><use href="#i-check"/></svg></div><div><span>Opt-In Agree</span><strong id="kpiOptIn">0</strong><small id="kpiOptInPct">A + C</small></div></article>
-          <article class="kpi-card accent-pink"><div class="kpi-icon pink"><svg><use href="#i-calendar"/></svg></div><div><span>Confirmation · C</span><strong id="kpiAppointments">0</strong><small>Active confirmed appointments</small></div></article>
-          <article class="kpi-card accent-blue"><div class="kpi-icon blue">◷</div><div><span>Pending Confirmation · P</span><strong id="kpiPending">0</strong><small>Resident responded · date waiting</small></div></article>
-          <article class="kpi-card accent-cyan"><div class="kpi-icon cyan"><svg><use href="#i-building"/></svg></div><div><span>Work Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div></article>
-          <article class="kpi-card accent-amber"><div class="kpi-icon amber">NR</div><div><span>No Response</span><strong id="kpiNR">0</strong><small>Requires follow-up</small></div></article>
-          <article class="kpi-card accent-rose"><div class="kpi-icon rose">D</div><div><span>Opt-Out</span><strong id="kpiOptOut">0</strong><small>Resident declined</small></div></article>
-          <article class="kpi-card accent-violet"><div class="kpi-icon violet"><svg><use href="#i-survey"/></svg></div><div><span>Survey Visits</span><strong id="kpiFollowups">0</strong><small>Upcoming visit appointments</small></div></article>
-        </div>
+        <details class="dashboard-zone-overview dashboard-expand">
+          <summary><span>Zone breakdown</span><small>Open all 6 zones</small></summary>
+          <article class="panel zone-panel">
+            <div class="panel-head"><div><span class="section-label">ZONE BY ZONE</span><h3>Six zones · live progress</h3><p>Completed, remaining, confirmation, pending and NR for each zone.</p></div><span class="panel-badge">LIVE</span></div>
+            <div id="zoneProgress" class="zone-progress zone-card-grid"></div>
+          </article>
+        </details>
 
         <div class="dashboard-shortcuts" aria-label="Quick access">
           <button type="button" id="dashboardQuickJump"><span class="shortcut-icon"><svg><use href="#i-search"/></svg></span><span><strong>Find a Unit</strong><small>Block and unit search</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
@@ -178,17 +183,13 @@
           <p class="zone-map-note" id="zoneMapNote">Pasir Ris Drive 1 &amp; Street 51 · satellite imagery and approximate block labels.</p>
         </article>
 
-        <div class="dashboard-grid dashboard-grid-wow">
-          <article class="panel zone-panel">
-            <div class="panel-head"><div><span class="section-label">ZONE PERFORMANCE</span><h3>Project pulse by zone</h3><p>Completion is calculated from the master unit data.</p></div><span class="panel-badge">LIVE</span></div>
-            <div id="zoneProgress" class="zone-progress zone-card-grid"></div>
-          </article>
-
+        <details class="dashboard-more dashboard-expand">
+          <summary><span>Upcoming confirmations</span><small>Open list</small></summary>
           <article class="panel appointment-panel">
             <div class="panel-head"><div><span class="section-label">NEXT ACTIONS</span><h3>Upcoming confirmations</h3><p>Existing Excel schedules are already loaded.</p></div><button class="text-btn" data-go="appointments">View schedule</button></div>
             <div id="upcomingAppointments" class="compact-list premium-compact-list"></div>
           </article>
-        </div>
+        </details>
 
       </section>
 
