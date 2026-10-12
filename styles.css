@@ -3273,3 +3273,8 @@ body.theme-night #dashboard .dashboard-glance>div{border-right-color:rgba(208,23
   #dashboard .dashboard-glance>div:last-child{border-right:1px solid rgba(119,167,206,.3)}
   body.theme-night #dashboard .dashboard-glance>div{border-color:rgba(208,235,255,.25)}
 }
+/* Match the six report measures without adding another dashboard section. */
+#dashboard .dashboard-glance{grid-template-columns:repeat(6,minmax(0,1fr))}
+#dashboard .dashboard-glance span{font-size:10px;line-height:1.2}
+@media(max-width:960px){#dashboard .dashboard-glance{grid-template-columns:repeat(3,minmax(0,1fr))}#dashboard .dashboard-glance>div:nth-child(3){border-right:0}}
+@media(max-width:760px){#dashboard .dashboard-glance{grid-template-columns:repeat(2,minmax(0,1fr))}}

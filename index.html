@@ -113,25 +113,25 @@
           <div class="command-copy">
             <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
             <h2>ELU Upgrading</h2>
-            <p>Project progress · Pasir Ris</p>
-            <div class="hero-tags"><span id="heroTagZones">6 Zones</span><span id="heroTagBlocks">38 Blocks</span><span id="heroTagUnits">2,341 Units</span></div>
+            <p>All Zones · same totals as the Meeting Report</p>
+            <div class="hero-tags"><span id="heroTagZones">6 Zones</span><span id="heroTagBlocks">38 Blocks</span></div>
             <div class="hero-mini-actions" aria-label="Open dashboard details">
               <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Today's plan</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
-              <button type="button" data-dashboard-detail="visits" aria-expanded="false" aria-controls="upcomingVisitsPanel"><svg aria-hidden="true"><use href="#i-survey"/></svg><span>Survey visits</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
+              <button type="button" id="dashboardMeetingBtn"><svg aria-hidden="true"><use href="#i-report"/></svg><span>Meeting Report</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
             </div>
           </div>
           <div class="hero-orbit-wrap">
             <div class="hero-orbit" id="heroOrbit">
               <div class="hero-orbit-inner"><strong id="heroCompletionPct">0%</strong><span>Completed</span></div>
             </div>
-            <div class="hero-orbit-caption"><strong id="heroTotalUnits">0</strong><span>Total project units</span></div>
           </div>
-          <div class="dashboard-glance" aria-label="Overall project status">
-            <div><span>Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div>
-            <div><span>Remaining</span><strong id="kpiRemaining">0</strong><small>units to finish</small></div>
-            <div><span>Confirmation</span><strong id="kpiAppointments">0</strong><small>Status C</small></div>
-            <div><span>No Response</span><strong id="kpiNR">0</strong><small>Status NR</small></div>
-            <div><span>Pending</span><strong id="kpiPending">0</strong><small>Status P</small></div>
+          <div class="dashboard-glance" aria-label="All Zones Meeting Report totals">
+            <div><span>Total DU</span><strong id="kpiTotalDU">0</strong><small>all 6 zones</small></div>
+            <div><span>Opt-In A+C</span><strong id="kpiOptIn">0</strong><small>agree</small></div>
+            <div><span>Work Completed</span><strong id="kpiCompleted">0</strong><small id="kpiCompletedPct">0%</small></div>
+            <div><span>Opt-Out D</span><strong id="kpiOptOut">0</strong><small>disagree</small></div>
+            <div><span>No Response NR+P</span><strong id="kpiNR">0</strong><small>includes <b id="kpiPending">0</b> pending</small></div>
+            <div><span>Confirmation C</span><strong id="kpiAppointments">0</strong><small>included in A+C</small></div>
           </div>
         </div>
 
@@ -149,7 +149,7 @@
         <details class="dashboard-zone-overview dashboard-expand">
           <summary><span>Zone breakdown</span><small>Open all 6 zones</small></summary>
           <article class="panel zone-panel">
-            <div class="panel-head"><div><span class="section-label">ZONE BY ZONE</span><h3>Six zones · live progress</h3><p>Completed, remaining, confirmation, pending and NR for each zone.</p></div><span class="panel-badge">LIVE</span></div>
+            <div class="panel-head"><div><span class="section-label">ZONE BY ZONE</span><h3>Six zones · live progress</h3><p>Uses the same All Zones rows and status rules as the Meeting Report.</p></div><span class="panel-badge">LIVE</span></div>
             <div id="zoneProgress" class="zone-progress zone-card-grid"></div>
           </article>
         </details>

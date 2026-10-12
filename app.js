@@ -1000,16 +1000,18 @@ window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapRe
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
-  const noResponse=nr,remaining=Math.max(0,total-done),donePct=total?Math.round(done/total*100):0;
-  document.getElementById("heroTotalUnits").textContent=total.toLocaleString();document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;const tag=document.getElementById("heroTagUnits");if(tag)tag.textContent=`${total.toLocaleString()} Units`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
+  const noResponse=nr+p,donePct=total?Math.round(done/total*100):0;
+  document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
 
+  document.getElementById("kpiTotalDU").textContent=total.toLocaleString();
+  document.getElementById("kpiOptIn").textContent=agree.toLocaleString();
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
-  document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
-  document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiRemaining").textContent=remaining.toLocaleString();
+  document.getElementById("kpiOptOut").textContent=d.toLocaleString();
+  document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
-    const group=rows.filter(r=>r.zone===Number(z)),summary=reportTotals(group),confirmed=group.reduce((n,r)=>n+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0),left=Math.max(0,summary.total-summary.done),pct=summary.total?Math.round(summary.done/summary.total*100):0;
-    return `<button type="button" class="zone-pulse-card" data-overview-zone="${z}" aria-label="Open Zone ${z} block board"><span class="zone-pulse-top"><span class="zone-pulse-icon"><svg aria-hidden="true"><use href="#i-building"/></svg></span><strong>Zone ${z}</strong><em>${group.length} blocks</em></span><span class="zone-pulse-total">${summary.total.toLocaleString()} <small>units</small></span><span class="zone-pulse-progress"><i style="width:${pct}%"></i></span><span class="zone-pulse-metrics"><span><b>${summary.done}</b> Done</span><span><b>${left}</b> Left</span><span><b>${confirmed}</b> C</span><span><b>${summary.nr}</b> NR</span><span><b>${summary.p}</b> P</span></span></button>`
+    const group=rows.filter(r=>r.zone===Number(z)),summary=reportTotals(group),confirmed=group.reduce((n,r)=>n+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0),pct=summary.total?Math.round(summary.done/summary.total*100):0;
+    return `<button type="button" class="zone-pulse-card" data-overview-zone="${z}" aria-label="Open Zone ${z} block board"><span class="zone-pulse-top"><span class="zone-pulse-icon"><svg aria-hidden="true"><use href="#i-building"/></svg></span><strong>Zone ${z}</strong><em>${group.length} blocks</em></span><span class="zone-pulse-total">${summary.total.toLocaleString()} <small>units</small></span><span class="zone-pulse-progress"><i style="width:${pct}%"></i></span><span class="zone-pulse-metrics"><span><b>${summary.done}</b> Done</span><span><b>${summary.agree}</b> A+C</span><span><b>${summary.d}</b> D</span><span><b>${summary.nr+summary.p}</b> NR+P</span><span><b>${confirmed}</b> C</span></span></button>`
   }).join("");
   if(document.getElementById("dashboard").classList.contains("dashboard-map-open"))renderZoneMap(u);
   const upcoming=state.appointments.filter(x=>!isInactiveSchedule(x)&&x.workStatus!=="Completed"&&!appointmentHasEnded(x)&&x.date>=isoTodaySG()).sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.block)-Number(b.block)).slice(0,6);
@@ -1019,6 +1021,7 @@ function renderDashboard(){
   renderTodayTeamBoard();
   renderDashboardToday();
 }
+document.getElementById("dashboardMeetingBtn").addEventListener("click",()=>{document.getElementById("reportZoneFilter").value="all";document.getElementById("reportBlockFilter").innerHTML=allBlockOptions(true);document.getElementById("reportBlockFilter").value="all";setView("reports")});
 document.getElementById("zoneProgress").addEventListener("click",e=>{const card=e.target.closest("[data-overview-zone]");if(!card)return;setView("blockboard");document.getElementById("boardZone").value=card.dataset.overviewZone;syncBoardBlocks()});
 function renderDashboardToday(){
   const today=dashboardScheduleDate(),tomorrow=today!==isoTodaySG(),label=tomorrow?"Tomorrow":"Today";
