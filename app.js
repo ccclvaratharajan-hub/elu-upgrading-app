@@ -577,6 +577,7 @@ photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / P
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."],
 sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
+let photoEntryOpened=false;
 function setView(view){
   rebuildAllMasters();
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(view).classList.add("active");
@@ -596,7 +597,18 @@ function setView(view){
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
-  else if(view==="photos"){syncPhotoTargetUnits();photoAutoCleanup()}
+  else if(view==="photos"){
+    if(!photoEntryOpened){
+      const date=document.getElementById("photoDate").value||today;
+      const currentZone=Number(document.getElementById("photoZone").value||1);
+      if(currentZone===1){
+        const first=state.appointments.find(a=>a.date===date&&!isInactiveSchedule(a)&&preferredMasterAppointment(a.unitKey)===a);
+        if(first)document.getElementById("photoZone").value=String(first.zone||zoneOfBlock(first.block));
+      }
+      photoEntryOpened=true;
+    }
+    syncPhotoTargetUnits().catch(console.error);photoAutoCleanup()
+  }
   else if(view==="reports")renderReport();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1010,10 +1022,11 @@ function renderDashboardToday(){
   const active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===today&&preferredMasterAppointment(a.unitKey)===a)
     .sort((a,b)=>startMinutes(a.slot)-startMinutes(b.slot)||String(a.slot||"").localeCompare(String(b.slot||""))||Number(a.block)-Number(b.block)||String(a.unitDisplay||"").localeCompare(String(b.unitDisplay||"")));
   document.getElementById("dashboardTodayCount").textContent=active.length.toLocaleString();
-  document.getElementById("dashboardTodayRows").innerHTML=Array.from({length:6},(_,i)=>{
-    const zone=i+1,rows=active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===zone);
-    return `<section class="dashboard-today-zone" aria-label="Zone ${zone} appointments"><div class="dashboard-today-zone-head"><strong>Zone ${zone}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div>${rows.length?rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong><span>${esc(a.team||"Team not assigned")}</span></div>`).join(""):`<div class="dashboard-today-empty">No appointments today</div>`}</section>`;
-  }).join("");
+  document.getElementById("dashboardTodayRows").innerHTML=active.length?Array.from({length:6},(_,i)=>({
+    zone:i+1,rows:active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===i+1)
+  })).filter(group=>group.rows.length).map(({zone,rows})=>
+    `<section class="dashboard-today-zone" aria-label="Zone ${zone} appointments"><div class="dashboard-today-zone-head"><strong>Zone ${zone}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div><div class="dashboard-today-zone-units">${rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong></div>`).join("")}</div></section>`
+  ).join(""):`<div class="empty-state">No appointments scheduled for today.</div>`;
 }
 let selectedBoardUnitKey="";
 function classicBlockBoardHtml(units,floorFilter,q){
@@ -2602,7 +2615,7 @@ async function syncPhotoAppointmentsForDay(date,zone){
     const previous=byUnit.get(a.unitKey);
     if(!previous||Number(a.id)>Number(previous.id))byUnit.set(a.unitKey,a);
   }
-  const bookings=[...byUnit.values()];
+  const bookings=[...byUnit.values()].filter(a=>date!==isoTodaySG()||preferredMasterAppointment(a.unitKey)===a);
   if(!bookings.length)return;
   const [saved,meta]=await Promise.all([photoDbAll("schedule"),photoDbAll("meta")]);
   const byId=new Map(saved.map(row=>[row.id,row]));
@@ -2702,19 +2715,24 @@ async function renderPhotoScheduleTable(){
   </table>`
 }
 
-function syncPhotoZoneTabs(){
+function syncPhotoZoneTabs(schedule=[],date=""){
   const zone=String(document.getElementById("photoZone").value||"1");
-  document.querySelectorAll("[data-photo-zone-tab]").forEach(b=>b.classList.toggle("active",b.dataset.photoZoneTab===zone))
+  document.querySelectorAll("[data-photo-zone-tab]").forEach(b=>{
+    b.classList.toggle("active",b.dataset.photoZoneTab===zone);
+    const count=date?schedule.filter(r=>r.date===date&&String(r.zone)===b.dataset.photoZoneTab).length:null;
+    b.innerHTML=`Zone ${b.dataset.photoZoneTab}${count===null?"":` <small>(${count})</small>`}`;
+  })
 }
 
 async function syncPhotoTargetUnits(){
   const zone=Number(document.getElementById("photoZone").value||1);
   const date=document.getElementById("photoDate").value||isoTodaySG();
   const sel=document.getElementById("photoTargetUnit"),prev=sel?.value||"";
-  await syncPhotoAppointmentsForDay(date,zone);
+  for(let z=1;z<=6;z++)await syncPhotoAppointmentsForDay(date,z);
+  const schedule=await photoDbAll("schedule");
   const rows=await photoDisplayRows(date,zone);
 
-  syncPhotoZoneTabs();
+  syncPhotoZoneTabs(schedule,date);
   syncPhotoScheduleBlocks();
 
   if(sel){
