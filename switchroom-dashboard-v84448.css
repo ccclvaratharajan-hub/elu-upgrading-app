@@ -1,9 +1,8 @@
-/* V8.44.48 - Approved electrical switchroom dashboard photo only. */
-body:not(.theme-night) #dashboard .command-hero {
-  background-image:linear-gradient(90deg,rgba(242,249,255,.90) 0%,rgba(228,243,255,.70) 43%,rgba(222,242,255,.07) 100%),url("switchroom-light-v84448.jpg");
-  background-position:center,center 46%;background-size:cover;
+/* Dashboard switchroom photo: high-priority override, without altering other views. */
+body:not(.theme-night) #dashboard.view .command-hero {
+ background: linear-gradient(90deg,rgba(240,249,255,.92) 0%,rgba(230,245,255,.72) 42%,rgba(222,242,255,.04) 100%),url("switchroom-light-v84448.jpg") center 46%/cover no-repeat !important;
+ color:#103a5b;
 }
-body.theme-night #dashboard .command-hero {
-  background-image:linear-gradient(90deg,rgba(5,21,51,.92) 0%,rgba(6,29,67,.72) 45%,rgba(5,30,66,.12) 100%),url("switchroom-dark-v84448.jpg");
-  background-position:center,center 46%;background-size:cover;
+body.theme-night #dashboard.view .command-hero {
+ background:linear-gradient(90deg,rgba(5,21,51,.94) 0%,rgba(6,29,67,.70) 45%,rgba(5,30,66,.08) 100%),url("switchroom-dark-v84448.jpg") center 46%/cover no-repeat !important;
 }
