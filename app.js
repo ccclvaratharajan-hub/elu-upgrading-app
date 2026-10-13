@@ -1536,20 +1536,35 @@ async function renderComplaintHistory(){
   try{
     const photos=(await photoDbAll("complaintPhotos")).filter(p=>p.unitKey===c.unitKey);
     if(activeComplaintCaseId!==id)return;
-    const photoCards=(caseId,eventId,label)=>photos.filter(p=>p.caseId===caseId&&p.visitId===eventId).map(p=>{const url=URL.createObjectURL(p.blob);complaintPhotoUrls.push(url);return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label}" loading="lazy"></a>`}).join("");
+    const photoCards=(caseId,eventId,label)=>photos.filter(p=>p.caseId===caseId&&p.visitId===eventId).map(p=>{const url=URL.createObjectURL(p.blob);complaintPhotoUrls.push(url);return `<span class="complaint-photo-item"><a href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(label)}"><img src="${url}" alt="${esc(label)}" loading="lazy"></a><button type="button" class="complaint-photo-delete" data-comp-photo-delete="${esc(p.id)}" aria-label="Delete ${esc(label)}" title="Delete this photo">×</button></span>`}).join("");
     const detailText=(value,limit=160)=>{const t=String(value||"—");return t.length>limit?`<details class="complaint-read-more"><summary>${esc(t.slice(0,limit))}… <b>Read full note</b></summary><p>${esc(t)}</p></details>`:`<p class="complaint-card-text">${esc(t)}</p>`};
-    const complaintColumn=unitCases.map((k,i)=>{
+    let visitNumber=0;
+    const caseTimeline=unitCases.map((k,i)=>{
       const cp=photoCards(k.id,`opened-${k.id}`,`Complaint ${i+1} photo`);
-      return `<article class="complaint-ledger-card ${k.id===id?"selected":""}"><div class="complaint-ledger-card-top"><b>Complaint ${i+1}</b><span class="pill ${complaintState(k)==="Closed"?"completed":"d"}">${esc(complaintState(k))}</span></div><small>${esc(safeDate(k.date))} · ${esc(k.type||"Other")} · ${esc(k.source||"Resident / Owner")}</small>${detailText(k.complaint)}${cp?`<div class="complaint-visit-images">${cp}</div>`:""}<div class="complaint-ledger-actions"><button type="button" class="table-action" data-case-followup="${k.id}">+ Visit for Complaint ${i+1}</button><button type="button" class="table-action" data-comp-edit="${k.id}">Edit</button></div></article>`
+      const complaintCard=`<article class="complaint-ledger-card complaint-event-card ${k.id===id?"selected":""}"><div class="complaint-ledger-card-top"><b>Complaint ${i+1}</b><span class="pill ${complaintState(k)==="Closed"?"completed":"d"}">${esc(complaintState(k))}</span></div><small>${esc(safeDate(k.date))} · ${esc(k.type||"Other")} · ${esc(k.source||"Resident / Owner")}</small>${detailText(k.complaint)}${cp?`<div class="complaint-visit-images">${cp}</div>`:""}<div class="complaint-ledger-actions"><button type="button" class="table-action" data-case-followup="${k.id}">+ Add visit</button><button type="button" class="table-action" data-comp-edit="${k.id}">Edit</button></div></article>`;
+      const visits=complaintEvents(k).filter(v=>!isComplaintOpening(v)).sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||"")||String(a.id).localeCompare(String(b.id)));
+      const visitCards=visits.map(v=>{
+        const number=++visitNumber,vp=photoCards(k.id,v.id,`Visit ${number} photo`);
+        return `<article class="complaint-ledger-card complaint-event-card visit-event-card"><div class="complaint-ledger-card-top"><b>Visit ${number}</b><span class="pill ${v.outcome==="Closed"?"completed":"pending"}">${esc(v.outcome||"Open")}</span></div><small>${esc(safeDate(v.date))}${v.time?` · ${esc(v.time)}`:""} · Complaint ${i+1}</small>${detailText(v.action,190)}${v.attendedBy?`<small>Attended by ${esc(v.attendedBy)}</small>`:""}${v.appointmentDate?`<small>Appointment ${esc(safeDate(v.appointmentDate))}</small>`:""}${vp?`<div class="complaint-visit-images">${vp}</div>`:""}</article>`
+      }).join("");
+      return `<section class="complaint-event-pair" aria-label="Complaint ${i+1} and its visits">${complaintCard}${visitCards||'<p class="complaint-no-visits">Visit not recorded yet.</p>'}</section>`
     }).join("");
-    const visitColumn=unitVisits.map((v,i)=>{
-      const vp=photoCards(v.caseId,v.id,`Visit ${i+1} photo`);
-      return `<article class="complaint-ledger-card"><div class="complaint-ledger-card-top"><b>Visit ${i+1}</b><span class="pill ${v.outcome==="Closed"?"completed":"pending"}">${esc(v.outcome||"Open")}</span></div><small>${esc(safeDate(v.date))}${v.time?` · ${esc(v.time)}`:""} · For Complaint ${caseNumbers.get(v.caseId)}</small>${detailText(v.action,190)}${v.attendedBy?`<small>Attended by ${esc(v.attendedBy)}</small>`:""}${v.appointmentDate?`<small>Appointment ${esc(safeDate(v.appointmentDate))}</small>`:""}${vp?`<div class="complaint-visit-images">${vp}</div>`:""}</article>`
-    }).join("");
-    document.getElementById("complaintCaseTimeline").innerHTML=`<div class="complaint-ledger-toolbar"><button type="button" class="primary-btn" data-comp-new="${id}">+ New complaint for this unit</button></div><div class="complaint-ledger-columns"><section><h4>Resident complaints <span>${unitCases.length}</span></h4>${complaintColumn}</section><section><h4>Site visits & rectification <span>${unitVisits.length}</span></h4>${visitColumn||'<p class="complaint-no-visits">No visit recorded yet.</p>'}</section></div>`;
+    document.getElementById("complaintCaseTimeline").innerHTML=`<div class="complaint-ledger-toolbar"><button type="button" class="primary-btn" data-comp-new="${id}">+ New complaint for this unit</button></div><div class="complaint-event-list">${caseTimeline}</div>`;
   }catch(error){console.error(error);document.getElementById("complaintCaseTimeline").textContent="Could not load complaint / visit photos."}
 }
 document.getElementById("complaintCaseTimeline").addEventListener("click",e=>{
+  const photoButton=e.target.closest("[data-comp-photo-delete]");
+  if(photoButton){
+    if(!confirm("Delete this complaint / visit photo? This cannot be undone."))return;
+    (async()=>{
+      const record=(await photoDbAll("complaintPhotos")).find(p=>String(p.id)===photoButton.dataset.compPhotoDelete);
+      const active=state.complaints.find(c=>c.id===activeComplaintCaseId);
+      if(!record||!active||record.unitKey!==active.unitKey)return;
+      await photoDbDelete("complaintPhotos",record.id);
+      await renderComplaintHistory();toast("Complaint photo deleted")
+    })().catch(err=>{console.error(err);toast("Could not delete complaint photo")});
+    return
+  }
   let edit=e.target.closest("[data-comp-edit]");if(edit){editComplaint(Number(edit.dataset.compEdit));return}
   let b=e.target.closest("[data-case-followup]");if(b){activeComplaintCaseId=Number(b.dataset.caseFollowup);document.getElementById("complaintVisitCaseId").value=b.dataset.caseFollowup;renderComplaintHistory();document.getElementById("complaintVisitForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   b=e.target.closest("[data-comp-new]");if(!b)return;const c=state.complaints.find(x=>x.id===Number(b.dataset.compNew));if(!c)return;
@@ -2635,15 +2650,22 @@ function photoScheduleSkipKey(date,unitKey){return `photo-skip:${photoScheduleRo
 async function syncPhotoAppointmentsForDay(date,zone){
   const byUnit=new Map();
   for(const a of state.appointments){
-    if(a.date!==date||isInactiveSchedule(a)||Number(a.zone||zoneOfBlock(a.block))!==Number(zone))continue;
+    if(a.date!==date||!liveScheduleRecord(a)||getUnit(a.unitKey)?.response==="D"||Number(a.zone||zoneOfBlock(a.block))!==Number(zone))continue;
     const previous=byUnit.get(a.unitKey);
     if(!previous||Number(a.id)>Number(previous.id))byUnit.set(a.unitKey,a);
   }
   const bookings=[...byUnit.values()].filter(a=>date!==isoTodaySG()||preferredMasterAppointment(a.unitKey)===a);
-  if(!bookings.length)return;
   const [saved,meta]=await Promise.all([photoDbAll("schedule"),photoDbAll("meta")]);
   const byId=new Map(saved.map(row=>[row.id,row]));
   const skipped=new Set(meta.map(item=>item.key));
+  const activeKeys=new Set(bookings.map(a=>a.unitKey));
+  for(const row of [...saved]){
+    if(row.source==="appointment"&&row.date===date&&Number(row.zone)===Number(zone)&&
+      (!activeKeys.has(row.unitKey)||skipped.has(photoScheduleSkipKey(date,row.unitKey)))){
+      await photoDbDelete("schedule",row.id);
+      byId.delete(row.id);
+    }
+  }
   for(const a of bookings){
     const u=getUnit(a.unitKey),id=photoScheduleRowId(date,a.unitKey);
     if(!u||skipped.has(photoScheduleSkipKey(date,a.unitKey)))continue;
@@ -2671,6 +2693,11 @@ async function photoDisplayRows(date,zone){
   const byUnit=new Map(schedule.map(r=>[r.unitKey,{...r,photoOnly:false}]));
   for(const p of photos){
     if(byUnit.has(p.unitKey))continue;
+    // Keep stored photos, but do not recreate a cancelled/Opt-Out appointment as a photo-only card.
+    const excluded=getUnit(p.unitKey)?.response==="D"||state.appointments.some(a=>
+      a.unitKey===p.unitKey&&a.date===date&&["Cancelled","OptOut"].includes(a.scheduleState)
+    )&&!state.appointments.some(a=>a.unitKey===p.unitKey&&a.date===date&&liveScheduleRecord(a));
+    if(excluded)continue;
     const u=getUnit(p.unitKey);
     byUnit.set(p.unitKey,{
       id:photoScheduleRowId(date,p.unitKey),date,zone:Number(p.zone||zone),
