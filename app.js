@@ -732,11 +732,19 @@ document.getElementById("dashboardMapShortcut").addEventListener("click",()=>{
   if(open){section.classList.remove("dashboard-map-open");document.getElementById("dashboardMapShortcut").setAttribute("aria-expanded","false");return}
   openDashboardMap();
 });
+document.getElementById("dashboardZoneShortcut").addEventListener("click",()=>{
+  const panel=document.getElementById("dashboardZonePanel"),button=document.getElementById("dashboardZoneShortcut");
+  panel.hidden=!panel.hidden;
+  button.setAttribute("aria-expanded",String(!panel.hidden));
+  if(!panel.hidden)panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+});
 document.getElementById("dashboardTodayToggle").addEventListener("click",()=>{
-  const list=document.getElementById("dashboardTodayList"),button=document.getElementById("dashboardTodayToggle");
-  list.hidden=!list.hidden;
-  button.setAttribute("aria-expanded",String(!list.hidden));
-  button.textContent=list.hidden?"View list":"Hide list";
+  const panel=document.querySelector("#dashboard .dashboard-today"),list=document.getElementById("dashboardTodayList"),button=document.getElementById("dashboardTodayToggle");
+  panel.hidden=!panel.hidden;
+  list.hidden=panel.hidden;
+  button.setAttribute("aria-expanded",String(!panel.hidden));
+  button.title=panel.hidden?"View today's appointments":"Hide today's appointments";
+  if(!panel.hidden)panel.scrollIntoView({behavior:"smooth",block:"nearest"});
 });
 document.getElementById("dashboardTodayRows").addEventListener("click",e=>{
   const button=e.target.closest("[data-today-photo-zone]");if(!button)return;
@@ -1001,7 +1009,7 @@ function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
   const noResponse=nr+p,donePct=total?Math.round(done/total*100):0;
-  document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;const orbit=document.getElementById("heroOrbit");if(orbit)orbit.style.setProperty("--pct",`${donePct*3.6}deg`);const orbitText=document.getElementById("heroCompletionPct");if(orbitText)orbitText.textContent=`${donePct}%`;
+  document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;
 
   document.getElementById("kpiTotalDU").textContent=total.toLocaleString();
   document.getElementById("kpiOptIn").textContent=agree.toLocaleString();

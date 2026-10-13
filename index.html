@@ -7,7 +7,7 @@
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css?v=8.44.27">
-  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.35" media="screen">
+  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.43" media="screen">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -109,20 +109,14 @@
       </header>
 
       <section class="view active" id="dashboard">
-        <div class="command-hero">
-          <div class="command-copy">
-            <div class="command-kicker"><span class="live-dot"></span> ELU UPGRADING · PR3 COMMAND CENTRE</div>
-            <h2>ELU Upgrading</h2>
-            <p>All Zones · same totals as the Meeting Report</p>
-            <div class="hero-tags"><span id="heroTagZones">6 Zones</span><span id="heroTagBlocks">38 Blocks</span></div>
-            <div class="hero-mini-actions" aria-label="Open dashboard details">
-              <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Today's plan</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
-              <button type="button" id="dashboardMeetingBtn"><svg aria-hidden="true"><use href="#i-report"/></svg><span>Meeting Report</span><svg class="mini-chevron" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
-            </div>
-          </div>
-          <div class="hero-orbit-wrap">
-            <div class="hero-orbit" id="heroOrbit">
-              <div class="hero-orbit-inner"><strong id="heroCompletionPct">0%</strong><span>Completed</span></div>
+        <section class="dashboard-overview-compact" aria-label="Project overview · All Zones">
+          <div class="overview-topline">
+            <span class="overview-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
+            <div class="overview-caption"><strong>Project overview</strong><small>Meeting Report · All Zones</small></div>
+            <div class="overview-scope"><span id="heroTagZones">6 Zones</span><span id="heroTagBlocks">38 Blocks</span></div>
+            <div class="overview-links" aria-label="Dashboard shortcuts">
+              <button type="button" data-dashboard-detail="today" aria-expanded="false" aria-controls="todayTeamPanel" title="Open today's plan" aria-label="Open today's plan"><svg aria-hidden="true"><use href="#i-calendar"/></svg></button>
+              <button type="button" id="dashboardMeetingBtn" title="Open All Zones Meeting Report" aria-label="Open All Zones Meeting Report"><svg aria-hidden="true"><use href="#i-report"/></svg></button>
             </div>
           </div>
           <div class="dashboard-glance" aria-label="All Zones Meeting Report totals">
@@ -133,7 +127,7 @@
             <div><span>No Response NR+P</span><strong id="kpiNR">0</strong><small>includes <b id="kpiPending">0</b> pending</small></div>
             <div><span>Confirmation C</span><strong id="kpiAppointments">0</strong><small>included in A+C</small></div>
           </div>
-        </div>
+        </section>
 
         <div class="dashboard-detail-tray" id="dashboardDetailTray" hidden>
           <article class="panel today-team-panel" id="todayTeamPanel" hidden>
@@ -146,23 +140,26 @@
           </article>
         </div>
 
-        <details class="dashboard-zone-overview dashboard-expand">
-          <summary><span>Zone breakdown</span><small>Open all 6 zones</small></summary>
+        <div class="dashboard-zone-overview" id="dashboardZonePanel" hidden>
           <article class="panel zone-panel">
             <div class="panel-head"><div><span class="section-label">ZONE BY ZONE</span><h3>Six zones · live progress</h3><p>Uses the same All Zones rows and status rules as the Meeting Report.</p></div><span class="panel-badge">LIVE</span></div>
             <div id="zoneProgress" class="zone-progress zone-card-grid"></div>
           </article>
-        </details>
-
-        <div class="dashboard-shortcuts" aria-label="Quick access">
-          <button type="button" id="dashboardQuickJump"><span class="shortcut-icon"><svg><use href="#i-search"/></svg></span><span><strong>Find a Unit</strong><small>Block and unit search</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" data-go="survey"><span class="shortcut-icon"><svg><use href="#i-survey"/></svg></span><span><strong>Survey Register</strong><small>Open upcoming visits</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" id="dashboardMapShortcut" aria-expanded="false" aria-controls="zoneMapPanel"><span class="shortcut-icon"><svg><use href="#i-map"/></svg></span><span><strong>Zone Map</strong><small>Explore blocks</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
-          <button type="button" data-go="blockboard"><span class="shortcut-icon"><svg><use href="#i-building"/></svg></span><span><strong>Block Chart</strong><small>See unit progress</small></span><svg class="shortcut-arrow"><use href="#i-arrow-up-right"/></svg></button>
         </div>
 
-        <section class="dashboard-today" aria-labelledby="dashboardTodayTitle">
-          <div class="dashboard-today-summary"><span class="dashboard-today-icon"><svg aria-hidden="true"><use href="#i-calendar"/></svg></span><div><span class="section-label">TODAY · APPOINTMENTS</span><h3 id="dashboardTodayTitle">Today's appointments</h3></div><strong id="dashboardTodayCount" aria-live="polite">0</strong><button type="button" id="dashboardTodayToggle" class="ghost-btn" aria-expanded="false" aria-controls="dashboardTodayList">View list</button></div>
+        <div class="dashboard-shortcuts royal-icon-dock" aria-label="Quick access">
+          <button type="button" id="dashboardQuickJump" title="Find a unit"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-search"/></svg></span><strong>Find Unit</strong></button>
+          <button type="button" id="dashboardZoneShortcut" aria-expanded="false" aria-controls="dashboardZonePanel" title="Zone breakdown"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-dashboard"/></svg></span><strong>Zones</strong></button>
+          <button type="button" id="dashboardTodayToggle" aria-expanded="false" aria-controls="dashboardTodayList" title="View today's appointments"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-calendar"/></svg></span><strong>Appointments <span id="dashboardTodayCount" aria-live="polite">0</span></strong></button>
+          <button type="button" id="dashboardMapShortcut" aria-expanded="false" aria-controls="zoneMapPanel" title="Open zone map"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-map"/></svg></span><strong>Zone Map</strong></button>
+          <button type="button" data-go="blockboard" title="Open block chart"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-building"/></svg></span><strong>Block Chart</strong></button>
+          <button type="button" data-go="survey" title="Open survey register"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-survey"/></svg></span><strong>Survey</strong></button>
+          <button type="button" data-go="photos" title="Open photo entry"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-photo"/></svg></span><strong>Photos</strong></button>
+          <button type="button" data-go="appointments" title="Open appointment schedule"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#i-list"/></svg></span><strong>Schedule</strong></button>
+        </div>
+
+        <section class="dashboard-today" aria-labelledby="dashboardTodayTitle" hidden>
+          <div class="dashboard-today-summary"><span class="dashboard-today-icon"><svg aria-hidden="true"><use href="#i-calendar"/></svg></span><div><span class="section-label">TODAY · APPOINTMENTS</span><h3 id="dashboardTodayTitle">Today's appointments</h3></div></div>
           <div class="dashboard-today-list" id="dashboardTodayList" hidden><div id="dashboardTodayRows"></div><button type="button" class="text-btn" data-go="appointments">Open full appointment schedule</button></div>
         </section>
 
@@ -183,13 +180,12 @@
           <p class="zone-map-note" id="zoneMapNote">Pasir Ris Drive 1 &amp; Street 51 · satellite imagery and approximate block labels.</p>
         </article>
 
-        <details class="dashboard-more dashboard-expand">
-          <summary><span>Upcoming confirmations</span><small>Open list</small></summary>
+        <div class="dashboard-more dashboard-expand" hidden>
           <article class="panel appointment-panel">
             <div class="panel-head"><div><span class="section-label">NEXT ACTIONS</span><h3>Upcoming confirmations</h3><p>Existing Excel schedules are already loaded.</p></div><button class="text-btn" data-go="appointments">View schedule</button></div>
             <div id="upcomingAppointments" class="compact-list premium-compact-list"></div>
           </article>
-        </details>
+        </div>
 
       </section>
 
@@ -751,7 +747,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.36"></script>
+  <script src="app.js?v=8.44.43"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>

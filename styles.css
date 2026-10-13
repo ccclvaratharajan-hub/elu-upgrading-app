@@ -3278,3 +3278,28 @@ body.theme-night #dashboard .dashboard-glance>div{border-right-color:rgba(208,23
 #dashboard .dashboard-glance span{font-size:10px;line-height:1.2}
 @media(max-width:960px){#dashboard .dashboard-glance{grid-template-columns:repeat(3,minmax(0,1fr))}#dashboard .dashboard-glance>div:nth-child(3){border-right:0}}
 @media(max-width:760px){#dashboard .dashboard-glance{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Single compact dashboard overview in place of the second large banner. */
+#dashboard .dashboard-overview-compact{min-width:0;padding:12px 15px 9px;border:1px solid rgba(194,224,246,.85);border-radius:15px;background:rgba(235,247,255,.84);box-shadow:0 8px 21px rgba(20,72,112,.12);color:#123e64}
+#dashboard .overview-topline{display:flex;align-items:center;gap:9px;min-width:0}
+#dashboard .overview-mark{display:grid;place-items:center;flex:0 0 33px;width:33px;height:33px;border-radius:9px;color:#fff;background:linear-gradient(145deg,#367db9,#1c4c86)}
+#dashboard .overview-mark svg,#dashboard .overview-links svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
+#dashboard .overview-caption{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+#dashboard .overview-caption strong{font-size:13px;font-weight:900}
+#dashboard .overview-caption small{font-size:10px;font-weight:750;color:#4f7390}
+#dashboard .overview-scope{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+#dashboard .overview-scope span{padding:5px 8px;border:1px solid #bfdaec;border-radius:7px;background:rgba(255,255,255,.72);font-size:11px;font-weight:850;white-space:nowrap}
+#dashboard .overview-links{display:flex;gap:5px}
+#dashboard .overview-links button{display:grid;place-items:center;width:32px;height:32px;border:1px solid #a8cee8;border-radius:8px;background:#e6f4ff;color:#185889;cursor:pointer}
+#dashboard .overview-links button:hover{background:#c9e8fc}
+#dashboard .overview-links button:focus-visible{outline:3px solid #418ec4;outline-offset:2px}
+#dashboard .dashboard-overview-compact .dashboard-glance{margin-top:10px;padding:9px 0 0;border-top:1px solid rgba(139,183,214,.55);color:inherit}
+#dashboard .dashboard-overview-compact .dashboard-glance>div{padding:3px 10px;border-right-color:rgba(139,183,214,.45)}
+#dashboard .dashboard-overview-compact .dashboard-glance>div:last-child{border-right:0}
+#dashboard .dashboard-overview-compact .dashboard-glance strong{font-size:22px}
+body.theme-night #dashboard .dashboard-overview-compact{background:rgba(12,40,80,.84);border-color:rgba(151,190,230,.5);color:#f4faff}
+body.theme-night #dashboard .overview-caption small{color:#b4d4eb}
+body.theme-night #dashboard .overview-scope span{background:rgba(51,100,151,.55);border-color:#628fb8}
+body.theme-night #dashboard .overview-links button{background:#1c4d82;border-color:#618ab4;color:#f4faff}
+@media(min-width:1251px){#dashboard.view.active>.dashboard-overview-compact{grid-column:1/-1;grid-row:auto}}
+@media(max-width:760px){#dashboard .overview-topline{flex-wrap:wrap}#dashboard .overview-scope{margin-left:0}#dashboard .overview-links{margin-left:auto}#dashboard .dashboard-overview-compact .dashboard-glance>div{border:1px solid rgba(139,183,214,.4);border-radius:8px;padding:7px}}
