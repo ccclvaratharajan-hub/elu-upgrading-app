@@ -3305,16 +3305,13 @@ body.theme-night #dashboard .overview-links button{background:#1c4d82;border-col
 @media(max-width:760px){#dashboard .overview-topline{flex-wrap:wrap}#dashboard .overview-scope{margin-left:0}#dashboard .overview-links{margin-left:auto}#dashboard .dashboard-overview-compact .dashboard-glance>div{border:1px solid rgba(139,183,214,.4);border-radius:8px;padding:7px}}
 
 /* Complaint history: keep each complaint directly above its own visits. */
-#complaints .complaint-event-list{display:grid;grid-template-columns:minmax(0,1fr);gap:15px;max-width:900px;margin:0 auto}
-#complaints .complaint-event-pair{min-width:0;padding:13px;border:1px solid rgba(62,125,170,.32);border-radius:15px;background:rgba(230,245,254,.48)}
+#complaints .complaint-event-list{display:grid;grid-template-columns:minmax(0,1fr);gap:15px;width:100%;margin:0 auto}
+#complaints .complaint-event-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:16px;min-width:0;padding:13px;border:1px solid rgba(62,125,170,.32);border-radius:15px;background:rgba(230,245,254,.48)}
+#complaints .complaint-event-left,#complaints .complaint-event-right{min-width:0}
 #complaints .complaint-event-pair .complaint-ledger-card{margin:0}
-#complaints .complaint-event-pair .visit-event-card{margin:9px 0 0 24px;border-left:4px solid #568dbe;background:rgba(255,255,255,.65)}
-#complaints .complaint-event-pair .complaint-no-visits{margin:10px 0 0 24px}
-#complaints .complaint-photo-item{position:relative;display:inline-flex;min-width:100px}
-#complaints .complaint-photo-item a{display:block}
-#complaints .complaint-photo-delete{position:absolute;top:3px;right:3px;display:grid;place-items:center;width:25px;height:25px;padding:0;border:1px solid rgba(255,255,255,.85);border-radius:50%;background:#80324a;color:#fff;font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.35)}
-#complaints .complaint-photo-delete:hover{background:#aa254a}
-#complaints .complaint-photo-delete:focus-visible{outline:3px solid #358bcb;outline-offset:2px}
+#complaints .complaint-event-pair .visit-event-card{margin:0 0 10px;border-left:4px solid #568dbe;background:rgba(255,255,255,.65)}
+#complaints .complaint-event-pair .visit-event-card:last-child{margin-bottom:0}
+#complaints .complaint-event-pair .complaint-no-visits{margin:10px 0}
 body.theme-night #complaints .complaint-event-pair{background:rgba(15,48,86,.8);border-color:rgba(118,175,221,.5)}
 body.theme-night #complaints .complaint-event-pair .visit-event-card{background:rgba(24,56,98,.92);border-left-color:#83b5e5}
-@media(max-width:550px){#complaints .complaint-event-pair{padding:9px}#complaints .complaint-event-pair .visit-event-card{margin-left:12px}}
+@media(max-width:700px){#complaints .complaint-event-pair{grid-template-columns:minmax(0,1fr);gap:9px;padding:9px}}

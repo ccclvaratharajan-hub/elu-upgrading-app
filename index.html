@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.45">
+  <link rel="stylesheet" href="styles.css?v=8.44.47">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.43" media="screen">
 </head>
 <body class="secure-locked">
@@ -375,11 +375,12 @@
             <div id="complaintCaseTimeline" class="complaint-case-timeline"></div>
             <form id="complaintVisitForm" class="premium-form complaint-visit-form">
               <input type="hidden" id="complaintVisitCaseId">
+              <input type="hidden" id="complaintVisitEditId">
               <h3 id="complaintVisitFormTitle">Add visit / follow-up</h3>
               <div class="form-row three">
                 <label>Visit date<input type="date" id="complaintVisitDate" required></label>
                 <label>Visit time<input type="time" id="complaintVisitTime"></label>
-                <label>Outcome<select id="complaintVisitOutcome"><option value="Open">Open / follow-up</option><option value="In Progress">In Progress</option><option value="Closed">Closed / rectified</option></select></label>
+                <label>Outcome<select id="complaintVisitOutcome"><option value="Closed">Closed / attended</option><option value="Open">Open / follow-up</option><option value="In Progress">In Progress</option></select></label>
               </div>
               <div class="form-row two">
                 <label>Attended by<input id="complaintVisitBy" placeholder="Team / person"></label>
@@ -747,7 +748,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.45"></script>
+  <script src="app.js?v=8.44.47"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
