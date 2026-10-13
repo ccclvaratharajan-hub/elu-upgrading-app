@@ -3315,3 +3315,54 @@ body.theme-night #dashboard .overview-links button{background:#1c4d82;border-col
 body.theme-night #complaints .complaint-event-pair{background:rgba(15,48,86,.8);border-color:rgba(118,175,221,.5)}
 body.theme-night #complaints .complaint-event-pair .visit-event-card{background:rgba(24,56,98,.92);border-left-color:#83b5e5}
 @media(max-width:700px){#complaints .complaint-event-pair{grid-template-columns:minmax(0,1fr);gap:9px;padding:9px}}
+
+/* Screen space at 100% zoom: retain readable type and reclaim chrome width. */
+@media screen and (min-width:761px){
+  .sidebar{width:220px;padding-inline:12px}
+  .main{margin-left:220px}
+  .sidebar .nav-item{gap:8px;min-height:40px;padding:5px 8px;font-size:13px}
+  .sidebar .nav-item svg{width:25px;height:25px;flex:0 0 25px;padding:4px}
+}
+body:not(.theme-night) .sidebar,body.theme-night .sidebar{background:linear-gradient(180deg,rgba(27,33,40,.97),rgba(35,42,47,.95));border-right-color:rgba(193,174,130,.42)}
+body:not(.theme-night) .sidebar:before{background:linear-gradient(180deg,transparent,#b6a071,transparent);box-shadow:none}
+body:not(.theme-night) .sidebar .nav-item,body.theme-night .sidebar .nav-item{background:transparent;border-color:transparent;color:#edf0ee;box-shadow:none;text-shadow:none}
+body:not(.theme-night) .sidebar .nav-item svg,body.theme-night .sidebar .nav-item svg{background:transparent;border:0;color:#d8d9d2;box-shadow:none}
+body:not(.theme-night) .sidebar .nav-item:hover,body.theme-night .sidebar .nav-item:hover{background:rgba(255,255,255,.09);border-color:transparent;color:#fff;transform:none}
+body:not(.theme-night) .sidebar .nav-item.active,body.theme-night .sidebar .nav-item.active{background:rgba(212,195,153,.15);border-color:rgba(216,198,158,.24);color:#fff;box-shadow:inset 3px 0 #c4ae80;text-shadow:none}
+body:not(.theme-night) .sidebar .nav-item.active svg,body.theme-night .sidebar .nav-item.active svg{background:transparent;border:0;color:#e6cc92;box-shadow:none}
+body:not(.theme-night) .sidebar .brand-mark{background:linear-gradient(145deg,#726d5b,#3e4140);border-color:#9c9278;color:#fff}
+.focus-view .sidebar{display:none!important}
+.focus-view .main{margin-left:0!important;padding:10px 14px 26px!important}
+.focus-view .topbar{display:flex;align-items:center;justify-content:space-between;min-height:0;gap:12px;margin:0 0 9px;padding:7px 12px}
+.focus-view .topbar h1{font-size:21px;white-space:normal;margin:0}
+.focus-view .topbar .eyebrow,.focus-view .topbar p{display:none}
+.focus-view .top-actions{display:flex;flex:0 0 auto;overflow:visible;padding:0}
+.focus-view .top-actions>*:not(#focusViewBtn){display:none!important}
+.focus-view .view.active>.panel{padding:12px}
+.focus-view .view.active>.hero,.focus-view .view.active>.report-hero{padding:12px 15px;margin-bottom:8px}
+.focus-view .view.active>.section-toolbar{margin-bottom:8px}
+.complaint-history-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#complaints #complaintHistoryPanel.complaint-share-mode{position:fixed;inset:10px;z-index:120;overflow:auto;max-width:none;width:auto;margin:0;padding:14px;background:#f8f7f3!important;border:1px solid #cfc5ae;color:#1e2e31;box-shadow:0 15px 50px rgba(0,0,0,.32)}
+#complaints .complaint-share-mode .panel-head{margin-bottom:8px}
+#complaints .complaint-share-mode .complaint-ledger-toolbar,#complaints .complaint-share-mode #complaintVisitForm,#complaints .complaint-share-mode .complaint-ledger-actions,#complaints .complaint-share-mode #complaintHistoryClose{display:none!important}
+#complaints .complaint-share-mode .complaint-event-list{gap:9px}
+#complaints .complaint-share-mode .complaint-event-pair{gap:11px;padding:7px;border-color:#d8d2c2;background:#f3f1eb}
+#complaints .complaint-share-mode .complaint-ledger-card{padding:10px;border-color:#d8d2c2;background:#fff;color:#263338;box-shadow:none}
+#complaints .complaint-share-mode .visit-event-card{border-left-color:#998567;background:#fff}
+#complaints .complaint-share-mode .complaint-ledger-card-top b{font-size:14px;color:#263338}
+#complaints .complaint-share-mode :is(.complaint-card-text,.complaint-read-more summary){font-size:13px;line-height:1.4;color:#263338}
+#complaints .complaint-share-mode .complaint-visit-images img{width:72px;height:54px}
+@media(max-width:700px){#complaints #complaintHistoryPanel.complaint-share-mode{inset:4px;padding:9px}#complaints .complaint-share-mode .complaint-event-pair{grid-template-columns:1fr}}
+
+/* Complaint history: readable light cards in the night theme, including visit notes. */
+body.theme-night #complaints .complaint-event-pair{background:rgba(16,35,54,.42);border-color:rgba(198,202,192,.53)}
+body.theme-night #complaints .complaint-event-pair .complaint-ledger-card{background:#f5f7f5;color:#182f3b;border-color:#cad5d4;box-shadow:0 3px 10px rgba(0,0,0,.12)}
+body.theme-night #complaints .complaint-event-pair .visit-event-card{background:#f5f7f5;border-left-color:#a48957}
+body.theme-night #complaints .complaint-event-pair .complaint-ledger-card-top b,
+body.theme-night #complaints .complaint-event-pair .complaint-card-text,
+body.theme-night #complaints .complaint-event-pair .complaint-read-more,
+body.theme-night #complaints .complaint-event-pair .complaint-read-more summary,
+body.theme-night #complaints .complaint-event-pair .complaint-read-more p{color:#183442}
+body.theme-night #complaints .complaint-event-pair .complaint-ledger-card small{color:#405c6c}
+body.theme-night #complaints .complaint-event-pair .complaint-read-more summary b{color:#125a85}
+body.theme-night #complaints .complaint-share-mode .complaint-event-pair{background:#f3f1eb;border-color:#d8d2c2}

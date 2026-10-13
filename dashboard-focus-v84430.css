@@ -95,3 +95,9 @@ body.theme-night #dashboard .royal-icon-dock #dashboardTodayCount{background:rgb
 #dashboard .dashboard-zone-overview,#dashboard .dashboard-today{width:100%}
 @media(max-width:980px){#dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:480px){#dashboard>.dashboard-shortcuts.royal-icon-dock{gap:7px}#dashboard .royal-icon-dock button{min-height:79px;padding:7px 3px;border-radius:12px}#dashboard .royal-icon-dock .shortcut-icon{width:31px;height:31px;flex-basis:31px}#dashboard .royal-icon-dock strong{font-size:10px}}
+
+/* Neutral icon finish; operational status colors remain unchanged. */
+body:not(.theme-night) #dashboard .royal-icon-dock button{background:linear-gradient(145deg,rgba(255,253,248,.86),rgba(230,225,211,.69));border-color:rgba(175,162,135,.51);color:#333b3e;box-shadow:0 5px 13px rgba(35,35,31,.1)}
+body.theme-night #dashboard .royal-icon-dock button{background:linear-gradient(145deg,rgba(37,43,48,.83),rgba(63,61,55,.73));border-color:rgba(195,177,137,.5);color:#f6f3e9}
+body:not(.theme-night) #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon,body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{background:linear-gradient(145deg,#52534c,#343a3d);border-color:#9e9070;color:#f6e8c6;box-shadow:0 4px 10px rgba(24,27,27,.2)}
+body:not(.theme-night) #dashboard .royal-icon-dock button:before,body.theme-night #dashboard .royal-icon-dock button:before{background:radial-gradient(circle,rgba(190,168,120,.18),transparent 70%)}

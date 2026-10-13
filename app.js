@@ -618,6 +618,10 @@ function setView(view){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
+document.getElementById("focusViewBtn").addEventListener("click",()=>{
+  const active=document.body.classList.toggle("focus-view"),button=document.getElementById("focusViewBtn");
+  button.setAttribute("aria-pressed",String(active));button.textContent=active?"Exit Focus":"Focus View";
+});
 document.body.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)setView(b.dataset.go)});
 const dashboardDetailPanels={today:document.getElementById("todayTeamPanel"),visits:document.getElementById("upcomingVisitsPanel")};
 function showDashboardDetail(key){
@@ -1523,8 +1527,13 @@ document.getElementById("complaintForm").addEventListener("submit",async e=>{
 function editComplaint(id){const c=state.complaints.find(x=>x.id===id);if(!c)return;setView("complaints");document.getElementById("complaintEntryPanel").classList.remove("hidden");document.getElementById("complaintZone").value=String(c.zone||zoneOfBlock(c.block));syncComplaintBlocks();document.getElementById("complaintBlock").value=String(c.block);syncPairUnits("complaint");document.getElementById("complaintUnit").value=c.unitKey;autofillPair("complaint");document.getElementById("complaintDate").value=c.date;document.getElementById("complaintStatus").value=complaintState(c);document.getElementById("complaintSource").value=c.source||"Resident / Owner";document.getElementById("complaintType").value=c.type||"Other";document.getElementById("complaintText").value=c.complaint;document.getElementById("complaintRemarks").value=c.remarks||"";document.getElementById("complaintEditId").value=String(c.id);document.getElementById("complaintSaveBtn").textContent="Update Complaint";document.getElementById("complaintCancelEdit").classList.remove("hidden");document.getElementById("complaintEntryPanel").scrollIntoView({behavior:"smooth",block:"start"})}
 async function deleteComplaint(id){if(!confirm("Delete this complaint case and its visit photos?"))return;try{await photoDbDeleteWhere("complaintPhotos",p=>p.caseId===id);state.complaints=state.complaints.filter(x=>x.id!==id);if(activeComplaintCaseId===id)closeComplaintHistory();save("Complaint deleted")}catch(error){console.error(error);toast("Could not delete complaint photos")}}
 let activeComplaintCaseId=null,complaintPhotoUrls=[];
-function closeComplaintHistory(){activeComplaintCaseId=null;complaintPhotoUrls.forEach(URL.revokeObjectURL);complaintPhotoUrls=[];document.getElementById("complaintHistoryPanel").classList.add("hidden")}
+function closeComplaintHistory(){activeComplaintCaseId=null;complaintPhotoUrls.forEach(URL.revokeObjectURL);complaintPhotoUrls=[];document.getElementById("complaintHistoryPanel").classList.remove("complaint-share-mode");document.getElementById("complaintShareToggle").setAttribute("aria-pressed","false");document.getElementById("complaintShareToggle").textContent="Share view";document.getElementById("complaintHistoryPanel").classList.add("hidden")}
 document.getElementById("complaintHistoryClose").addEventListener("click",closeComplaintHistory);
+document.getElementById("complaintShareToggle").addEventListener("click",()=>{
+  const panel=document.getElementById("complaintHistoryPanel"),button=document.getElementById("complaintShareToggle"),active=panel.classList.toggle("complaint-share-mode");
+  button.setAttribute("aria-pressed",String(active));button.textContent=active?"Exit share view":"Share view";
+  if(active){panel.querySelectorAll(".complaint-read-more[open]").forEach(note=>note.open=false);panel.scrollTop=0}
+});
 function openComplaintHistory(id){activeComplaintCaseId=id;document.getElementById("complaintHistoryPanel").classList.remove("hidden");document.getElementById("complaintVisitCaseId").value=String(id);document.getElementById("complaintVisitForm").reset();document.getElementById("complaintVisitDate").value=isoTodaySG();renderComplaintHistory();document.getElementById("complaintHistoryPanel").scrollIntoView({behavior:"smooth",block:"start"})}
 async function renderComplaintHistory(){
   const id=activeComplaintCaseId,c=state.complaints.find(x=>x.id===id);if(!c)return;

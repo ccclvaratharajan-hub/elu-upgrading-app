@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.47">
-  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.43" media="screen">
+  <link rel="stylesheet" href="styles.css?v=8.44.48">
+  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.48" media="screen">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -95,6 +95,7 @@
         </div>
 
         <div class="top-actions">
+          <button class="ghost-btn top-shortcut" type="button" id="focusViewBtn" aria-pressed="false" title="Use the full screen width for reading or screenshots">Focus View</button>
           <button class="ghost-btn top-shortcut scene-peek-btn" type="button" id="scenePeekBtn" aria-pressed="false" title="Temporarily reveal the background lighting"><svg><use href="#i-bolt"/></svg><span>View Lighting</span></button>
           <button class="ghost-btn top-shortcut" type="button" id="mapJumpBtn" title="Open project map"><svg><use href="#i-map"/></svg><span>Map</span></button>
           <button class="ghost-btn top-shortcut quick-jump-trigger" type="button" id="quickJumpBtn" title="Jump to a zone, block or unit"><svg><use href="#i-search"/></svg><span>Quick Jump</span><kbd>/</kbd></button>
@@ -371,7 +372,7 @@
             <div id="complaintTable" class="table-shell"></div>
           </article>
           <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
-            <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div>
+            <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><div class="complaint-history-tools"><button type="button" class="ghost-btn" id="complaintShareToggle" aria-pressed="false">Share view</button><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div></div>
             <div id="complaintCaseTimeline" class="complaint-case-timeline"></div>
             <form id="complaintVisitForm" class="premium-form complaint-visit-form">
               <input type="hidden" id="complaintVisitCaseId">
@@ -748,7 +749,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.47"></script>
+  <script src="app.js?v=8.44.48"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
