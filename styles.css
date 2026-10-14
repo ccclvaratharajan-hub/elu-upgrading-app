@@ -3366,3 +3366,62 @@ body.theme-night #complaints .complaint-event-pair .complaint-read-more p{color:
 body.theme-night #complaints .complaint-event-pair .complaint-ledger-card small{color:#405c6c}
 body.theme-night #complaints .complaint-event-pair .complaint-read-more summary b{color:#125a85}
 body.theme-night #complaints .complaint-share-mode .complaint-event-pair{background:#f3f1eb;border-color:#d8d2c2}
+
+/* Dedicated A4 history preview; the photograph is an image element so it prints with background graphics disabled. */
+.complaint-print-overlay[hidden]{display:none!important}
+.complaint-print-overlay{position:fixed;inset:0;z-index:500;overflow:auto;padding:16px 16px 36px;background:#22394d;color:#19334c}
+.complaint-print-controls{position:sticky;top:0;z-index:3;display:flex;gap:10px;align-items:center;max-width:297mm;margin:0 auto 12px;padding:9px 13px;border-radius:10px;background:#edf4fb;box-shadow:0 4px 18px rgba(0,0,0,.19)}
+.complaint-print-controls strong{margin-right:auto;font-size:14px}
+.complaint-print-controls button{border:1px solid #9ab8d2;border-radius:8px;padding:8px 12px;background:#174979;color:white;font-weight:700;cursor:pointer}
+.complaint-print-controls button:last-child{background:white;color:#174979}
+.complaint-print-sheet{position:relative;isolation:isolate;width:297mm;min-height:210mm;margin:auto;overflow:hidden;background:#e7eff8;color:#17334c;box-shadow:0 10px 38px rgba(0,0,0,.3)}
+.complaint-print-backdrop{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:.94}
+.complaint-print-sheet:before{content:"";position:absolute;z-index:-1;inset:0;background:rgba(235,244,254,.23)}
+.complaint-print-sheet.night:before{background:rgba(8,31,67,.18)}
+.complaint-print-content{padding:11mm 12mm}
+.complaint-print-content header{margin-bottom:8mm;padding:8mm 10mm;border-radius:10px;background:rgba(255,255,255,.92);border-left:5px solid #1c5d99}
+.complaint-print-content header span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#37618a}
+.complaint-print-content header h1{font-size:21px;line-height:1.1;margin:3mm 0;color:#183a5d}
+.complaint-print-content header p{margin:0;font-size:11px;color:#49687e}
+.complaint-print-timeline .complaint-event-list{gap:4mm!important}
+.complaint-print-timeline .complaint-event-pair{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:4mm;padding:3mm;border:1px solid rgba(123,163,199,.7);border-radius:9px;background:rgba(235,244,253,.82);break-inside:avoid;page-break-inside:avoid}
+.complaint-print-timeline .complaint-ledger-card{padding:4mm;margin:0!important;background:#fff!important;color:#1b3649!important;border:1px solid #bed0dc;border-radius:8px;box-shadow:none!important}
+.complaint-print-timeline .visit-event-card{border-left:4px solid #2871ab}
+.complaint-print-timeline .visit-event-card+.visit-event-card{margin-top:3mm!important}
+.complaint-print-timeline .complaint-ledger-card-top b,.complaint-print-timeline .complaint-card-text,.complaint-print-timeline .complaint-read-more p{color:#17374e!important}
+.complaint-print-timeline .complaint-ledger-card small{color:#466278!important}
+.complaint-print-timeline .complaint-ledger-card-top b{font-size:13px}
+.complaint-print-timeline .complaint-card-text,.complaint-print-timeline .complaint-read-more p{font-size:11px;line-height:1.35;margin:3mm 0}
+.complaint-print-timeline .complaint-visit-images img{width:55px;height:43px;object-fit:cover}
+.complaint-print-timeline .complaint-no-visits{color:#1b3649;font-size:11px}
+@media screen and (max-width:1150px){.complaint-print-sheet{margin-left:0}.complaint-print-overlay{overflow-x:auto}}
+@page complaint-history{size:A4 landscape;margin:0}
+@media print{
+  body.complaint-print-open{margin:0!important;background:white!important}
+  body.complaint-print-open>*:not(#complaintPrintOverlay){display:none!important}
+  body.complaint-print-open #complaintPrintOverlay{position:static!important;display:block!important;padding:0!important;margin:0!important;overflow:visible!important;background:transparent!important}
+  body.complaint-print-open .complaint-print-controls{display:none!important}
+  body.complaint-print-open .complaint-print-sheet{page:complaint-history;width:297mm;min-height:210mm;margin:0;box-shadow:none;overflow:visible}
+  body.complaint-print-open .complaint-print-backdrop{display:block!important}
+}
+
+/* V8.44.49: coordinated switchgear-room backgrounds and navigation chrome. */
+body:not(.theme-night){background-color:#dbe8f4}
+body:not(.theme-night)::before{background:url("elu-electric-light-v84449.jpg") center center/cover no-repeat;filter:none}
+body.theme-night{background-color:#10274c;background-image:linear-gradient(rgba(9,27,55,.12),rgba(9,27,55,.12)),url("elu-electric-night-v84449.jpg");background-position:center;background-size:cover;background-attachment:fixed}
+body:not(.theme-night) .security-gate{background:url("elu-electric-light-v84449.jpg") center/cover no-repeat}
+body.theme-night .security-gate{background:linear-gradient(rgba(7,26,61,.16),rgba(7,26,61,.16)),url("elu-electric-night-v84449.jpg") center/cover no-repeat}
+body:not(.theme-night) .sidebar,body.theme-night .sidebar{background:linear-gradient(180deg,rgba(10,39,82,.97),rgba(19,57,105,.95) 55%,rgba(9,35,75,.98));border-right:1px solid rgba(130,184,231,.5);box-shadow:7px 0 24px rgba(6,28,61,.24)}
+body:not(.theme-night) .sidebar:before,body.theme-night .sidebar:before{background:linear-gradient(180deg,transparent,#6dc5f2 35%,#9fdcf8 60%,transparent);box-shadow:0 0 12px rgba(78,170,223,.36)}
+body:not(.theme-night) .sidebar .nav-item,body.theme-night .sidebar .nav-item{color:#eaf5ff}
+body:not(.theme-night) .sidebar .nav-item svg,body.theme-night .sidebar .nav-item svg{color:#ceeaff}
+body:not(.theme-night) .sidebar .nav-item.active,body.theme-night .sidebar .nav-item.active{background:rgba(63,133,202,.23);border-color:rgba(143,199,240,.33);color:#fff;box-shadow:inset 3px 0 #8fd7fc}
+body:not(.theme-night) .sidebar .nav-item.active svg,body.theme-night .sidebar .nav-item.active svg{color:#a5e6ff}
+body:not(.theme-night) .sidebar .brand-mark,body.theme-night .sidebar .brand-mark{background:linear-gradient(145deg,#3179bd,#173e7a);border-color:#89c8ee;color:#fff;box-shadow:0 4px 13px rgba(17,99,161,.29)}
+body:not(.theme-night) .topbar{border-radius:16px;padding:12px 16px;background:rgba(239,248,255,.83);border:1px solid rgba(176,214,239,.73);box-shadow:0 6px 19px rgba(12,67,111,.11);backdrop-filter:blur(12px)}
+body.theme-night .topbar{border-radius:16px;padding:12px 16px;background:rgba(9,35,76,.76);border:1px solid rgba(132,190,236,.43);box-shadow:0 7px 21px rgba(3,18,48,.2);backdrop-filter:blur(12px)}
+body.theme-night .topbar:after{display:none}
+
+/* V8.44.50 — keep the switch room visible in the night view. */
+body.theme-night{background-image:url("elu-switchgear-night-v84450.jpg");background-position:center;background-size:cover;background-attachment:fixed}
+body.theme-night .security-gate{background:url("elu-switchgear-night-v84450.jpg") center/cover no-repeat}

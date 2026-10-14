@@ -101,3 +101,35 @@ body:not(.theme-night) #dashboard .royal-icon-dock button{background:linear-grad
 body.theme-night #dashboard .royal-icon-dock button{background:linear-gradient(145deg,rgba(37,43,48,.83),rgba(63,61,55,.73));border-color:rgba(195,177,137,.5);color:#f6f3e9}
 body:not(.theme-night) #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon,body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{background:linear-gradient(145deg,#52534c,#343a3d);border-color:#9e9070;color:#f6e8c6;box-shadow:0 4px 10px rgba(24,27,27,.2)}
 body:not(.theme-night) #dashboard .royal-icon-dock button:before,body.theme-night #dashboard .royal-icon-dock button:before{background:radial-gradient(circle,rgba(190,168,120,.18),transparent 70%)}
+
+/* V8.44.49 — one blue visual language across dashboard cards and icons. */
+body:not(.theme-night) #dashboard{--hub-line:rgba(81,145,195,.38);--hub-glass:rgba(240,249,255,.86);--hub-shadow:rgba(16,65,111,.16);--hub-ink:#14395b;--hub-muted:#426781;--hub-highlight:#1d68a7;--hub-icon:rgba(60,136,205,.15);--hub-button:rgba(243,250,255,.91)}
+body.theme-night #dashboard{--hub-line:rgba(139,194,239,.4);--hub-glass:rgba(12,42,84,.84);--hub-shadow:rgba(2,19,48,.3);--hub-ink:#eff8ff;--hub-muted:#c1d9ed;--hub-highlight:#8ad9ff;--hub-icon:rgba(100,180,239,.2);--hub-button:rgba(24,71,120,.88)}
+body:not(.theme-night) #dashboard .command-hero{background:linear-gradient(105deg,rgba(237,248,255,.91),rgba(213,235,251,.82) 65%,rgba(189,223,247,.72)),url("elu-electric-light-v84449.jpg") center/cover;border:1px solid rgba(152,198,228,.78);color:#143b5f;box-shadow:0 10px 24px rgba(12,66,112,.16)}
+body.theme-night #dashboard .command-hero{background:linear-gradient(100deg,rgba(7,30,69,.9),rgba(13,51,102,.77) 60%,rgba(19,65,123,.52)),url("elu-electric-night-v84449.jpg") center/cover;border:1px solid rgba(120,185,235,.57);color:#f4faff;box-shadow:0 11px 28px rgba(3,23,55,.27)}
+body:not(.theme-night) #dashboard .royal-icon-dock button{background:linear-gradient(145deg,rgba(247,252,255,.9),rgba(221,239,251,.83));border-color:rgba(144,190,223,.67);color:#193f64;box-shadow:0 5px 13px rgba(14,70,117,.13)}
+body.theme-night #dashboard .royal-icon-dock button{background:linear-gradient(145deg,rgba(18,52,98,.86),rgba(24,68,119,.8));border-color:rgba(118,183,229,.56);color:#edf8ff;box-shadow:0 6px 15px rgba(4,27,65,.27)}
+body:not(.theme-night) #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon,body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{background:linear-gradient(145deg,#2b7db9,#18538c);border-color:#8cd4f3;color:#fff;box-shadow:0 0 0 1px rgba(198,235,252,.25),0 3px 13px rgba(41,147,206,.35)}
+body:not(.theme-night) #dashboard .royal-icon-dock button:before,body.theme-night #dashboard .royal-icon-dock button:before{background:radial-gradient(circle,rgba(81,170,224,.19),transparent 70%)}
+body:not(.theme-night) #dashboard .dashboard-overview-compact{background:rgba(237,248,255,.87);border-color:rgba(148,198,230,.79);color:#153d5f}
+body.theme-night #dashboard .dashboard-overview-compact{background:rgba(13,43,86,.84);border-color:rgba(121,184,231,.59);color:#f1faff}
+
+/* V8.44.50 — photo-led night dashboard, small quick icons along the bottom. */
+#dashboard .dashboard-visual-intro{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:93px;padding:12px 24px;color:#123c65;text-shadow:0 1px 6px rgba(255,255,255,.6)}
+#dashboard .dashboard-visual-intro span{font-size:23px;line-height:1.05;font-weight:950;letter-spacing:.04em}
+#dashboard .dashboard-visual-intro strong{margin-top:4px;font-size:15px;line-height:1.2}
+#dashboard .dashboard-visual-intro small{margin-top:3px;font-size:12px;font-weight:750}
+body.theme-night #dashboard .dashboard-visual-intro{color:#f4fbff;text-shadow:0 2px 12px rgba(0,20,56,.82)}
+body.theme-night #dashboard .dashboard-visual-intro span{font-size:clamp(22px,2.4vw,30px)}
+@media(min-width:761px){body.theme-night #dashboard.view.active{min-height:calc(100vh - 155px)}body.theme-night #dashboard>.royal-icon-dock{margin-top:auto}}
+body.theme-night #dashboard .dashboard-overview-compact{background:rgba(8,34,76,.43);border:1px solid rgba(138,201,245,.48);box-shadow:0 5px 19px rgba(3,23,57,.2);backdrop-filter:blur(7px)}
+body.theme-night #dashboard .dashboard-overview-compact .overview-scope span{background:rgba(17,65,113,.58)}
+body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{gap:8px}
+body.theme-night #dashboard .royal-icon-dock button{min-height:76px;padding:8px 5px;gap:5px;background:rgba(8,38,79,.43);border:1px solid rgba(136,197,240,.42);border-radius:11px;box-shadow:0 5px 14px rgba(2,21,54,.18);backdrop-filter:blur(5px);color:#f4fbff}
+body.theme-night #dashboard .royal-icon-dock button:hover{background:rgba(18,69,127,.68);border-color:#8ccef6;box-shadow:0 6px 18px rgba(26,143,213,.29)}
+body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{width:28px;height:28px;flex:0 0 28px;border:0;border-radius:8px;background:rgba(28,109,170,.48);color:#b5e9ff;box-shadow:0 0 11px rgba(53,178,234,.3)}
+body.theme-night #dashboard .royal-icon-dock .shortcut-icon svg{width:17px;height:17px}
+body.theme-night #dashboard .royal-icon-dock strong{font-size:11px;line-height:1.18}
+body.theme-night #dashboard .royal-icon-dock button:before{opacity:.32}
+@media(max-width:980px){body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:480px){body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(2,minmax(0,1fr))}body.theme-night #dashboard .royal-icon-dock button{min-height:67px}}

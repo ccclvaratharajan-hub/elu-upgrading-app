@@ -1529,6 +1529,23 @@ async function deleteComplaint(id){if(!confirm("Delete this complaint case and i
 let activeComplaintCaseId=null,complaintPhotoUrls=[];
 function closeComplaintHistory(){activeComplaintCaseId=null;complaintPhotoUrls.forEach(URL.revokeObjectURL);complaintPhotoUrls=[];document.getElementById("complaintHistoryPanel").classList.remove("complaint-share-mode");document.getElementById("complaintShareToggle").setAttribute("aria-pressed","false");document.getElementById("complaintShareToggle").textContent="Share view";document.getElementById("complaintHistoryPanel").classList.add("hidden")}
 document.getElementById("complaintHistoryClose").addEventListener("click",closeComplaintHistory);
+function closeComplaintPrintPreview(){document.getElementById("complaintPrintOverlay").hidden=true;document.body.classList.remove("complaint-print-open")}
+document.getElementById("complaintPrintOverlay").addEventListener("click",e=>{
+  if(e.target.closest("[data-complaint-print-close]"))closeComplaintPrintPreview();
+  else if(e.target.closest("[data-complaint-print-now]"))window.print();
+});
+document.getElementById("complaintPrintPreviewBtn").addEventListener("click",()=>{
+  const c=state.complaints.find(x=>x.id===activeComplaintCaseId),source=document.querySelector("#complaintCaseTimeline .complaint-event-list");
+  if(!c||!source)return;
+  const dark=document.body.classList.contains("theme-night"),clone=source.cloneNode(true);
+  clone.querySelectorAll(".complaint-ledger-actions").forEach(x=>x.remove());
+  clone.querySelectorAll(".complaint-read-more").forEach(x=>{const p=x.querySelector("p");if(p)x.replaceWith(p)});
+  clone.querySelectorAll("a[href^='blob:']").forEach(a=>{a.removeAttribute("href");a.removeAttribute("target")});
+  const overlay=document.getElementById("complaintPrintOverlay");
+  overlay.innerHTML=`<div class="complaint-print-controls"><strong>A4 Complaint Preview</strong><button type="button" data-complaint-print-now>Print / Save PDF</button><button type="button" data-complaint-print-close>Close</button></div><div class="complaint-print-sheet ${dark?"night":"day"}"><img class="complaint-print-backdrop" src="${dark?"elu-switchgear-night-v84450.jpg":"elu-electric-light-v84449.jpg"}" alt=""><div class="complaint-print-content"><header><span>ELU UPGRADING · COMPLAINT HISTORY</span><h1>Blk ${esc(c.block)} ${esc(c.unitDisplay||unitDisplay(c.floor,c.unit))}</h1><p>${esc(document.getElementById("complaintHistorySummary").textContent)}</p></header><div class="complaint-print-timeline"></div></div></div>`;
+  overlay.querySelector(".complaint-print-timeline").appendChild(clone);
+  overlay.hidden=false;document.body.classList.add("complaint-print-open");overlay.scrollTop=0;
+});
 document.getElementById("complaintShareToggle").addEventListener("click",()=>{
   const panel=document.getElementById("complaintHistoryPanel"),button=document.getElementById("complaintShareToggle"),active=panel.classList.toggle("complaint-share-mode");
   button.setAttribute("aria-pressed",String(active));button.textContent=active?"Exit share view":"Share view";

@@ -6,9 +6,8 @@
   <meta name="theme-color" content="#c8efff">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.48">
-  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.48" media="screen">
-  <link rel="stylesheet" href="switchroom-dashboard-v84448.css?v=8.44.48-fix1" media="screen">
+  <link rel="stylesheet" href="styles.css?v=8.44.50">
+  <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.50" media="screen">
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -111,6 +110,7 @@
       </header>
 
       <section class="view active" id="dashboard">
+        <div class="dashboard-visual-intro"><span>ELU UPGRADING</span><strong>Electrical Load Upgrading</strong><small>Pasir Ris · Field control</small></div>
         <section class="dashboard-overview-compact" aria-label="Project overview · All Zones">
           <div class="overview-topline">
             <span class="overview-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
@@ -373,7 +373,7 @@
             <div id="complaintTable" class="table-shell"></div>
           </article>
           <article class="panel complaint-history-panel hidden" id="complaintHistoryPanel">
-            <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><div class="complaint-history-tools"><button type="button" class="ghost-btn" id="complaintShareToggle" aria-pressed="false">Share view</button><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div></div>
+            <div class="panel-head register-head"><div><span class="section-label">UNIT CASE HISTORY</span><h3 id="complaintHistoryTitle">Complaint history</h3><p id="complaintHistorySummary"></p></div><div class="complaint-history-tools"><button type="button" class="ghost-btn" id="complaintPrintPreviewBtn">A4 Print Preview</button><button type="button" class="ghost-btn" id="complaintShareToggle" aria-pressed="false">Share view</button><button type="button" class="ghost-btn" id="complaintHistoryClose">Close view</button></div></div>
             <div id="complaintCaseTimeline" class="complaint-case-timeline"></div>
             <form id="complaintVisitForm" class="premium-form complaint-visit-form">
               <input type="hidden" id="complaintVisitCaseId">
@@ -746,11 +746,12 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div id="complaintPrintOverlay" class="complaint-print-overlay" hidden></div>
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.48"></script>
+  <script src="app.js?v=8.44.50"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
