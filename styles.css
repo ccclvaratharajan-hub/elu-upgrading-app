@@ -3483,3 +3483,16 @@ body.theme-night #complaints .complaint-event-pair .visit-event-card{background:
 @media(max-width:900px){#complaints .complaint-event-list{grid-template-columns:minmax(0,1fr)}}
 body:not(.theme-night):has(#dashboard.view.active) .topbar,
 body.theme-night:has(#dashboard.view.active) .topbar{padding:7px 10px;margin-bottom:10px;min-height:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* V8.44.57 — ESS exterior photograph in the light view only. */
+body:not(.theme-night)::before{background:url("elu-ess-light-v84457.png") center center/cover no-repeat;filter:none}
+body:not(.theme-night) .security-gate{background:url("elu-ess-light-v84457.png") center/cover no-repeat}
+
+/* V8.44.58 — close-up ESS and gentle weather in the light view only. */
+body:not(.theme-night)::before{background:url("elu-ess-close-light-v84458.png") center center/cover no-repeat;animation:essLightning 14s linear infinite}
+body:not(.theme-night) .security-gate{background:url("elu-ess-close-light-v84458.png") center/cover no-repeat}
+body:not(.theme-night)::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("ess-rain-v84458.svg") repeat;opacity:.19;animation:essRain 1.35s linear infinite}
+@keyframes essRain{from{background-position:0 0}to{background-position:0 240px}}
+@keyframes essLightning{0%,78%,80%,82%,100%{filter:brightness(1)}79%,81%{filter:brightness(1.13)}}
+@media(prefers-reduced-motion:reduce){body:not(.theme-night)::after,body:not(.theme-night)::before{animation:none}}
+@media print{body:not(.theme-night)::after{display:none!important}}
