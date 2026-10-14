@@ -3436,3 +3436,28 @@ body.theme-night .security-gate{background:url("elu-switchgear-night-v84453.jpg"
 body.theme-night{background-image:url("elu-switchgear-night-v84453.jpg");background-color:#071a37}
 body.theme-night .security-gate{background:url("elu-switchgear-night-v84453.jpg") center/cover no-repeat}
 body.theme-night .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:linear-gradient(145deg,rgba(235,249,255,.64),rgba(205,234,251,.55));backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+
+/* V8.44.54 — complaint history: visible switchgear behind legible cards. */
+body.theme-night #complaints #complaintHistoryPanel{
+  background:rgba(8,30,65,.12);
+  border-color:rgba(164,210,242,.68);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+body.theme-night #complaints .complaint-event-pair{
+  background:rgba(5,27,64,.16);
+  border-color:rgba(163,213,249,.68);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+body.theme-night #complaints .complaint-event-pair .complaint-ledger-card,
+body.theme-night #complaints .complaint-event-pair .visit-event-card{
+  background:rgba(245,251,255,.86);
+  color:#142f46;
+  border-color:rgba(162,203,231,.78);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+}
+body.theme-night #complaints .complaint-event-pair .visit-event-card{border-left-color:#4c93cb}
+#complaints .complaint-event-pair .complaint-ledger-card-top b{font-size:16px}
+#complaints .complaint-event-pair .complaint-card-text,
+#complaints .complaint-event-pair .complaint-read-more,
+#complaints .complaint-event-pair .complaint-read-more p{font-size:14px;line-height:1.5}
+#complaints .complaint-event-pair .complaint-ledger-card small{font-size:12px;line-height:1.5}
