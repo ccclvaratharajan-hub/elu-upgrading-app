@@ -3425,3 +3425,14 @@ body.theme-night .topbar:after{display:none}
 /* V8.44.50 — keep the switch room visible in the night view. */
 body.theme-night{background-image:url("elu-switchgear-night-v84450.jpg");background-position:center;background-size:cover;background-attachment:fixed}
 body.theme-night .security-gate{background:url("elu-switchgear-night-v84450.jpg") center/cover no-repeat}
+
+/* V8.44.51 — full-width switchgear in both modes. */
+body:not(.theme-night)::before{background:url("elu-switchgear-light-v84451.jpg") center center/cover no-repeat;filter:none}
+body:not(.theme-night) .security-gate{background:url("elu-switchgear-light-v84451.jpg") center/cover no-repeat}
+body.theme-night{background-image:url("elu-switchgear-night-v84453.jpg");background-position:center;background-size:cover;background-attachment:fixed}
+body.theme-night .security-gate{background:url("elu-switchgear-night-v84453.jpg") center/cover no-repeat}
+
+/* V8.44.53 — blue-lit night scene, translucent working surfaces. */
+body.theme-night{background-image:url("elu-switchgear-night-v84453.jpg");background-color:#071a37}
+body.theme-night .security-gate{background:url("elu-switchgear-night-v84453.jpg") center/cover no-repeat}
+body.theme-night .main :is(.panel,.kpi-card,.floor-row,.team-panel,.today-team-panel,.report-hero,.hero,.zone-record-group,.planner-zone-section,.attention-panel,.planner-hero,.planner-sheet-panel){background:linear-gradient(145deg,rgba(235,249,255,.64),rgba(205,234,251,.55));backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}

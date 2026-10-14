@@ -133,3 +133,21 @@ body.theme-night #dashboard .royal-icon-dock strong{font-size:11px;line-height:1
 body.theme-night #dashboard .royal-icon-dock button:before{opacity:.32}
 @media(max-width:980px){body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:480px){body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(2,minmax(0,1fr))}body.theme-night #dashboard .royal-icon-dock button{min-height:67px}}
+
+/* V8.44.51 — eight compact controls in two rows, over the lower floor area. */
+#dashboard.view.active{grid-template-columns:minmax(0,1fr);align-content:start}
+#dashboard.view.active>.dashboard-visual-intro,#dashboard.view.active>.dashboard-overview-compact,#dashboard.view.active>.dashboard-shortcuts.royal-icon-dock{grid-column:1/-1}
+#dashboard>.dashboard-shortcuts.royal-icon-dock,body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{width:min(100%,880px);grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 10px;margin:clamp(48px,14vh,140px) auto 12px;align-self:end}
+#dashboard .royal-icon-dock button,body:not(.theme-night) #dashboard .royal-icon-dock button,body.theme-night #dashboard .royal-icon-dock button{min-height:63px;padding:5px 8px;gap:3px;border-radius:12px;background:rgba(224,242,255,.38);border:1px solid rgba(118,183,226,.56);box-shadow:0 4px 14px rgba(11,60,113,.18),inset 0 1px rgba(255,255,255,.48);backdrop-filter:blur(4px)}
+body.theme-night #dashboard .royal-icon-dock button{background:rgba(8,44,86,.42);color:#fff;border-color:rgba(166,220,255,.62);box-shadow:0 3px 17px rgba(17,140,221,.34),inset 0 1px rgba(225,249,255,.3)}
+#dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon,body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{width:25px;height:25px;flex:0 0 25px;border-radius:7px;box-shadow:0 0 12px rgba(52,162,231,.58)}
+#dashboard .royal-icon-dock .shortcut-icon svg,body.theme-night #dashboard .royal-icon-dock .shortcut-icon svg{width:15px;height:15px}
+#dashboard .royal-icon-dock strong,body.theme-night #dashboard .royal-icon-dock strong{font-size:11px;line-height:1.1}
+#dashboard .dashboard-overview-compact{max-width:940px;background:rgba(236,248,255,.62);backdrop-filter:blur(5px)}
+body.theme-night #dashboard .dashboard-overview-compact{background:rgba(9,47,91,.52)}
+@media(max-width:760px){#dashboard>.dashboard-shortcuts.royal-icon-dock,body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:40px}#dashboard .royal-icon-dock strong{font-size:10px}}
+@media(max-width:480px){#dashboard>.dashboard-shortcuts.royal-icon-dock,body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:20px}}
+
+/* V8.44.53 — show the dark-blue panel photo through dashboard glass. */
+body.theme-night #dashboard .dashboard-overview-compact{background:rgba(6,29,72,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+body.theme-night #dashboard .royal-icon-dock button{background:rgba(4,26,67,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
