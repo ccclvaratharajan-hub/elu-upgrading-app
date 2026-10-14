@@ -3491,8 +3491,20 @@ body:not(.theme-night) .security-gate{background:url("elu-ess-light-v84457.png")
 /* V8.44.58 — close-up ESS and gentle weather in the light view only. */
 body:not(.theme-night)::before{background:url("elu-ess-close-light-v84458.png") center center/cover no-repeat;animation:essLightning 14s linear infinite}
 body:not(.theme-night) .security-gate{background:url("elu-ess-close-light-v84458.png") center/cover no-repeat}
-body:not(.theme-night)::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("ess-rain-v84458.svg") repeat;opacity:.19;animation:essRain 1.35s linear infinite}
+body:not(.theme-night)::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("ess-rain-v84459.svg") repeat;opacity:.62;animation:essRain .72s linear infinite}
 @keyframes essRain{from{background-position:0 0}to{background-position:0 240px}}
-@keyframes essLightning{0%,78%,80%,82%,100%{filter:brightness(1)}79%,81%{filter:brightness(1.13)}}
+@keyframes essLightning{0%,68%,70%,72%,100%{filter:brightness(1)}69%{filter:brightness(1.82)}71%{filter:brightness(1.38)}}
 @media(prefers-reduced-motion:reduce){body:not(.theme-night)::after,body:not(.theme-night)::before{animation:none}}
 @media print{body:not(.theme-night)::after{display:none!important}}
+
+/* V8.44.60 — move only the leafy edges of the ESS scene, not the building. */
+.ess-tree-sway{display:none}
+body:not(.theme-night) .ess-tree-sway{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;background:url("elu-ess-close-light-v84458.png") center center/cover no-repeat;mask-image:radial-gradient(ellipse 14% 48% at 3% 45%,#000 34%,transparent 100%),radial-gradient(ellipse 20% 31% at 7% 96%,#000 30%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 14% 48% at 3% 45%,#000 34%,transparent 100%),radial-gradient(ellipse 20% 31% at 7% 96%,#000 30%,transparent 100%);transform-origin:1% 86%;animation:essLeavesLeft 3.8s ease-in-out infinite alternate}
+body:not(.theme-night) .ess-tree-top,body:not(.theme-night) .ess-tree-right{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;background:url("elu-ess-close-light-v84458.png") center center/cover no-repeat}
+body:not(.theme-night) .ess-tree-top{mask-image:radial-gradient(ellipse 46% 15% at 49% 0%,#000 30%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 46% 15% at 49% 0%,#000 30%,transparent 100%);transform-origin:49% 0%;animation:essLeavesTop 4.6s ease-in-out infinite alternate}
+body:not(.theme-night) .ess-tree-right{mask-image:radial-gradient(ellipse 12% 43% at 98% 43%,#000 29%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 12% 43% at 98% 43%,#000 29%,transparent 100%);transform-origin:99% 79%;animation:essLeavesRight 4.1s ease-in-out infinite alternate-reverse}
+@keyframes essLeavesLeft{from{transform:translateX(-11px) rotate(-.85deg)}to{transform:translateX(13px) rotate(.95deg)}}
+@keyframes essLeavesTop{from{transform:translateX(-8px) skewX(-.7deg)}to{transform:translateX(9px) skewX(.75deg)}}
+@keyframes essLeavesRight{from{transform:translateX(-10px) rotate(-.8deg)}to{transform:translateX(12px) rotate(.9deg)}}
+@media(prefers-reduced-motion:reduce){body:not(.theme-night) .ess-tree-sway,body:not(.theme-night) .ess-tree-top,body:not(.theme-night) .ess-tree-right{animation:none}}
+@media print{.ess-tree-sway,.ess-tree-top,.ess-tree-right{display:none!important}}
