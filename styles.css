@@ -3545,3 +3545,10 @@ body:not(.theme-night)::after{display:block;background:linear-gradient(180deg,rg
 @keyframes essCloud{0%,55%,74%,100%{opacity:0}63%,68%{opacity:.28}69%{opacity:0}70%{opacity:.14}72%{opacity:0}}
 @keyframes essLightning{0%,55%,74%,100%{filter:brightness(1)}63%,68%{filter:brightness(.87)}69%{filter:brightness(1.68)}70%{filter:brightness(.94)}71%{filter:brightness(1.24)}72%{filter:brightness(.95)}}
 @media(prefers-reduced-motion:reduce){body:not(.theme-night)::after{display:none}}
+
+/* V8.44.68 — static scene for reliable scrolling and navigation. */
+body:not(.theme-night)::before{animation:none!important;filter:none!important}
+body:not(.theme-night)::after{display:none!important;animation:none!important}
+.ess-tree-sway,.ess-tree-top,.ess-tree-right,.ess-natural-rain{display:none!important}
+body.theme-night::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("elu-switchgear-night-v84453.jpg") center center/cover no-repeat}
+body.theme-night .app-shell{position:relative;z-index:1}
