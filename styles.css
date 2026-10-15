@@ -3508,3 +3508,40 @@ body:not(.theme-night) .ess-tree-right{mask-image:radial-gradient(ellipse 12% 43
 @keyframes essLeavesRight{from{transform:translateX(-10px) rotate(-.8deg)}to{transform:translateX(12px) rotate(.9deg)}}
 @media(prefers-reduced-motion:reduce){body:not(.theme-night) .ess-tree-sway,body:not(.theme-night) .ess-tree-top,body:not(.theme-night) .ess-tree-right{animation:none}}
 @media print{.ess-tree-sway,.ess-tree-top,.ess-tree-right{display:none!important}}
+
+/* V8.44.62 — restrained weather; animate only foliage clear of the building. */
+body:not(.theme-night)::after{background-image:url("ess-rain-v84458.svg");opacity:.34;animation-duration:1.45s}
+@keyframes essLightning{0%,68%,70%,72%,100%{filter:brightness(1)}69%{filter:brightness(1.46)}71%{filter:brightness(1.16)}}
+body:not(.theme-night) .ess-tree-sway{
+  mask-image:radial-gradient(ellipse 10% 14% at 5% 5%,#000 16%,transparent 100%),radial-gradient(ellipse 14% 16% at 6% 98%,#000 19%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 10% 14% at 5% 5%,#000 16%,transparent 100%),radial-gradient(ellipse 14% 16% at 6% 98%,#000 19%,transparent 100%);
+  animation-duration:5.2s
+}
+body:not(.theme-night) .ess-tree-top,body:not(.theme-night) .ess-tree-right{display:none}
+@keyframes essLeavesLeft{from{transform:translateX(-3px) rotate(-.25deg)}to{transform:translateX(4px) rotate(.3deg)}}
+
+/* V8.44.63 — keep the switch room visible in dark mode. */
+body.theme-night::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url("elu-switchgear-night-v84453.jpg") center center/cover no-repeat}
+body.theme-night .app-shell{position:relative;z-index:1}
+body.theme-night .security-gate{background:url("elu-switchgear-night-v84453.jpg") center/cover no-repeat}
+
+/* Individually moving, varied drops replace the repeating rain graphic. */
+body:not(.theme-night)::after{display:none}
+.ess-natural-rain{display:none}
+body:not(.theme-night) .ess-natural-rain{display:block;position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+@media print{.ess-natural-rain{display:none!important}}
+
+/* V8.44.64 — foliage flutters; the trunk, building and ground stay still. */
+body:not(.theme-night) .ess-tree-sway{
+  mask-image:radial-gradient(ellipse 8% 8% at 4% 1%,#000 5%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 8% 8% at 4% 1%,#000 5%,transparent 100%);
+  transform-origin:center;
+  animation:essLeavesLeft 4.8s ease-in-out infinite alternate
+}
+@keyframes essLeavesLeft{from{transform:translateX(-2px)}to{transform:translateX(3px)}}
+
+/* A soft passing cloud, brief flash, and return to normal light. */
+body:not(.theme-night)::after{display:block;background:linear-gradient(180deg,rgba(19,37,68,.7),rgba(18,38,66,.18) 47%,transparent 76%);opacity:0;animation:essCloud 14s linear infinite}
+@keyframes essCloud{0%,55%,74%,100%{opacity:0}63%,68%{opacity:.28}69%{opacity:0}70%{opacity:.14}72%{opacity:0}}
+@keyframes essLightning{0%,55%,74%,100%{filter:brightness(1)}63%,68%{filter:brightness(.87)}69%{filter:brightness(1.68)}70%{filter:brightness(.94)}71%{filter:brightness(1.24)}72%{filter:brightness(.95)}}
+@media(prefers-reduced-motion:reduce){body:not(.theme-night)::after{display:none}}
