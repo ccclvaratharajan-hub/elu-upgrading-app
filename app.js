@@ -2217,10 +2217,15 @@ async function exportManagerPPT(){
         slide.addShape(pptx.ShapeType.rect,{x:xs[col],y:top,w:width,h:first,line:{color:edge,width:.7},fill:{color:"E1F0F7"}});
         slide.addText(text,{x:xs[col]+.035,y:top+.02,w:width-.07,h:first-.04,margin:0,fontFace:"Arial",fontSize:8.3,bold:true,color:"133E56",align:"center",valign:"mid",fit:"shrink"});
       };
-      heading("S/N",0);heading("BLK NO.",1);heading("TOTAL UNITS",2);
+      // The first three labels span both header rows, exactly as in the Meeting Sheet.
+      const fixedHeading=(text,col)=>{
+        slide.addShape(pptx.ShapeType.rect,{x:xs[col],y:top,w:widths[col],h:first+second,line:{color:edge,width:.7},fill:{color:"E1F0F7"}});
+        slide.addText(text,{x:xs[col]+.035,y:top+.02,w:widths[col]-.07,h:first+second-.04,margin:0,fontFace:"Arial",fontSize:9,bold:true,color:"133E56",align:"center",valign:"mid",fit:"shrink"});
+      };
+      fixedHeading("S/N",0);fixedHeading("BLK NO.",1);fixedHeading("TOTAL UNITS",2);
       heading("UNITS OPT-IN\n(Agree)",3,2);heading("UNITS OPT-IN\n(10mmsq Work Completed at site)",5,2);
       heading("UNITS OPT-OUT\n(Disagree)",7,2);heading("UNITS NO RESPONSE",9,2);
-      widths.forEach((_,j)=>cell(slide,j<3?"":j%2===1?"Number":"%",j,top+first,second,{header:true,fill:"F2F8FB",fontSize:8}));
+      for(let j=3;j<widths.length;j++)cell(slide,j%2===1?"Number":"%",j,top+first,second,{header:true,fill:"F2F8FB",fontSize:8});
       rows.forEach((r,i)=>{
         const y=top+first+second+i*rowH,base=i%2?"F8FBFD":"FFFFFF";
         const nr=r.nr+r.p,percentage=r.total?`${Math.round(nr/r.total*100)}%`:"0%";
@@ -2459,6 +2464,7 @@ async function exportManagerPPTV727(){return exportManagerPPT()}
 
 document.getElementById("exportManagerPdfBtn").addEventListener("click",exportManagerPDFV727);
 document.getElementById("exportManagerPptBtn").addEventListener("click",exportManagerPPT);
+document.getElementById("meetingSheetPptBtn").addEventListener("click",exportManagerPPT);
 document.getElementById("exportUnitSummaryPdfBtn").addEventListener("click",exportUnitSummaryPDF);
 document.getElementById("exportBlockChartPdfBtn").addEventListener("click",exportBlockChartPDF);
 
