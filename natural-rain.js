@@ -11,11 +11,12 @@
     const depth = Math.random();
     return {
       x: random(-25, w + 25), y: anywhere ? random(0, h) : random(-65, -5),
-      speed: random(75, 165) + depth * 185,
-      drift: random(-17, -3),
-      radius: depth < .7 ? random(.25, .65) : random(.6, 1.1),
-      length: depth > .92 ? random(2.5, 5.5) : 0,
-      alpha: random(.07, .13) + depth * .13
+      speed: random(75, 145) + depth * 155,
+      drift: random(-14, -2),
+      radius: depth < .63 ? random(.45, .75) : random(.75, 1.2),
+      length: depth > .96 ? random(1.5, 3.5) : random(0, .55),
+      alpha: random(.2, .29) + depth * .11,
+      shade: Math.random() < .68 ? '66,103,128' : '229,244,253'
     };
   }
   function resize() {
@@ -24,7 +25,7 @@
     canvas.width = Math.round(w * ratio);
     canvas.height = Math.round(h * ratio);
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    drops = Array.from({length: Math.min(170, Math.max(70, Math.round(w * h / 9500)))}, () => newDrop(true));
+    drops = Array.from({length: Math.min(300, Math.max(105, Math.round(w * h / 4900)))}, () => newDrop(true));
   }
   function draw(time) {
     frame = requestAnimationFrame(draw);
@@ -41,7 +42,7 @@
       drop.x += drop.drift * dt;
       drop.y += drop.speed * dt;
       if (drop.y > h + 12 || drop.x < -25) drops[i] = newDrop();
-      ctx.fillStyle = `rgba(222,239,250,${drop.alpha})`;
+      ctx.fillStyle = `rgba(${drop.shade},${drop.alpha})`;
       ctx.beginPath();
       ctx.ellipse(drop.x, drop.y, drop.radius, drop.radius + drop.length, -.12, 0, Math.PI * 2);
       ctx.fill();
