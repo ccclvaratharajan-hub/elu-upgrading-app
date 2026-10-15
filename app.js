@@ -582,7 +582,8 @@ sitefiles:["Site Report Files","Download the Block Chart, Response Details and N
 }[view]}
 let photoEntryOpened=false;
 function setView(view){
-  rebuildAllMasters();
+  // The masters and tables are already refreshed at startup and on saves.
+  // Page navigation must not recalculate every unit again.
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(view).classList.add("active");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   const [t,s]=viewTitle(view);document.getElementById("pageTitle").textContent=t;document.getElementById("pageSubtitle").textContent=s;
@@ -597,8 +598,8 @@ function setView(view){
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
   else if(view==="survey")renderSurveyTable();
-  else if(view==="appointments")renderAppointmentTable();
-  else if(view==="units")renderUnitTable();
+  else if(view==="appointments"){} // Keep the current filtered table already on screen.
+  else if(view==="units"){} // The register is refreshed by renderAll and its own filters.
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
@@ -615,7 +616,7 @@ function setView(view){
     syncPhotoTargetUnits().catch(console.error);photoAutoCleanup()
   }
   else if(view==="reports")renderReport();
-  window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo({top:0,behavior:"instant"});
 }
 document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
 document.getElementById("focusViewBtn").addEventListener("click",()=>{
