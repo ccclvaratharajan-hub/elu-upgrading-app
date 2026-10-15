@@ -153,22 +153,3 @@ body.theme-night #dashboard .dashboard-overview-compact{background:rgba(9,47,91,
 /* V8.44.53 — show the dark-blue panel photo through dashboard glass. */
 body.theme-night #dashboard .dashboard-overview-compact{background:rgba(6,29,72,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 body.theme-night #dashboard .royal-icon-dock button{background:rgba(4,26,67,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-
-/* V8.44.61 — keep the centre of the ESS scene open; a readable corner summary. */
-#dashboard.view.active>.dashboard-overview-compact{width:min(100%,580px);max-width:580px;margin:0 auto 0 0;align-self:flex-start;min-height:0;padding:10px 12px}
-#dashboard .dashboard-overview-compact .dashboard-glance{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:6px;padding-top:7px}
-#dashboard .dashboard-overview-compact .dashboard-glance>div{padding:4px 6px;border-right:0;border-radius:7px;background:rgba(255,255,255,.19)}
-#dashboard .dashboard-overview-compact .dashboard-glance strong{font-size:20px}
-body:not(.theme-night) #dashboard .dashboard-overview-compact{background:rgba(233,246,255,.37);border-color:rgba(201,230,248,.67);color:#0c3558;box-shadow:0 7px 18px rgba(12,54,94,.15);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);text-shadow:0 1px 3px rgba(255,255,255,.94)}
-body.theme-night #dashboard .dashboard-overview-compact{background:rgba(8,34,76,.3);border-color:rgba(154,207,246,.52);color:#f3faff;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);text-shadow:0 2px 4px rgba(0,16,43,.88)}
-body.theme-night #dashboard .dashboard-overview-compact .dashboard-glance>div{background:rgba(7,30,67,.2)}
-@media(max-width:650px){#dashboard.view.active>.dashboard-overview-compact{width:100%;max-width:none}#dashboard .dashboard-overview-compact .dashboard-glance{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-/* Rounded, translucent quick actions without changing their targets. */
-body:not(.theme-night) #dashboard>.dashboard-shortcuts.royal-icon-dock button,
-body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock button{border-radius:999px;min-height:65px;padding:7px 12px;gap:3px}
-body:not(.theme-night) #dashboard>.dashboard-shortcuts.royal-icon-dock button{background:rgba(226,244,255,.28);border-color:rgba(196,232,255,.72);color:#0a3154;text-shadow:0 1px 3px rgba(255,255,255,.95);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock button{background:rgba(5,30,72,.31);border-color:rgba(156,212,248,.62);color:#f5fbff;text-shadow:0 1px 3px rgba(0,15,43,.93);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-body:not(.theme-night) #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon,
-body.theme-night #dashboard .royal-icon-dock button:nth-child(n) .shortcut-icon{border-radius:50%;width:27px;height:27px;flex:0 0 27px}
-@media(max-width:760px){#dashboard>.dashboard-shortcuts.royal-icon-dock,body.theme-night #dashboard>.dashboard-shortcuts.royal-icon-dock{grid-template-columns:repeat(2,minmax(0,1fr))}}

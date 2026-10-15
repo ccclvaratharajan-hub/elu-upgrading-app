@@ -582,9 +582,7 @@ sitefiles:["Site Report Files","Download the Block Chart, Response Details and N
 }[view]}
 let photoEntryOpened=false;
 function setView(view){
-  // Masters are rebuilt when a record changes, during initial load, and after
-  // automatic completion. Rebuilding every unit on a read-only page switch
-  // made Appointment → Blockboard appear frozen on larger saved datasets.
+  rebuildAllMasters();
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(view).classList.add("active");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   const [t,s]=viewTitle(view);document.getElementById("pageTitle").textContent=t;document.getElementById("pageSubtitle").textContent=s;
@@ -1065,16 +1063,11 @@ function renderBlockBoard(){
   const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),raw=getBlockUnits(block);
   const zone=Number(document.getElementById("boardZone").value)||Number(PROJECT_LAYOUT[block]?.zone||0);
   const zoneBlocks=ZONE_BLOCKS[zone]||[];
-  const liveByKey=new Map();
-  const liveFor=key=>{
-    if(!liveByKey.has(key))liveByKey.set(key,currentUnitAppointmentState(key));
-    return liveByKey.get(key);
-  };
-  const zoneUnits=zoneBlocks.flatMap(b=>getBlockUnits(b)).map(x=>{const live=liveFor(x.key);return{...x,response:live.status,workStatus:live.workStatus}});
+  const zoneUnits=zoneBlocks.flatMap(b=>getBlockUnits(b)).map(x=>{const live=currentUnitAppointmentState(x.key);return{...x,response:live.status,workStatus:live.workStatus}});
   const zTotal=zoneUnits.length,zOptIn=zoneUnits.filter(x=>x.response==="A"||x.response==="C").length,zAppointments=zoneUnits.filter(x=>x.response==="C").length,zPending=zoneUnits.filter(x=>x.response==="P").length,zCompleted=zoneUnits.filter(x=>x.workStatus==="Completed").length,zOptOut=zoneUnits.filter(x=>x.response==="D").length,zNR=zoneUnits.filter(x=>x.response==="NR"||x.response==="P").length,zVisits=state.surveys.filter(v=>Number(v.zone||zoneOfBlock(v.block))===zone).length,zPct=n=>zTotal?Math.round(n/zTotal*100):0;
   const zh=document.getElementById("zoneHeadline");
   if(zh)zh.innerHTML=`<div class="zone-summary-title"><span>ZONE ${zone} SUMMARY</span><strong>${zoneBlocks.map(b=>`Blk ${b}`).join(" · ")}</strong><small>Live Block Board totals</small></div><div class="zone-summary-grid"><div class="zone-summary-tile total"><span>Total Units</span><strong>${zTotal}</strong><small>100%</small></div><div class="zone-summary-tile optin"><span>Opt-In · A + C</span><strong>${zOptIn}</strong><small>${zPct(zOptIn)}%</small></div><div class="zone-summary-tile appt"><span>Appointments · C</span><strong>${zAppointments}</strong><small>${zPct(zAppointments)}%</small></div><div class="zone-summary-tile pending"><span>Pending · P</span><strong>${zPending}</strong><small>${zPct(zPending)}%</small></div><div class="zone-summary-tile completed"><span>Completed</span><strong>${zCompleted}</strong><small>${zPct(zCompleted)}%</small></div><div class="zone-summary-tile nr"><span>NR · P + NR</span><strong>${zNR}</strong><small>${zPct(zNR)}%</small></div><div class="zone-summary-tile optout"><span>Opt-Out · D</span><strong>${zOptOut}</strong><small>${zPct(zOptOut)}%</small></div><div class="zone-summary-tile visits"><span>Total Visits</span><strong>${zVisits}</strong><small>Register</small></div></div>`;
-  const u=raw.map(x=>{const live=liveFor(x.key),a=live.appointment;return{...x,response:live.status,workStatus:live.workStatus,appointmentDate:a?.date||"",appointmentSlot:a?.slot||"",team:a?.team||""}});
+  const u=raw.map(x=>{const live=currentUnitAppointmentState(x.key),a=live.appointment;return{...x,response:live.status,workStatus:live.workStatus,appointmentDate:a?.date||"",appointmentSlot:a?.slot||"",team:a?.team||""}});
   const total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,pct=n=>total?Math.round(n/total*100):0;
   document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile p"><span>◷ P · Pending</span><strong>${p}</strong><small>${pct(p)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
