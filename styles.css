@@ -1399,7 +1399,7 @@ body.secure-locked .toast{visibility:hidden}
 .photo-unit-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
 .photo-unit-head div{display:flex;flex-direction:column;gap:2px}.photo-unit-head strong{font-size:12px}.photo-unit-head span{font-size:10px;color:#748a9d}.photo-unit-head em{font-style:normal;font-size:9px;font-weight:850;color:#4d7f63}
 .photo-thumb-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
-.photo-thumb{position:relative;border:1px solid #d7e4ed;border-radius:10px;overflow:hidden;background:#f7fafc;min-height:110px}
+.photo-thumb{position:relative;border:1px solid transparent;border-radius:10px;overflow:hidden;background:#f7fafc;min-height:110px}
 .photo-thumb.used{outline:2px solid #8fc7a8}
 .photo-thumb.extra{outline:2px dashed #d6b26b}
 .photo-thumb img{width:100%;height:110px;object-fit:contain;background:#fff;display:block}
