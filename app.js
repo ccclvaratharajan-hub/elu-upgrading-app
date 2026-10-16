@@ -1115,12 +1115,28 @@ document.getElementById("drawerClose").addEventListener("click",closeDrawer);doc
 function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerUnitKey").value);if(!u)return;closeDrawer();setView(target);if(target==="survey"){document.getElementById("surveyZone").value=String(u.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(u.block);syncSurveyUnits();document.getElementById("surveyUnit").value=u.key;autofillSurvey()}else{document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment")}}
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));
 
+function setSurveyVisitTime(value=""){
+  const hour=document.getElementById("surveyVisitHour"),minute=document.getElementById("surveyVisitMinute"),period=document.getElementById("surveyVisitPeriod");
+  minute.querySelector('[data-legacy-minute]')?.remove();
+  hour.value="";minute.value="";period.value="";
+  const n=surveyVisitMinutes(value);
+  if(n===9999)return;
+  const h24=Math.floor(n/60),mm=String(n%60).padStart(2,"0");
+  if(!["00","15","30","45"].includes(mm)){
+    const saved=document.createElement("option");saved.value=mm;saved.textContent=`${mm} (saved)`;saved.dataset.legacyMinute="";minute.append(saved);
+  }
+  hour.value=String(h24%12||12);minute.value=mm;period.value=h24>=12?"PM":"AM";
+}
+function selectedSurveyVisitTime(){
+  const h=document.getElementById("surveyVisitHour").value,m=document.getElementById("surveyVisitMinute").value,p=document.getElementById("surveyVisitPeriod").value;
+  return h&&m&&p?`${h}:${m} ${p}`:"";
+}
 function resetSurveyForm(){
   document.getElementById("surveyEditId").value="";
   document.getElementById("surveySaveBtn").textContent="Save Survey Visit";
   document.getElementById("surveyCancelEdit").classList.add("hidden");
   document.getElementById("surveyVisitDate").value=isoTodaySG();
-  document.getElementById("surveyVisitTime").value="";
+  setSurveyVisitTime();
   document.getElementById("surveyRemarks").value="";
   autofillSurvey()
 }
@@ -1130,9 +1146,11 @@ document.getElementById("surveyForm").addEventListener("submit",e=>{
   const key=document.getElementById("surveyUnit").value,u=getUnit(key);if(!u)return;
   const id=Number(document.getElementById("surveyEditId").value)||Date.now();
   const visitDate=document.getElementById("surveyVisitDate").value;
-  const visitTime=document.getElementById("surveyVisitTime").value;
+  const selectedTime=selectedSurveyVisitTime();
   if(!visitDate){toast("Select Survey Visit Date");return}
-  if(!visitTime){toast("Select Survey Visit Time");return}
+  if(!selectedTime){toast("Select Survey Visit Hour, Minute and AM/PM");return}
+  const previous=state.surveys.find(s=>s.id===id);
+  const visitTime=previous?.visitTime&&surveyVisitMinutes(previous.visitTime)===surveyVisitMinutes(selectedTime)?previous.visitTime:selectedTime;
   const entry={
     id,
     createdAt:new Date().toISOString(),
@@ -1156,7 +1174,7 @@ function editSurvey(id){
   document.getElementById("surveyOwner").value=s.ownerName||"";
   document.getElementById("surveyContact").value=s.contact||"";
   document.getElementById("surveyVisitDate").value=s.visitDate||s.followUpDate||"";
-  document.getElementById("surveyVisitTime").value=s.visitTime||"";
+  setSurveyVisitTime(s.visitTime||"");
   document.getElementById("surveyRemarks").value=s.remarks||"";
   document.getElementById("surveyEditId").value=String(s.id);
   document.getElementById("surveySaveBtn").textContent="Update Survey Visit";

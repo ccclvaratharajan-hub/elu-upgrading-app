@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.71">
+  <link rel="stylesheet" href="styles.css?v=8.44.73">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -238,7 +238,13 @@
               </div>
               <div class="form-row two">
                 <label>Survey Visit Date<input type="date" id="surveyVisitDate"></label>
-                <label>Visit Time<input type="time" id="surveyVisitTime"></label>
+                <label>Visit Time
+                  <span class="survey-time-parts">
+                    <select id="surveyVisitHour" aria-label="Survey visit hour"><option value="">Hour</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
+                    <select id="surveyVisitMinute" aria-label="Survey visit minute"><option value="">Minute</option><option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option></select>
+                    <select id="surveyVisitPeriod" aria-label="Survey visit AM or PM"><option value="">AM/PM</option><option>AM</option><option>PM</option></select>
+                  </span>
+                </label>
               </div>
               <label>Visit Note<textarea id="surveyRemarks" rows="4" placeholder="Call note, access note, resident request..."></textarea></label>
               <div class="form-actions">
@@ -753,7 +759,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.70"></script>
+  <script src="app.js?v=8.44.73"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
