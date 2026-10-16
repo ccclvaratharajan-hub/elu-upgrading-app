@@ -1067,6 +1067,7 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
 }
 .survey-time-parts{display:grid;grid-template-columns:1fr 1.15fr 1.25fr;gap:6px;margin-top:6px;font-variant-numeric:tabular-nums}
 .survey-time-parts select{min-width:0;width:100%;margin-top:0}
+#surveyTable .survey-key-date,#surveyTable .survey-key-time,#surveyTable .survey-key-unit{font-size:14px;font-weight:900;color:#123e67;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 
 /* V7.23 Secure Access — classic theme retained */

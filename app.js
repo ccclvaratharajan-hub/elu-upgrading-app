@@ -1200,6 +1200,12 @@ function surveyVisitMinutes(value){
   if(m[3])return normalizeTimeToken(hour,minute,m[3]);
   return hour*60+minute
 }
+function surveyTimeLabel(value){
+  const minutes=surveyVisitMinutes(value);
+  if(minutes===9999)return value||"—";
+  const hour24=Math.floor(minutes/60),hour=hour24%12||12;
+  return `${String(hour).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")} ${hour24>=12?"PM":"AM"}`
+}
 function compareSurveyVisits(a,b){
   return (a.visitDate||a.followUpDate||"").localeCompare(b.visitDate||b.followUpDate||"")||
     surveyVisitMinutes(a.visitTime)-surveyVisitMinutes(b.visitTime)||
@@ -1217,7 +1223,7 @@ function renderSurveyTable(){
   const r=surveyRecentOnly?upcoming:all.slice().sort(compareSurveyVisits);
   document.querySelector("#surveyShowAllBtn span").textContent=surveyRecentOnly?"Show all":"Upcoming only";
   document.getElementById("surveyScopeNote").textContent=surveyRecentOnly?`${r.length} upcoming survey visit${r.length===1?"":"s"} without a later appointment. Past and booked visits are in Show all.`:`All ${all.length} survey visits shown, including past and booked visits.`;
-  document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong>${safeDate(vd)||"—"}</strong></td><td>${esc(s.visitTime||"—")}</td><td>Blk ${s.block}<br><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
+  document.getElementById("surveyTable").innerHTML=r.length?`<table><thead><tr><th>Visit Date</th><th>Time</th><th>Block / Unit</th><th>Owner</th><th>Contact</th><th>Visit Note</th><th>Latest Appointment</th><th>Action</th></tr></thead><tbody>${r.map(s=>{const vd=s.visitDate||s.followUpDate||"";return`<tr><td><strong class="survey-key-date">${safeDate(vd)||"—"}</strong></td><td><strong class="survey-key-time">${esc(surveyTimeLabel(s.visitTime))}</strong></td><td>Blk ${s.block}<br><strong class="survey-key-unit">${esc(s.unitDisplay)}</strong></td><td>${esc(s.ownerName||"—")}</td><td>${esc(s.contact||"—")}</td><td>${esc(s.remarks||"—")}</td><td>${(()=>{const a=latestAppointment(s.unitKey);return a?.date?`<strong>${esc(safeDate(a.date))}</strong><br>${esc(a.slot||"—")}<br><small>${esc(a.workStatus==="Completed"?"Completed":a.scheduleState||"Active")}</small>`:"—"})()}</td><td><div class="action-set"><button class="table-action" data-survey-book="${s.id}">Appointment</button><button class="table-action" data-survey-edit="${s.id}">Edit</button><button class="table-action delete" data-survey-delete="${s.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`:`<div class="empty-state">${surveyRecentOnly?"No survey visits scheduled from today onward. Use Show all for past records.":"No survey visits recorded."}</div>`
 }
 function printSurveyRegister(mode){
   const zone=document.getElementById("surveyZoneFilter").value;
@@ -1232,8 +1238,8 @@ function printSurveyRegister(mode){
   const perPage=16,groups=[];
   for(let i=0;i<visits.length;i+=perPage)groups.push(visits.slice(i,i+perPage));
   const pages=groups.map((group,page)=>{
-    const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td><strong>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</strong></td><td><strong>${esc(s.unitDisplay)}</strong></td><td>${esc(safeDate(s.visitDate||s.followUpDate||""))}<br>${esc(s.visitTime||"")}</td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
-    return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${esc(printScope)} · ${visits.length} visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE / TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
+    const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td><strong>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</strong></td><td><strong class="key-unit">${esc(s.unitDisplay)}</strong></td><td><strong class="key-date">${esc(safeDate(s.visitDate||s.followUpDate||""))}</strong></td><td><strong class="key-time">${esc(surveyTimeLabel(s.visitTime))}</strong></td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
+    return `<section class="sheet"><header><h1>ELU · SURVEY VISIT REGISTER</h1><div class="meta"><span>${esc(scope)} · ${esc(printScope)} · ${visits.length} visits</span><span>Printed ${esc(safeDate(isoTodaySG()))} · Page ${page+1}/${groups.length}</span></div></header><table><thead><tr><th>S/N</th><th>ZONE / BLOCK</th><th>UNIT</th><th>SURVEY DATE</th><th>TIME</th><th>OWNER</th><th>CONTACT</th><th>APPOINTMENT DATE / TIME</th></tr></thead><tbody>${rows}</tbody></table></section>`
   }).join("");
   const win=window.open("","_blank","width=1200,height=900");if(!win){toast("Allow pop-ups to print Survey Register");return}
   const printCss=`
@@ -1251,8 +1257,9 @@ function printSurveyRegister(mode){
     tr>:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}
     th{height:9mm;background:#d4e8fa;color:#103e70;font-size:11px;font-weight:900}
     td{height:9mm;color:#102c47;font-weight:650}
-    th:nth-child(1){width:6%}th:nth-child(2){width:15%}th:nth-child(3){width:10%}
-    th:nth-child(4){width:17%}th:nth-child(5){width:17%}th:nth-child(6){width:17%}th:nth-child(7){width:18%}
+    .key-unit,.key-date,.key-time{font-size:13px;font-weight:900;color:#103e70;white-space:nowrap}
+    th:nth-child(1){width:5%}th:nth-child(2){width:14%}th:nth-child(3){width:11%}th:nth-child(4){width:12%}
+    th:nth-child(5){width:9%}th:nth-child(6){width:16%}th:nth-child(7){width:15%}th:nth-child(8){width:18%}
     thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
     @media print{header,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
