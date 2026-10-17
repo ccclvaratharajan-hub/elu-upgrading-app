@@ -1,4 +1,4 @@
-/* V8.44.83: read-only forecast from the live Block Board state. */
+/* V8.44.84: read-only forecast from the live Block Board state. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
@@ -92,7 +92,7 @@ async function exportCompletionPpt(){
     const group=rows.filter(r=>r.zone===zone),slide=pptx.addSlide();slide.background={color:"F6FAFD"};
     if(backgroundData){
       slide.addImage({data:backgroundData,x:0,y:0,w:13.333,h:7.5});
-      slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:7.5,line:{color:"102C4C",transparency:100},fill:{color:"102C4C",transparency:38}});
+      slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:7.5,line:{color:"102C4C",transparency:100},fill:{color:"102C4C",transparency:62}});
     }
     slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.13,line:{color:"57BFEF"},fill:{color:"57BFEF"}});
     const headColor=backgroundData?"FFFFFF":"123E67",kickerColor=backgroundData?"C9EEFF":"24658C";
@@ -100,7 +100,7 @@ async function exportCompletionPpt(){
     slide.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.48,y:.69,w:8.1,h:.58,fontFace:"Arial",fontSize:20,bold:true,color:headColor,margin:0,fit:"shrink"});
     slide.addText(`Main-work target: ${completionTargetLabel(rows,zone)}`,{x:8.6,y:.76,w:4.2,h:.36,fontFace:"Arial",fontSize:15,bold:true,color:headColor,align:"right",margin:0,fit:"shrink"});
     const draw=(v,c,y,h,header=false,shade=false)=>{
-      slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,line:{color:"B7CBDA",width:.7},fill:{color:header?"DCECF7":shade?"EDF5FA":"FFFFFF"}});
+      slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,line:{color:"A9C6DA",width:.7},fill:{color:header?"DCECF7":shade?"EDF5FA":"FFFFFF",transparency:backgroundData?(header?9:shade?21:16):0}});
       slide.addText(String(v),{x:x[c]+.04,y:y+.025,w:widths[c]-.08,h:h-.05,fontFace:"Arial",fontSize:header?9:10.8,bold:header||c===0||c===3||c===7||c===9,color:header?"123E67":"18394E",margin:0,align:c===0||c===9?"left":"center",valign:"mid",fit:"shrink"});
     };
     ["Block","Units","Done","Done %","Booked","NR","P","Balance %","Teams","Target / follow-up"].forEach((v,c)=>draw(v,c,1.58,.51,true));
