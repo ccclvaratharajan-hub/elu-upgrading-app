@@ -1,4 +1,4 @@
-/* V8.44.82: read-only forecast from the live Block Board state. */
+/* V8.44.83: read-only forecast from the live Block Board state. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
@@ -62,6 +62,14 @@ function completionDate(date){return date?safeDate(date):"—"}
 function completionPercent(value){return `${value.toFixed(1)}%`}
 function completionTargetLabel(rows,zone){const date=completionZoneTarget(rows,zone);return date?completionDate(date):"Almost completed / follow-up"}
 function completionBlockLabel(r){return r.followUp?`Almost completed · NR/P follow-up${r.plannedDate?` ~ ${completionDate(r.plannedDate)}`:""}`:completionDate(r.target)}
+async function completionBackgroundData(){
+  try{
+    const response=await fetch(new URL("elu-switchgear-night-v84453.jpg",document.baseURI));
+    if(!response.ok)throw new Error("Slide photograph unavailable");
+    const blob=await response.blob();
+    return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob)});
+  }catch(err){console.warn("Completion slide background",err);return null}
+}
 function renderCompletionPlan(){
   const rows=completionSchedule(),{today,perTeam}=completionInputs();
   const totals=rows.reduce((a,r)=>{for(const k of ["done","booked","nr","p","undated"])a[k]+=r[k];return a},{done:0,booked:0,nr:0,p:0,undated:0});
@@ -77,15 +85,20 @@ function renderCompletionPlan(){
 }
 async function exportCompletionPpt(){
   if(typeof PptxGenJS!=="function"){toast("PPT library did not load.");return}
-  const rows=completionSchedule(),{today,perTeam}=completionInputs(),pptx=new PptxGenJS();
+  const rows=completionSchedule(),{today,perTeam}=completionInputs(),pptx=new PptxGenJS(),backgroundData=await completionBackgroundData();
   pptx.layout="LAYOUT_WIDE";pptx.author="ELU Upgrading";pptx.subject="Approximate zone completion plan";pptx.title="10 mm² Cable Upgrading Work (Unit Work)";
   const widths=[1.05,.90,.90,1.00,.80,.80,1.00,1.00,.90,4.08],x=[.45];widths.forEach(w=>x.push(x.at(-1)+w));
   [4,5,6].forEach((zone,i)=>{
     const group=rows.filter(r=>r.zone===zone),slide=pptx.addSlide();slide.background={color:"F6FAFD"};
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.13,line:{color:"123E67"},fill:{color:"123E67"}});
-    slide.addText(`ELU / ZONE ${zone} / EXPECTED COMPLETION`,{x:.48,y:.33,w:8.8,h:.29,fontFace:"Arial",fontSize:11,bold:true,color:"24658C",margin:0});
-    slide.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.48,y:.69,w:8.1,h:.58,fontFace:"Arial",fontSize:20,bold:true,color:"123E67",margin:0,fit:"shrink"});
-    slide.addText(`Main-work target: ${completionTargetLabel(rows,zone)}`,{x:8.6,y:.76,w:4.2,h:.36,fontFace:"Arial",fontSize:15,bold:true,color:"12638E",align:"right",margin:0,fit:"shrink"});
+    if(backgroundData){
+      slide.addImage({data:backgroundData,x:0,y:0,w:13.333,h:7.5});
+      slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:7.5,line:{color:"102C4C",transparency:100},fill:{color:"102C4C",transparency:38}});
+    }
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.13,line:{color:"57BFEF"},fill:{color:"57BFEF"}});
+    const headColor=backgroundData?"FFFFFF":"123E67",kickerColor=backgroundData?"C9EEFF":"24658C";
+    slide.addText(`ELU / ZONE ${zone} / EXPECTED COMPLETION`,{x:.48,y:.33,w:8.8,h:.29,fontFace:"Arial",fontSize:11,bold:true,color:kickerColor,margin:0});
+    slide.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.48,y:.69,w:8.1,h:.58,fontFace:"Arial",fontSize:20,bold:true,color:headColor,margin:0,fit:"shrink"});
+    slide.addText(`Main-work target: ${completionTargetLabel(rows,zone)}`,{x:8.6,y:.76,w:4.2,h:.36,fontFace:"Arial",fontSize:15,bold:true,color:headColor,align:"right",margin:0,fit:"shrink"});
     const draw=(v,c,y,h,header=false,shade=false)=>{
       slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,line:{color:"B7CBDA",width:.7},fill:{color:header?"DCECF7":shade?"EDF5FA":"FFFFFF"}});
       slide.addText(String(v),{x:x[c]+.04,y:y+.025,w:widths[c]-.08,h:h-.05,fontFace:"Arial",fontSize:header?9:10.8,bold:header||c===0||c===3||c===7||c===9,color:header?"123E67":"18394E",margin:0,align:c===0||c===9?"left":"center",valign:"mid",fit:"shrink"});
@@ -93,9 +106,9 @@ async function exportCompletionPpt(){
     ["Block","Units","Done","Done %","Booked","NR","P","Balance %","Teams","Target / follow-up"].forEach((v,c)=>draw(v,c,1.58,.51,true));
     group.forEach((r,j)=>[r.block,r.total,r.done,completionPercent(r.donePct),r.booked,r.nr,r.p,completionPercent(r.balancePct),r.teams,completionBlockLabel(r)]
       .forEach((v,c)=>draw(v,c,2.09+j*.61,.61,false,j%2===1)));
-    slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.49,w:12.2,h:.33,fontFace:"Arial",fontSize:10,color:"355D74",margin:0,fit:"shrink"});
-    slide.addText("Balance % = (NR + P) / total units. Active blocks below 10% balance are almost completed; follow-up does not extend the zone target.",{x:.48,y:6.86,w:12.2,h:.25,fontFace:"Arial",fontSize:9,color:"5C7788",margin:0,fit:"shrink"});
-    slide.addText(`${i+1} / 3`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:"60798A",align:"right",margin:0});
+    slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.49,w:12.2,h:.33,fontFace:"Arial",fontSize:10,bold:!!backgroundData,color:backgroundData?"FFFFFF":"355D74",margin:0,fit:"shrink"});
+    slide.addText("Balance % = (NR + P) / total units. Active blocks below 10% balance are almost completed; follow-up does not extend the zone target.",{x:.48,y:6.86,w:12.2,h:.25,fontFace:"Arial",fontSize:9,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
+    slide.addText(`${i+1} / 3`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:backgroundData?"FFFFFF":"60798A",align:"right",margin:0});
   });
   try{const blob=await pptx.write({outputType:"blob"});downloadBlob(`ELU_Completion_Plan_${today}.pptx`,blob);toast("Completion slides downloaded")}
   catch(err){console.error("Completion PPT",err);toast("Completion PPT failed")}
