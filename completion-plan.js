@@ -1,8 +1,9 @@
-/* V8.44.95: follow both KSK teams from Zone 6 into the Zone 4 handover. */
+/* V8.44.96: estimate small active blocks and preserve the contractor block order. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
 function completionInputs(){return {today:isoTodaySG(),perTeam:SLOTS.length}}
+function completionCloseoutBlock(zone,block){return zone===6||zone===5&&block<=538}
 function completionRows(){
   return [4,5,6].flatMap(zone=>(ZONE_BLOCKS[zone]||[]).map(block=>{
     const raw=getBlockUnits(block),started=blockHasFieldActivity(block,raw);
@@ -17,7 +18,9 @@ function completionRows(){
     return {zone,block,total,started,done,donePct:total?done/total*100:0,balancePct,
       booked:booked.length,nr,p,undated:balance,planLeft:futureUnits,lastBooked:completionMaxDate(...booked.map(u=>u.appointmentDate)),bookedSlots:booked.map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
       allSlots:units.filter(u=>u.appointmentDate&&SLOTS.includes(u.appointmentSlot)).map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
-      followUp:started&&balance>0&&balance<10,
+      // Small balances in the current work sequence still need an estimate.
+      // Only the older closeout blocks may leave NR/P under ten as follow-up.
+      followUp:started&&completionCloseoutBlock(zone,block)&&balance>0&&balance<10,
       teams:zone===4&&block>=559?2:1,target:"",plannedDate:"",workDays:0};
   }));
 }
@@ -69,7 +72,9 @@ function completionSchedule(){
   };
   const group=(zone,blocks,earliest,capacity,includeUpcoming=false)=>{
     const selected=blocks.map(block=>rows.find(r=>r.zone===zone&&r.block===block))
-      .filter(r=>r&&(r.started||includeUpcoming)).sort((a,b)=>Number(b.started)-Number(a.started)||(a.started?completionPriority(a,b):blocks.indexOf(a.block)-blocks.indexOf(b.block)));
+      .filter(r=>r&&(r.started||includeUpcoming)).sort((a,b)=>zone===4&&blocks.includes(562)
+        ?blocks.indexOf(a.block)-blocks.indexOf(b.block)
+        :Number(b.started)-Number(a.started)||(a.started?completionPriority(a,b):blocks.indexOf(a.block)-blocks.indexOf(b.block)));
     // Upcoming blocks use unbooked NR/P counts only for an estimated date.
     selected.filter(r=>!r.followUp).forEach(r=>allocate(r,earliest,capacity,r.zone===6||r.block===562?2:r.teams));
     return completionMaxDate(...selected.filter(r=>!r.followUp).map(r=>r.target));
