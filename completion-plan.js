@@ -1,4 +1,4 @@
-/* V8.44.94: three contractor groups and small-balance follow-up rule. */
+/* V8.44.95: follow both KSK teams from Zone 6 into the Zone 4 handover. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
@@ -71,22 +71,27 @@ function completionSchedule(){
     const selected=blocks.map(block=>rows.find(r=>r.zone===zone&&r.block===block))
       .filter(r=>r&&(r.started||includeUpcoming)).sort((a,b)=>Number(b.started)-Number(a.started)||(a.started?completionPriority(a,b):blocks.indexOf(a.block)-blocks.indexOf(b.block)));
     // Upcoming blocks use unbooked NR/P counts only for an estimated date.
-    selected.filter(r=>!r.followUp).forEach(r=>allocate(r,earliest,capacity,r.block===562?2:r.teams));
+    selected.filter(r=>!r.followUp).forEach(r=>allocate(r,earliest,capacity,r.zone===6||r.block===562?2:r.teams));
     return completionMaxDate(...selected.filter(r=>!r.followUp).map(r=>r.target));
   };
   group(5,ZONE_BLOCKS[5],today,()=>1,true);
-  group(6,[555,556],today,()=>1);
-  group(6,ZONE_BLOCKS[6].filter(block=>block!==555&&block!==556),today,()=>1);
+  const block562=rows.find(r=>r.zone===4&&r.block===562);
+  // The first booked 562 appointment is the first KSK team handover. Until
+  // then both KSK teams can work in Zone 6; afterwards one remains there.
+  const first562Date=block562?.allSlots.map(a=>a.date).filter(Boolean).sort()[0]||today;
+  const zone6Capacity=date=>date<first562Date?2:1;
+  rows.filter(r=>r.zone===6).forEach(r=>r.teams=first562Date>today?2:1);
+  group(6,[555,556],today,zone6Capacity);
+  group(6,ZONE_BLOCKS[6].filter(block=>block!==555&&block!==556),today,zone6Capacity);
   group(4,[557,558],today,()=>1,true);
   // One KSK team starts 562 now. Its second team joins after the active
   // Zone 6 main work; under-10-unit NR/P follow-ups do not hold the handover.
   const releaseDate=completionMaxDate(...rows.filter(r=>r.zone===6&&r.started&&!r.followUp).map(r=>r.target))||today;
   const releaseStart=completionNextDay(completionMaxDate(today,releaseDate));
-  const block562=rows.find(r=>r.zone===4&&r.block===562);
   const pairedDate=completionParallelBookingDate(block562?.allSlots);
   const secondTeamDate=pairedDate&&pairedDate<releaseStart?pairedDate:releaseStart;
-  block562.teams=secondTeamDate<=today?2:1;
-  const mainCapacity=date=>date>=secondTeamDate?2:1;
+  block562.teams=first562Date<=today&&secondTeamDate<=today?2:1;
+  const mainCapacity=date=>date<first562Date?0:date>=secondTeamDate?2:1;
   group(4,[562,561,560,559],today,mainCapacity,true);
   return rows;
 }
