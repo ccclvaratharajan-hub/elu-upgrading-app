@@ -1,4 +1,4 @@
-/* V8.44.86: clearer switchroom photograph behind completion slides. */
+/* V8.44.89: use more slide space and larger text in completion PPT. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
@@ -16,6 +16,14 @@ function completionRows(){
       followUp:started&&balance>0&&balancePct<10&&done+booked.length>0,
       teams:zone===4&&block===562?2:1,target:"",plannedDate:""};
   }));
+}
+function completionPriority(a,b){
+  return Number(b.followUp)-Number(a.followUp)||
+    Number(b.started)-Number(a.started)||
+    a.balancePct-b.balancePct||
+    b.donePct-a.donePct||
+    a.undated-b.undated||
+    a.block-b.block;
 }
 function completionSchedule(){
   const rows=completionRows(),{today}=completionInputs(),occupied=new Map();
@@ -47,10 +55,9 @@ function completionSchedule(){
   };
   const group=(zone,blocks,earliest,capacity)=>{
     const selected=blocks.map(block=>rows.find(r=>r.zone===zone&&r.block===block))
-      .sort((a,b)=>Number(b.started)-Number(a.started));
-    // Give live blocks their available slots before estimating blocks yet to start.
-    selected.filter(r=>!r.followUp).concat(selected.filter(r=>r.followUp))
-      .forEach(r=>allocate(r,earliest,capacity));
+      .sort(completionPriority);
+    // Reserve near-complete blocks first, then use remaining capacity for larger balances.
+    selected.forEach(r=>allocate(r,earliest,capacity));
     return completionMaxDate(...selected.filter(r=>!r.followUp).map(r=>r.target));
   };
   group(5,ZONE_BLOCKS[5],today,()=>1);
@@ -67,14 +74,14 @@ function completionSchedule(){
   return rows;
 }
 function completionDisplayRows(rows,zone){
-  return rows.filter(r=>r.zone===zone).sort((a,b)=>
-    Number(b.started)-Number(a.started)||Number(a.followUp)-Number(b.followUp)||a.block-b.block);
+  return rows.filter(r=>r.zone===zone).sort(completionPriority);
 }
 function completionZoneTarget(rows,zone){return completionMaxDate(...rows.filter(r=>r.zone===zone&&!r.followUp).map(r=>r.target))}
 function completionDate(date){return date?safeDate(date):"—"}
 function completionPercent(value){return `${value.toFixed(1)}%`}
 function completionTargetLabel(rows,zone){const date=completionZoneTarget(rows,zone);return date?completionDate(date):"Almost completed / follow-up"}
 function completionBlockLabel(r){return r.followUp?`Almost completed · NR/P follow-up${r.plannedDate?` ~ ${completionDate(r.plannedDate)}`:""}`:completionDate(r.target)}
+function completionPptBlockLabel(r){return r.followUp?`Almost completed · ${completionDate(r.plannedDate)}`:completionDate(r.target)}
 async function completionBackgroundData(){
   try{
     const response=await fetch(new URL("elu-switchgear-night-v84453.jpg",document.baseURI));
@@ -113,14 +120,20 @@ async function exportCompletionPpt(){
     slide.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.48,y:.69,w:8.1,h:.58,fontFace:"Arial",fontSize:20,bold:true,color:headColor,margin:0,fit:"shrink"});
     slide.addText(`Main-work target: ${completionTargetLabel(rows,zone)}`,{x:8.6,y:.76,w:4.2,h:.36,fontFace:"Arial",fontSize:15,bold:true,color:headColor,align:"right",margin:0,fit:"shrink"});
     const draw=(v,c,y,h,header=false,shade=false)=>{
-      slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,line:{color:"A9C6DA",width:.7},fill:{color:header?"DCECF7":shade?"EDF5FA":"FFFFFF",transparency:backgroundData?(header?25:shade?40:36):0}});
-      slide.addText(String(v),{x:x[c]+.04,y:y+.025,w:widths[c]-.08,h:h-.05,fontFace:"Arial",fontSize:header?9:10.8,bold:header||c===0||c===3||c===7||c===9,color:header?"123E67":"18394E",margin:0,align:c===0||c===9?"left":"center",valign:"mid",fit:"shrink"});
+      slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,
+        line:{color:header?"204C73":"83A7BF",width:header?1:.75},
+        fill:{color:header?"173F68":shade?"EAF3F9":"FFFFFF",
+          transparency:backgroundData?(header?4:shade?13:8):0}});
+      slide.addText(String(v),{x:x[c]+.05,y:y+.035,w:widths[c]-.10,h:h-.07,
+        fontFace:"Arial",fontSize:header?11.2:13.4,bold:true,
+        color:header?"FFFFFF":"102D46",margin:0,
+        align:c===0||c===9?"left":"center",valign:"mid",fit:"shrink"});
     };
-    ["Block","Units","Done","Done %","Booked","NR","P","Balance %","Teams","Target / follow-up"].forEach((v,c)=>draw(v,c,1.58,.51,true));
-    group.forEach((r,j)=>[r.block,r.total,r.done,completionPercent(r.donePct),r.booked,r.nr,r.p,completionPercent(r.balancePct),r.teams,completionBlockLabel(r)]
-      .forEach((v,c)=>draw(v,c,2.09+j*.61,.61,false,j%2===1)));
-    slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.49,w:12.2,h:.33,fontFace:"Arial",fontSize:10,bold:!!backgroundData,color:backgroundData?"FFFFFF":"355D74",margin:0,fit:"shrink"});
-    slide.addText("Balance % = (NR + P) / total units. Active blocks below 10% balance are almost completed; follow-up does not extend the zone target.",{x:.48,y:6.86,w:12.2,h:.25,fontFace:"Arial",fontSize:9,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
+    ["Block","Units","Done","Done %","Booked","NR","P","Balance %","Teams","Target / follow-up"].forEach((v,c)=>draw(v,c,1.40,.62,true));
+    group.forEach((r,j)=>[r.block,r.total,r.done,completionPercent(r.donePct),r.booked,r.nr,r.p,completionPercent(r.balancePct),r.teams,completionPptBlockLabel(r)]
+      .forEach((v,c)=>draw(v,c,2.02+j*.70,.70,false,j%2===1)));
+    slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.39,w:12.2,h:.34,fontFace:"Arial",fontSize:11,bold:!!backgroundData,color:backgroundData?"FFFFFF":"355D74",margin:0,fit:"shrink"});
+    slide.addText("Balance % = (NR + P) / total units. Active blocks below 10% balance are almost completed; follow-up does not extend the zone target.",{x:.48,y:6.77,w:12.2,h:.27,fontFace:"Arial",fontSize:9.5,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
     slide.addText(`${i+1} / 3`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:backgroundData?"FFFFFF":"60798A",align:"right",margin:0});
   });
   try{const blob=await pptx.write({outputType:"blob"});downloadBlob(`ELU_Completion_Plan_${today}.pptx`,blob);toast("Completion slides downloaded")}
