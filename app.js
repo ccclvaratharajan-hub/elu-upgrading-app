@@ -578,7 +578,7 @@ teams:["Appointment Planner","Simple read-only daily view of appointments entere
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
 photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."],
-completion:["Expected Completion","Approximate block targets from live Block Board status."],
+completion:["10 mm² Cable Upgrading Work (Unit Work)","Approximate block targets from live Block Board status."],
 sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
 let photoEntryOpened=false;
