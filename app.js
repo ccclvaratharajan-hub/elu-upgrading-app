@@ -578,6 +578,7 @@ teams:["Appointment Planner","Simple read-only daily view of appointments entere
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
 photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."],
+completion:["Expected Completion","Approximate block targets from live Block Board status."],
 sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
 let photoEntryOpened=false;
@@ -597,6 +598,7 @@ function setView(view){
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
+  else if(view==="completion")renderCompletionPlan();
   else if(view==="survey")renderSurveyTable();
   else if(view==="appointments"){} // Keep the current filtered table already on screen.
   else if(view==="units"){} // The register is refreshed by renderAll and its own filters.
@@ -3256,7 +3258,7 @@ function initPhotoCenter(){
   renderBlockPhotoSummary().catch(console.error)
 }
 
-function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("photos")?.classList.contains("active"))syncPhotoTargetUnits().catch(console.error)}
+function renderAll(){rebuildAllMasters();renderDashboard();renderBlockBoard();renderSurveyTable();renderAppointmentTable();renderUnitTable();renderComplaintTable();renderPlanner();renderMasterSchedule();renderReport();if(document.getElementById("completion")?.classList.contains("active"))renderCompletionPlan();if(document.getElementById("photos")?.classList.contains("active"))syncPhotoTargetUnits().catch(console.error)}
 function startApp(){
   if(appStarted)return;
   appStarted=true;

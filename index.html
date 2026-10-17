@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.75">
+  <link rel="stylesheet" href="styles.css?v=8.44.77">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -79,6 +79,7 @@
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
         <button class="nav-item" data-view="photos"><svg><use href="#i-photo"/></svg><span>Photo Report</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
+        <button class="nav-item" data-view="completion"><svg><use href="#i-calendar"/></svg><span>Completion Plan</span></button>
         <button class="nav-item" data-view="sitefiles"><svg><use href="#i-report"/></svg><span>Site Report Files</span></button>
       </nav>
 
@@ -637,7 +638,7 @@
             <div id="reportBlockChart" class="report-block-chart"></div>
           </div>
           <div class="meeting-sheet-panel" id="meetingSheetPanel">
-            <div class="meeting-sheet-head"><div><span>WEEKLY PROGRESS MEETING</span><h3>Electrical Load Upgrading · Block Progress Summary</h3><p id="meetingSheetScope">All Zones</p></div><div class="report-actions"><button type="button" class="ghost-btn" id="meetingSheetPptBtn">Download PPT</button><button type="button" class="ghost-btn" id="meetingSheetPrintBtn">Print / Save PDF</button></div></div>
+            <div class="meeting-sheet-head"><div><span>WEEKLY PROGRESS MEETING</span><h3>Electrical Load Upgrading · Block Progress Summary</h3><p id="meetingSheetScope">All Zones</p></div><div class="report-actions"><button type="button" class="ghost-btn" id="exportCompletionPptBtn">Completion PPT</button><button type="button" class="ghost-btn" id="meetingSheetPptBtn">Download PPT</button><button type="button" class="ghost-btn" id="meetingSheetPrintBtn">Print / Save PDF</button></div></div>
             <div id="meetingSheetTable" class="meeting-sheet-scroll"></div>
             <p class="meeting-sheet-note">Meeting view: Pending Confirmation (P) is shown together with No Response. Detailed status remains unchanged in the Unit Register.</p>
           </div>
@@ -663,6 +664,12 @@
             <div id="responseSummaryTable" class="response-summary-table-wrap"></div>
           </div>
         </article>
+      </section>
+      <section class="view" id="completion">
+        <div class="completion-head"><div><span class="section-label">ELU FIELD PLAN</span><h2>Expected Completion</h2><p>Live Block Board status and confirmed appointment dates. Zone 1 and Zone 3 are excluded.</p></div><button type="button" class="primary-btn" id="completionPptBtn">Download Zone Slides</button></div>
+        <div class="completion-controls"><label>Units per team per day <input id="completionDailyUnits" type="number" min="1" max="8" value="4"></label><span>Sunday excluded · Green A and pink C excluded from new appointment planning</span></div>
+        <div class="completion-summary" id="completionSummary"></div><div id="completionZones"></div>
+        <p class="completion-note">Working estimate only. Red NR and white/blue P need resident confirmation. Green completed and pink dated units are excluded. Dates may move after cancellations or extra work.</p>
       </section>
       <section class="view" id="sitefiles">
         <div class="report-hero">
@@ -759,7 +766,8 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.76"></script>
+  <script src="app.js?v=8.44.77"></script>
+  <script src="completion-plan.js?v=8.44.77"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
