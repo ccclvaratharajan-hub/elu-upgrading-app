@@ -1,9 +1,8 @@
-/* V8.44.102: second KSK team joins 562 after 556's last booked visit. */
+/* V8.44.103: advance to the next block when fewer than ten NR/P units remain. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
 function completionInputs(){return {today:isoTodaySG(),perTeam:SLOTS.length}}
-function completionCloseoutBlock(zone,block){return zone===6&&block<=556||zone===5&&block<=538}
 function completionHasStarted(block,units,raw){
   if(!blockHasFieldActivity(block,raw))return false;
   // A future appointment alone does not mean field work has begun.
@@ -23,16 +22,17 @@ function completionRows(){
     const futureUnits=units.filter(u=>(u.response==="NR"||u.response==="P")&&u.workStatus!=="Completed").length;
     const done=units.filter(u=>u.workStatus==="Completed").length;
     const total=units.length,balance=nr+p,balancePct=total?balance/total*100:0;
-    // Four-unit 539 has one response/booking and three unanswered units.
-    // Reserve one sequencing day; do not schedule the unanswered NR as work.
+    // The four-unit 539 has an existing booking; its unanswered units are follow-up.
     const tinyNrFollowUp=zone===5&&block===539&&total===4&&futureUnits===3&&
       units.filter(u=>u.response==="NR").length===3&&booked.length+done>=1;
+    const followUp=tinyNrFollowUp||(started&&balance>0&&balance<10);
+    // Leave up to nine unanswered units for follow-up instead of blocking the next block.
+    // A genuinely untouched four-unit block still needs its one estimated workday.
+    const planLeft=followUp?0:futureUnits>=10?futureUnits-9:futureUnits;
     return {zone,block,total,started,done,donePct:total?done/total*100:0,balancePct,
-      booked:booked.length,nr,p,undated:balance,planLeft:tinyNrFollowUp?0:futureUnits,tinyNrFollowUp,lastBooked:completionMaxDate(...booked.map(u=>u.appointmentDate)),bookedSlots:booked.map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
+      booked:booked.length,nr,p,undated:balance,planLeft,tinyNrFollowUp,lastBooked:completionMaxDate(...booked.map(u=>u.appointmentDate)),bookedSlots:booked.map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
       allSlots:units.filter(u=>u.appointmentDate&&SLOTS.includes(u.appointmentSlot)).map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
-      // Small balances in the current work sequence still need an estimate.
-      // Only the older closeout blocks may leave NR/P under ten as follow-up.
-      followUp:started&&((completionCloseoutBlock(zone,block)&&balance>0&&nr<10)||(tinyNrFollowUp&&done>0)),
+      followUp,
       teams:zone===4&&block>=559?2:1,target:"",plannedDate:"",workDays:0};
   }));
 }
@@ -91,17 +91,13 @@ function completionSchedule(){
     let cursor=earliest;
     selected.filter(r=>!r.followUp).forEach(r=>{
       let target=allocate(r,cursor,capacity,r.zone===6||r.block===562?2:r.teams);
-      if(r.tinyNrFollowUp&&!r.done){
-        // The small block gets one estimated day after 538. Its existing
-        // appointment is untouched; no new resident booking is created.
-        r.plannedDate=cursor;r.workDays=1;r.target=target=completionMaxDate(target,cursor);
-      }
       if(target)cursor=completionNextDay(target);
     });
     return completionMaxDate(...selected.filter(r=>!r.followUp).map(r=>r.target));
   };
-  const zone5Closeout=completionMaxDate(...rows.filter(r=>r.zone===5&&[537,538].includes(r.block)).map(r=>r.lastBooked));
-  group(5,ZONE_BLOCKS[5],zone5Closeout?completionNextDay(completionMaxDate(today,zone5Closeout)):today,()=>1,true);
+  // Booked visits in 537–539 still occupy their actual slots; free slots can
+  // already be used to start 540 instead of waiting for the final booked visit.
+  group(5,ZONE_BLOCKS[5],today,()=>1,true);
   const block562=rows.find(r=>r.zone===4&&r.block===562);
   // The first booked 562 appointment is the first KSK team handover. Until
   // then both KSK teams can work in Zone 6; afterwards one remains there.
@@ -114,7 +110,7 @@ function completionSchedule(){
   // The 556 team transfers after its final booked visit. The team working
   // 555 stays there; its unfinished NR does not delay the 556 handover.
   const block556=rows.find(r=>r.zone===6&&r.block===556);
-  const releaseDate=completionMaxDate(...(block556?.allSlots||[]).map(a=>a.date))||block556?.target||today;
+  const releaseDate=completionMaxDate(block556?.target,...(block556?.allSlots||[]).map(a=>a.date))||today;
   const secondTeamDate=releaseDate>=today?completionNextDay(releaseDate):today;
   block562.teams=2;
   const mainCapacity=date=>date<first562Date?0:date>=secondTeamDate?2:1;
@@ -131,8 +127,8 @@ function completionDate(date){return date?safeDate(date):"—"}
 function completionPercent(value){return `${value.toFixed(1)}%`}
 function completionTargetLabel(rows,zone){const date=completionZoneTarget(rows,zone);return date?`Est. ${completionDate(date)}`:rows.some(r=>r.zone===zone&&r.started)?"Almost completed / follow-up":"No active block yet"}
 function completionWorkdays(r){return r.workDays?` · ${r.workDays} workday${r.workDays===1?"":"s"}`:""}
-function completionBlockLabel(r){return !r.started?`Not started · Est. ${completionDate(r.target)}${completionWorkdays(r)}`:r.followUp?`Almost completed · NR/P follow-up${r.plannedDate?` ~ ${completionDate(r.plannedDate)}`:""}${completionWorkdays(r)}`:r.done===r.total?"Completed":`${completionDate(r.target)}${completionWorkdays(r)}`}
-function completionPptBlockLabel(r){return !r.started?`Not started · Est. ${completionDate(r.target)}${completionWorkdays(r)}`:r.followUp?`Almost completed · ${completionDate(r.plannedDate)}${completionWorkdays(r)}`:r.done===r.total?"Completed":`${completionDate(r.target)}${completionWorkdays(r)}`}
+function completionBlockLabel(r){return r.tinyNrFollowUp?"NR follow-up · advance to next block":r.followUp?`Almost completed · NR/P follow-up${r.plannedDate?` ~ ${completionDate(r.plannedDate)}`:""}${completionWorkdays(r)}`:!r.started?`Not started · Est. ${completionDate(r.target)}${completionWorkdays(r)}`:r.done===r.total?"Completed":`${completionDate(r.target)}${completionWorkdays(r)}`}
+function completionPptBlockLabel(r){return r.tinyNrFollowUp?"NR follow-up · advance":r.followUp?"Almost completed · NR/P follow-up":!r.started?`Not started · Est. ${completionDate(r.target)}${completionWorkdays(r)}`:r.done===r.total?"Completed":`${completionDate(r.target)}${completionWorkdays(r)}`}
 async function completionBackgroundData(){
   try{
     const response=await fetch(new URL("elu-switchgear-night-v84453.jpg",document.baseURI));
@@ -186,7 +182,7 @@ async function exportCompletionPpt(){
     group.forEach((r,j)=>[r.block,r.total,r.done,completionPercent(r.donePct),r.booked,r.started?r.nr:"—",r.started?r.p:"—",r.started?completionPercent(r.balancePct):"—",r.teams,completionPptBlockLabel(r)]
       .forEach((v,c)=>draw(v,c,2.02+j*.70,.70,false,j%2===1)));
     slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.39,w:12.2,h:.34,fontFace:"Arial",fontSize:11,bold:!!backgroundData,color:backgroundData?"FFFFFF":"355D74",margin:0,fit:"shrink"});
-    slide.addText("Empty slots are forecasts, not bookings. KSK's second team joins Blk 562 after Blk 556's last booked visit.",{x:.48,y:6.77,w:12.2,h:.27,fontFace:"Arial",fontSize:9.5,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
+    slide.addText("Empty slots are forecasts, not bookings. Under 10 NR/P remains follow-up; the same KSK teams move from Zone 6 to Blk 562.",{x:.48,y:6.77,w:12.2,h:.27,fontFace:"Arial",fontSize:9.5,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
     slide.addText(`${i+1} / 3`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:backgroundData?"FFFFFF":"60798A",align:"right",margin:0});
   });
   try{const blob=await pptx.write({outputType:"blob"});downloadBlob(`ELU_Completion_Plan_${today}.pptx`,blob);toast("Completion slides downloaded")}
