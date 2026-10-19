@@ -1,14 +1,15 @@
-/* V8.44.103: advance to the next block when fewer than ten NR/P units remain. */
+/* V8.44.105: live remaining-workday view alongside the completion forecast. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
 function completionInputs(){return {today:isoTodaySG(),perTeam:SLOTS.length}}
 function completionHasStarted(block,units,raw){
   if(!blockHasFieldActivity(block,raw))return false;
-  // A future appointment alone does not mean field work has begun.
+  // A confirmed booking is enough to mark the block started, even when its
+  // appointment date is still in the future.
   if(![539,540,541,542,543,558,559,560,561].includes(block))return true;
   const today=isoTodaySG();
-  return units.some(u=>u.workStatus==="Completed"||u.appointmentDate&&u.appointmentDate<=today);
+  return units.some(u=>u.workStatus==="Completed"||(u.response==="C"&&!!u.appointmentDate)||(u.appointmentDate&&u.appointmentDate<=today));
 }
 function completionRows(){
   return [4,5,6].flatMap(zone=>(ZONE_BLOCKS[zone]||[]).map(block=>{
@@ -29,7 +30,7 @@ function completionRows(){
     // Leave up to nine unanswered units for follow-up instead of blocking the next block.
     // A genuinely untouched four-unit block still needs its one estimated workday.
     const planLeft=followUp?0:futureUnits>=10?futureUnits-9:futureUnits;
-    return {zone,block,total,started,done,donePct:total?done/total*100:0,balancePct,
+    return {zone,block,total,started,done,donePct:total?done/total*100:0,balancePct,futureUnits,
       booked:booked.length,nr,p,undated:balance,planLeft,tinyNrFollowUp,lastBooked:completionMaxDate(...booked.map(u=>u.appointmentDate)),bookedSlots:booked.map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
       allSlots:units.filter(u=>u.appointmentDate&&SLOTS.includes(u.appointmentSlot)).map(u=>({date:u.appointmentDate,slot:u.appointmentSlot})),
       followUp,
@@ -124,6 +125,12 @@ function completionDisplayRows(rows,zone){
 function completionZoneTarget(rows,zone){return completionMaxDate(...rows.filter(r=>r.zone===zone).map(r=>r.followUp?r.lastBooked:r.target))}
 function completionOverallTarget(rows){return completionMaxDate(...[4,5,6].map(zone=>completionZoneTarget(rows,zone)))}
 function completionDate(date){return date?safeDate(date):"—"}
+function completionWorkingDaysLeft(today,target){
+  if(!target||target<=today)return 0;
+  let days=0,date=today;
+  while(date<target){date=completionNextDay(date);if(date<=target)days++}
+  return days;
+}
 function completionPercent(value){return `${value.toFixed(1)}%`}
 function completionTargetLabel(rows,zone){const date=completionZoneTarget(rows,zone);return date?`Est. ${completionDate(date)}`:rows.some(r=>r.zone===zone&&r.started)?"Almost completed / follow-up":"No active block yet"}
 function completionWorkdays(r){return r.workDays?` · ${r.workDays} workday${r.workDays===1?"":"s"}`:""}
@@ -139,6 +146,13 @@ async function completionBackgroundData(){
 }
 function renderCompletionPlan(){
   const rows=completionSchedule(),{today,perTeam}=completionInputs();
+  document.getElementById("completionCountdown").innerHTML=[4,5,6].map(zone=>{
+    const group=rows.filter(r=>r.zone===zone),target=completionZoneTarget(rows,zone);
+    const booked=group.reduce((n,r)=>n+r.booked,0);
+    const unbooked=group.reduce((n,r)=>n+r.futureUnits,0);
+    const nr=group.reduce((n,r)=>n+r.nr+r.p,0);
+    return `<div class="completion-countdown-card"><strong>Zone ${zone}</strong><span class="completion-countdown-days">${target?completionWorkingDaysLeft(today,target):"—"}<small>working days left</small></span><span>Est. ${completionDate(target)}</span><span>${booked} booked · ${unbooked} unbooked forecast</span><span>${nr} recorded NR/P</span></div>`;
+  }).join("");
   const totals=rows.reduce((a,r)=>{for(const k of ["done","booked","nr","p"])a[k]+=r[k];if(!r.followUp)a.planLeft+=r.planLeft;return a},{done:0,booked:0,nr:0,p:0,planLeft:0});
   document.getElementById("completionSummary").innerHTML=[
     ["Recorded completed",totals.done],["Already booked",totals.booked],["Recorded NR + P",totals.nr+totals.p],
@@ -147,8 +161,8 @@ function renderCompletionPlan(){
   ].map(([label,count])=>`<div><span>${label}</span><strong>${count}</strong></div>`).join("");
   document.getElementById("completionZones").innerHTML=[4,5,6].map(zone=>{
     const group=completionDisplayRows(rows,zone);
-    const body=group.map(r=>`<tr><td><strong>Blk ${r.block}</strong>${r.started?"":"<small>Yet to start</small>"}</td><td>${r.total}</td><td>${r.done}</td><td><strong>${completionPercent(r.donePct)}</strong></td><td>${r.booked}</td><td>${r.started?r.nr:"—"}</td><td>${r.started?r.p:"—"}</td><td><strong>${r.started?completionPercent(r.balancePct):"—"}</strong></td><td>${r.teams}${r.zone===4&&r.block===562?"<small>2nd after Blk 556</small>":""}</td><td><strong>${completionBlockLabel(r)}</strong></td></tr>`).join("");
-    return `<article class="completion-zone"><div class="completion-zone-head"><div><span>ZONE ${zone}</span><h3>Blocks ${ZONE_BLOCKS[zone].join(", ")}</h3></div><div><small>Estimated zone target</small><strong>${completionTargetLabel(rows,zone)}</strong></div></div><div class="completion-scroll"><table><thead><tr><th>Block</th><th>Units</th><th>Done</th><th>Done %</th><th>Booked</th><th>NR</th><th>P</th><th>Balance %</th><th>Teams</th><th>Main work / follow-up</th></tr></thead><tbody>${body}</tbody></table></div></article>`;
+    const body=group.map(r=>`<tr><td><strong>Blk ${r.block}</strong>${r.started?"":"<small>Yet to start</small>"}</td><td>${r.total}</td><td>${r.done}</td><td><strong>${completionPercent(r.donePct)}</strong></td><td>${r.booked}</td><td>${r.started?r.nr:"—"}</td><td>${r.started?r.p:"—"}</td><td><strong>${r.started?completionPercent(r.balancePct):"—"}</strong></td><td>${r.teams}${r.zone===4&&r.block===562?"<small>2nd after Blk 556</small>":""}</td><td><strong>${r.target?completionWorkingDaysLeft(today,r.target):"—"}</strong></td><td><strong>${completionBlockLabel(r)}</strong></td></tr>`).join("");
+    return `<article class="completion-zone"><div class="completion-zone-head"><div><span>ZONE ${zone}</span><h3>Blocks ${ZONE_BLOCKS[zone].join(", ")}</h3></div><div><small>Estimated zone target</small><strong>${completionTargetLabel(rows,zone)}</strong></div></div><div class="completion-scroll"><table><thead><tr><th>Block</th><th>Units</th><th>Done</th><th>Done %</th><th>Booked</th><th>NR</th><th>P</th><th>Balance %</th><th>Teams</th><th>Days left</th><th>Main work / follow-up</th></tr></thead><tbody>${body}</tbody></table></div></article>`;
   }).join("");
   document.querySelector(".completion-controls span").textContent=`As of ${completionDate(today)} · ${perTeam} slots per team per day · Sundays excluded`;
 }
@@ -190,3 +204,10 @@ async function exportCompletionPpt(){
 }
 document.getElementById("completionPptBtn").addEventListener("click",exportCompletionPpt);
 document.getElementById("exportCompletionPptBtn").addEventListener("click",exportCompletionPpt);
+let completionCountdownDay=isoTodaySG();
+setInterval(()=>{
+  const today=isoTodaySG();
+  if(today===completionCountdownDay)return;
+  completionCountdownDay=today;
+  if(document.getElementById("completion")?.classList.contains("active"))renderCompletionPlan();
+},60000);
