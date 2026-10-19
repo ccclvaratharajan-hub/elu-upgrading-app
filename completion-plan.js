@@ -1,4 +1,4 @@
-/* V8.44.105: live remaining-workday view alongside the completion forecast. */
+/* V8.44.107: colour-code remaining days and estimated dates in PPT slides. */
 function completionMaxDate(...dates){return dates.filter(Boolean).sort().at(-1)||""}
 function completionNextDay(date){let d=addDaysISO(date,1);while(new Date(d+"T00:00:00Z").getUTCDay()===0)d=addDaysISO(d,1);return d}
 function completionAddDays(date,days){for(let i=0;i<days;i++)date=completionNextDay(date);return date}
@@ -170,6 +170,35 @@ async function exportCompletionPpt(){
   if(typeof PptxGenJS!=="function"){toast("PPT library did not load.");return}
   const rows=completionSchedule(),{today,perTeam}=completionInputs(),pptx=new PptxGenJS(),backgroundData=await completionBackgroundData();
   pptx.layout="LAYOUT_WIDE";pptx.author="ELU Upgrading";pptx.subject="Approximate zone completion plan";pptx.title="10 mm² Cable Upgrading Work (Unit Work)";
+  const overview=pptx.addSlide();overview.background={color:"F6FAFD"};
+  if(backgroundData){
+    overview.addImage({data:backgroundData,x:0,y:0,w:13.333,h:7.5});
+    overview.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:7.5,line:{color:"102C4C",transparency:100},fill:{color:"102C4C",transparency:63}});
+  }
+  overview.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.13,line:{color:"57BFEF"},fill:{color:"57BFEF"}});
+  const overviewInk=backgroundData?"FFFFFF":"123E67";
+  overview.addText("ELU / ESTIMATED COMPLETION",{x:.5,y:.39,w:7.2,h:.3,fontFace:"Arial",fontSize:12,bold:true,color:backgroundData?"C9EEFF":"24658C",margin:0});
+  overview.addText(`AS OF ${completionDate(today)}`,{x:9.0,y:.37,w:3.8,h:.34,fontFace:"Arial",fontSize:13,bold:true,color:overviewInk,align:"right",margin:0});
+  overview.addText("Working days remaining",{x:.5,y:.88,w:11.8,h:.55,fontFace:"Arial",fontSize:27,bold:true,color:overviewInk,margin:0});
+  overview.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.5,y:1.43,w:11.8,h:.35,fontFace:"Arial",fontSize:15,color:overviewInk,margin:0});
+  const overall=completionOverallTarget(rows),overallDays=overall?completionWorkingDaysLeft(today,overall):"—";
+  overview.addShape(pptx.ShapeType.roundRect,{x:.5,y:2.12,w:12.3,h:.98,rectRadius:.12,line:{color:"9DC8DD",width:1},fill:{color:"FFFFFF",transparency:backgroundData?7:0}});
+  overview.addText("OVERALL ESTIMATE",{x:.77,y:2.37,w:3.2,h:.31,fontFace:"Arial",fontSize:17,bold:true,color:"123E67",margin:0});
+  overview.addText(`${overallDays} working days left`,{x:4.0,y:2.32,w:4.5,h:.41,fontFace:"Arial",fontSize:21,bold:true,color:"087FA3",margin:0,fit:"shrink"});
+  overview.addText(`Est. ${completionDate(overall)}`,{x:8.85,y:2.32,w:3.55,h:.41,fontFace:"Arial",fontSize:19,bold:true,color:"A35300",align:"right",margin:0,fit:"shrink"});
+  [4,5,6].forEach((zone,i)=>{
+    const group=rows.filter(r=>r.zone===zone),target=completionZoneTarget(rows,zone);
+    const booked=group.reduce((n,r)=>n+r.booked,0),unbooked=group.reduce((n,r)=>n+r.futureUnits,0);
+    const x=.5+i*4.16;
+    overview.addShape(pptx.ShapeType.roundRect,{x,y:3.42,w:3.98,h:2.15,rectRadius:.1,line:{color:"A7C8DB",width:1},fill:{color:"FFFFFF",transparency:backgroundData?8:0}});
+    overview.addText(`ZONE ${zone}`,{x:x+.21,y:3.65,w:3.55,h:.29,fontFace:"Arial",fontSize:13,bold:true,color:"275B7D",margin:0});
+    overview.addText(String(target?completionWorkingDaysLeft(today,target):"—"),{x:x+.21,y:4.03,w:1.1,h:.72,fontFace:"Arial",fontSize:36,bold:true,color:"087FA3",margin:0});
+    overview.addText("working days left",{x:x+1.2,y:4.39,w:2.5,h:.26,fontFace:"Arial",fontSize:12,bold:true,color:"315E79",margin:0});
+    overview.addText(`Est. ${completionDate(target)}`,{x:x+.21,y:4.79,w:3.55,h:.34,fontFace:"Arial",fontSize:17,bold:true,color:"A35300",margin:0,fit:"shrink"});
+    overview.addText(`${booked} booked · ${unbooked} unbooked estimate`,{x:x+.21,y:5.16,w:3.55,h:.22,fontFace:"Arial",fontSize:10.5,color:"315E79",margin:0,fit:"shrink"});
+  });
+  overview.addText("Based on current Block Board and appointment slots · 4 units per team per working day · Sundays excluded. Dates are estimates and change with new bookings or cancellations.",{x:.5,y:6.32,w:12.25,h:.62,fontFace:"Arial",fontSize:11,bold:!!backgroundData,color:overviewInk,margin:0,fit:"shrink"});
+  overview.addText("1 / 4",{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:overviewInk,align:"right",margin:0});
   const widths=[1.05,.90,.90,1.00,.80,.80,1.00,1.00,.90,4.08],x=[.45];widths.forEach(w=>x.push(x.at(-1)+w));
   [4,5,6].forEach((zone,i)=>{
     const group=completionDisplayRows(rows,zone),slide=pptx.addSlide();slide.background={color:"F6FAFD"};
@@ -179,17 +208,21 @@ async function exportCompletionPpt(){
     }
     slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.13,line:{color:"57BFEF"},fill:{color:"57BFEF"}});
     const headColor=backgroundData?"FFFFFF":"123E67",kickerColor=backgroundData?"C9EEFF":"24658C";
-    slide.addText(`ELU / ZONE ${zone} / COMPLETION PLAN`,{x:.48,y:.33,w:8.8,h:.29,fontFace:"Arial",fontSize:11,bold:true,color:kickerColor,margin:0});
+    slide.addText(`ELU / ZONE ${zone} / COMPLETION PLAN · AS OF ${completionDate(today)}`,{x:.48,y:.33,w:8.8,h:.29,fontFace:"Arial",fontSize:11,bold:true,color:kickerColor,margin:0});
     slide.addText("10 mm² Cable Upgrading Work (Unit Work)",{x:.48,y:.69,w:8.1,h:.58,fontFace:"Arial",fontSize:20,bold:true,color:headColor,margin:0,fit:"shrink"});
-    slide.addText(`Estimated target: ${completionTargetLabel(rows,zone)}`,{x:8.6,y:.76,w:4.2,h:.36,fontFace:"Arial",fontSize:15,bold:true,color:headColor,align:"right",margin:0,fit:"shrink"});
+    const zoneTarget=completionZoneTarget(rows,zone);
+    slide.addShape(pptx.ShapeType.roundRect,{x:9.45,y:.28,w:3.4,h:.39,rectRadius:.07,line:{color:"9BDBEC",width:.5},fill:{color:"E5F8FC",transparency:3}});
+    slide.addText(`${zoneTarget?completionWorkingDaysLeft(today,zoneTarget):"—"} working days left`,{x:9.55,y:.33,w:3.2,h:.28,fontFace:"Arial",fontSize:14,bold:true,color:"087FA3",align:"right",margin:0,fit:"shrink"});
+    slide.addShape(pptx.ShapeType.roundRect,{x:8.5,y:.72,w:4.35,h:.47,rectRadius:.07,line:{color:"E7C48D",width:.5},fill:{color:"FFF5DE",transparency:2}});
+    slide.addText(`Estimated target: ${completionDate(zoneTarget)}`,{x:8.62,y:.79,w:4.11,h:.31,fontFace:"Arial",fontSize:15,bold:true,color:"A35300",align:"right",margin:0,fit:"shrink"});
     const draw=(v,c,y,h,header=false,shade=false)=>{
       slide.addShape(pptx.ShapeType.rect,{x:x[c],y,w:widths[c],h,
         line:{color:header?"204C73":"83A7BF",width:header?1:.75},
-        fill:{color:header?"173F68":shade?"EAF3F9":"FFFFFF",
+        fill:{color:header?"173F68":c===9?"FFF5DE":shade?"EAF3F9":"FFFFFF",
           transparency:backgroundData?(header?4:shade?13:8):0}});
       slide.addText(String(v),{x:x[c]+.05,y:y+.035,w:widths[c]-.10,h:h-.07,
         fontFace:"Arial",fontSize:header?11.2:13.4,bold:true,
-        color:header?"FFFFFF":"102D46",margin:0,
+        color:header?"FFFFFF":c===9?"A35300":"102D46",margin:0,
         align:c===0||c===9?"left":"center",valign:"mid",fit:"shrink"});
     };
     ["Block","Units","Done","Done %","Booked","NR","P","Balance %","Teams","Target / follow-up"].forEach((v,c)=>draw(v,c,1.40,.62,true));
@@ -197,7 +230,7 @@ async function exportCompletionPpt(){
       .forEach((v,c)=>draw(v,c,2.02+j*.70,.70,false,j%2===1)));
     slide.addText(`Working estimate as of ${completionDate(today)}. ${perTeam} units per team per day; Sundays excluded. Confirmed bookings retain their dates.`,{x:.48,y:6.39,w:12.2,h:.34,fontFace:"Arial",fontSize:11,bold:!!backgroundData,color:backgroundData?"FFFFFF":"355D74",margin:0,fit:"shrink"});
     slide.addText("Empty slots are forecasts, not bookings. Under 10 NR/P remains follow-up; the same KSK teams move from Zone 6 to Blk 562.",{x:.48,y:6.77,w:12.2,h:.27,fontFace:"Arial",fontSize:9.5,color:backgroundData?"E7F5FF":"5C7788",margin:0,fit:"shrink"});
-    slide.addText(`${i+1} / 3`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:backgroundData?"FFFFFF":"60798A",align:"right",margin:0});
+    slide.addText(`${i+2} / 4`,{x:12.2,y:7.18,w:.65,h:.18,fontFace:"Arial",fontSize:8,color:backgroundData?"FFFFFF":"60798A",align:"right",margin:0});
   });
   try{const blob=await pptx.write({outputType:"blob"});downloadBlob(`ELU_Completion_Plan_${today}.pptx`,blob);toast("Completion slides downloaded")}
   catch(err){console.error("Completion PPT",err);toast("Completion PPT failed")}
