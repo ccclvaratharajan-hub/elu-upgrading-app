@@ -29,6 +29,21 @@ function normalizeTimeToken(h,mins,ampm){let hour=Number(h),minute=Number(mins||
 function legacySlot(text){const m=String(text||"").match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)\s*[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return"";const left=`${Number(m[1])}${m[2]?":"+m[2]:""}${m[3].toLowerCase()}`,right=`${Number(m[4])}${m[5]?":"+m[5]:""}${m[6].toLowerCase()}`;return `${left}–${right}`}
 function slotEndMinutes(slot){const m=String(slot||"").match(/[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return null;return normalizeTimeToken(m[1],m[2],m[3])}
 function slotStartMinutes(slot){const m=String(slot||"").match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return 9999;return normalizeTimeToken(m[1],m[2],m[3])}
+// Keep saved team assignments intact; resolve only overlapping legacy KSK Team 1 entries for display/export.
+function zone4KskDisplayTeams(entries){
+  const result=new Map(entries.map(a=>[a.id,a.team]));
+  const overlaps=(a,b)=>slotStartMinutes(a.slot)<slotEndMinutes(b.slot)&&slotStartMinutes(b.slot)<slotEndMinutes(a.slot);
+  const byDate=new Map();
+  entries.forEach(a=>{if(!byDate.has(a.date))byDate.set(a.date,[]);byDate.get(a.date).push(a)});
+  byDate.forEach(day=>{
+    const first=[],second=day.filter(a=>a.team==="Team 2");
+    day.filter(a=>a.team==="Team 1").sort((a,b)=>Number(Boolean(b.teamManual))-Number(Boolean(a.teamManual))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||Number(a.id)-Number(b.id)).forEach(a=>{
+      if(!a.teamManual&&first.some(b=>overlaps(a,b))&&!second.some(b=>overlaps(a,b))){result.set(a.id,"Team 2");second.push(a)}
+      else first.push(a)
+    })
+  });
+  return result
+}
 function time24ToLabel(v){if(!v)return"";const [h0,m0]=v.split(":").map(Number),ap=h0>=12?"pm":"am",h=h0%12||12;return `${h}${m0?":"+String(m0).padStart(2,"0"):""}${ap}`}
 function customSlotLabel(start,end){return `${time24ToLabel(start)}–${time24ToLabel(end)}`}
 function minutesTo24(n){if(n==null||n===9999)return"";return `${String(Math.floor(n/60)).padStart(2,"0")}:${String(n%60).padStart(2,"0")}`}
@@ -1238,7 +1253,7 @@ function printSurveyRegister(mode){
   if(!visits.length){toast(mode==="date"?"No survey visits on this date":mode==="full"?"No survey visits to print":"No upcoming survey visits to print");return}
   const scope=zone==="all"?"All Zones":`Zone ${zone}`;
   const printScope=mode==="date"?`Survey date ${safeDate(selectedDate)}`:mode==="full"?"Full register":"Upcoming visits";
-  const perPage=16,groups=[];
+  const perPage=14,groups=[];
   for(let i=0;i<visits.length;i+=perPage)groups.push(visits.slice(i,i+perPage));
   const pages=groups.map((group,page)=>{
     const rows=group.map((s,i)=>`<tr><td>${page*perPage+i+1}</td><td><strong>Zone ${esc(s.zone||zoneOfBlock(s.block))} · Blk ${esc(s.block)}</strong></td><td><strong class="key-unit">${esc(s.unitDisplay)}</strong></td><td><strong class="key-date">${esc(safeDate(s.visitDate||s.followUpDate||""))}</strong></td><td><strong class="key-time">${esc(surveyTimeLabel(s.visitTime))}</strong></td><td>${esc(s.ownerName||"")}</td><td>${esc(s.contact||"")}</td><td></td></tr>`).join("");
@@ -1250,7 +1265,7 @@ function printSurveyRegister(mode){
     *{box-sizing:border-box}
     html,body{width:auto;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;color:#14283e;background:#fff}
-    .sheet{width:274mm;max-width:100%;margin:0 auto;padding:3mm;border:2px solid #173e63;break-after:page;page-break-after:always}
+    .sheet{width:100%;margin:0 auto;padding:3mm;border:2px solid #173e63;break-after:page;page-break-after:always}
     .sheet:last-child{break-after:auto;page-break-after:auto}
     header{background:#174f89;color:#fff;border:1px solid #103e70;border-radius:5px;padding:7px 10px;margin-bottom:8px}
     h1{text-align:center;font-size:19px;letter-spacing:.03em;color:#fff;margin:0 0 5px;font-weight:900}
@@ -1263,6 +1278,7 @@ function printSurveyRegister(mode){
     .key-unit,.key-date,.key-time{font-size:13px;font-weight:900;color:#103e70;white-space:nowrap}
     th:nth-child(1){width:5%}th:nth-child(2){width:14%}th:nth-child(3){width:11%}th:nth-child(4){width:12%}
     th:nth-child(5){width:9%}th:nth-child(6){width:16%}th:nth-child(7){width:15%}th:nth-child(8){width:18%}
+    th:first-child,td:first-child{white-space:nowrap;text-align:center;overflow-wrap:normal}
     thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
     @media print{header,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;

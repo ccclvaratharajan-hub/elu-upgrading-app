@@ -19,22 +19,45 @@
     return [...latest.values()];
   }
   const byUnit=(a,b)=>Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit);
-  function zoneTable(zone,date,appointments){
+  function zoneTable(zone,date,appointments,contractor=""){
+    const single=contractor==="IMS";
+    const displayTeams=contractor==="KSK"?zone4KskDisplayTeams(appointments):null;
+    const teamOf=a=>displayTeams?.get(a.id)||a.team;
     const custom=[...new Set(appointments.map(a=>a.slot).filter(s=>s&&!SLOTS.includes(s)))].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b));
-    const slots=[...SLOTS,...custom];
-    const matching=(team,slot)=>appointments.filter(a=>a.team===team&&a.slot===slot).sort(byUnit);
-    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button></div>').join("");
+    const slots=[...SLOTS,...custom].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
+    const matching=(team,slot)=>appointments.filter(a=>a.slot===slot&&(single||teamOf(a)===team)).sort(byUnit);
+    const covered=(team,slot)=>!matching(team,slot).length&&appointments.some(a=>
+      (single||teamOf(a)===team)&&a.slot!==slot&&slotStartMinutes(a.slot)<=slotStartMinutes(slot)&&
+      slotEndMinutes(a.slot)>=slotEndMinutes(slot));
+    const visibleSlots=slots.filter(slot=>!covered("Team 1",slot)||(!single&&!covered("Team 2",slot)));
+    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">→ '+(team==="Team 1"?"Team 2":"Team 1")+'</button>':'')+'</div>').join("");
     const remarks=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-remark">'+esc(a.remarks||"")+'</div>').join("");
-    const unassigned=appointments.filter(a=>a.team!=="Team 1"&&a.team!=="Team 2");
-    return '<section class="daily-zone"><div class="daily-zone-head"><strong>Zone '+zone+'</strong><span>'+appointments.length+' appointment'+(appointments.length===1?"":"s")+'</span></div><div class="daily-scroll"><table class="daily-table"><thead><tr><th>Date</th><th>Time</th><th>Team 1</th><th>Remarks</th><th>Time</th><th>Team 2</th><th>Remarks</th></tr></thead><tbody>'+slots.map((slot,i)=>'<tr>'+(i===0?'<td class="daily-date" rowspan="'+slots.length+'">'+esc(plannerDateLabel(date))+'</td>':"")+'<td class="daily-time">'+esc(slot)+'</td><td>'+units("Team 1",slot)+'</td><td>'+remarks("Team 1",slot)+'</td><td class="daily-time">'+esc(slot)+'</td><td>'+units("Team 2",slot)+'</td><td>'+remarks("Team 2",slot)+'</td></tr>').join("")+'</tbody></table></div>'+(unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned: </strong>'+unassigned.map(a=>esc("Blk "+a.block+" "+(a.unitDisplay||unitDisplay(a.floor,a.unit)))).join(", ")+'</div>':"")+'</section>';
+    const unassigned=single?[]:appointments.filter(a=>a.team!=="Team 1"&&a.team!=="Team 2");
+    const heading='Zone '+zone+(contractor?' · '+contractor+(single?' · Blk 557–558':' · Blk 559–562'):'');
+    const headers=single?['Date','Time','IMS Team','Remarks']:['Date','Time','Team 1','Remarks','Time','Team 2','Remarks'];
+    const teamCells=(team,slot)=>covered(team,slot)?'<td></td><td></td><td></td>':'<td class="daily-time">'+esc(slot)+'</td><td>'+units(team,slot)+'</td><td>'+remarks(team,slot)+'</td>';
+    return '<section class="daily-zone"><div class="daily-zone-head"><strong>'+heading+'</strong><span>'+appointments.length+' appointment'+(appointments.length===1?"":"s")+'</span></div><div class="daily-scroll"><table class="daily-table'+(single?' single-team':'')+'"><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+visibleSlots.map((slot,i)=>'<tr>'+(i===0?'<td class="daily-date" rowspan="'+visibleSlots.length+'">'+esc(plannerDateLabel(date))+'</td>':"")+(single?'<td class="daily-time">'+esc(slot)+'</td><td>'+units("Team 1",slot)+'</td><td>'+remarks("Team 1",slot)+'</td>':teamCells("Team 1",slot)+teamCells("Team 2",slot))+'</tr>').join("")+'</tbody></table></div>'+(unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned: </strong>'+unassigned.map(a=>esc("Blk "+a.block+" "+(a.unitDisplay||unitDisplay(a.floor,a.unit)))).join(", ")+'</div>':"")+'</section>';
   }
   function render(){
     const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all",appointments=currentEntries(date,zone);
     title.textContent=plannerDateLabel(date)+" · "+(zone==="all"?"All Zones":"Zone "+zone);
     const zones=zone==="all"?[...new Set(appointments.map(a=>Number(a.zone||zoneOfBlock(a.block))))].sort((a,b)=>a-b):[Number(zone)];
-    grid.innerHTML=zones.length?zones.map(z=>zoneTable(z,date,appointments.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z))).join(""):'<p class="daily-empty">No appointments for this date. Enter bookings in Appointment Schedule.</p>';
+    grid.innerHTML=zones.length?zones.map(z=>{
+      const entries=appointments.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z);
+      return z===4?zoneTable(z,date,entries.filter(a=>[557,558].includes(Number(a.block))),"IMS")+zoneTable(z,date,entries.filter(a=>[559,560,561,562].includes(Number(a.block))),"KSK"):zoneTable(z,date,entries);
+    }).join(""):'<p class="daily-empty">No appointments for this date. Enter bookings in Appointment Schedule.</p>';
   }
   grid.addEventListener("click",event=>{
+    const move=event.target.closest("[data-daily-team]");
+    if(move){
+      const id=Number(move.dataset.dailyTeam),a=state.appointments.find(x=>Number(x.id)===id);
+      if(!a||![559,560,561,562].includes(Number(a.block))||!liveScheduleRecord(a))return;
+      const entries=currentEntries(a.date,"4").filter(x=>[559,560,561,562].includes(Number(x.block)));
+      a.team=zone4KskDisplayTeams(entries).get(a.id)==="Team 1"?"Team 2":"Team 1";
+      a.teamManual=true;
+      save("KSK appointment moved to "+a.team);
+      return
+    }
     const button=event.target.closest("[data-daily-open]");
     if(button)editAppointment(Number(button.dataset.dailyOpen));
   });
@@ -43,9 +66,10 @@
     const popup=window.open("","_blank");
     if(!popup){toast("Allow pop-ups to print the daily sheet");return}
     const body=grid.cloneNode(true);
+    body.querySelectorAll("[data-daily-team]").forEach(button=>button.remove());
     body.querySelectorAll("button").forEach(button=>button.replaceWith(document.createTextNode(button.textContent)));
     popup.document.open();
-    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>ELU Daily Appointments '+esc(dateInput.value)+'</title><style>@page{size:A4 landscape;margin:10mm}body{font:12px Arial,sans-serif;color:#172c43;margin:0}h1{font-size:20px;margin:0 0 12px}.daily-zone{margin-bottom:18px;break-inside:avoid}.daily-zone-head{background:#173b62;color:white;padding:8px 12px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #aebdcc;padding:7px;vertical-align:top}th{background:#deebf4}th:nth-child(1){width:13%}th:nth-child(2),th:nth-child(5){width:12%}td.daily-time{font-weight:bold;background:#f2f6fa}td.daily-date{font-weight:bold;background:#fff3aa;vertical-align:middle;text-align:center}.daily-unit,.daily-remark{padding:3px 0;min-height:17px}.daily-unassigned{margin:8px}</style></head><body><h1>ELU Daily Appointments · '+esc(plannerDateLabel(dateInput.value||isoTodaySG()))+'</h1>'+body.innerHTML+'</body></html>');
+    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>ELU Daily Appointments '+esc(dateInput.value)+'</title><style>@page{size:A4 landscape;margin:10mm}body{font:12px Arial,sans-serif;color:#172c43;margin:0}h1{font-size:20px;margin:0 0 12px}.daily-zone{margin-bottom:18px;break-inside:avoid}.daily-zone-head{background:#173b62;color:white;padding:8px 12px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #aebdcc;padding:7px;vertical-align:top}th{background:#deebf4}th:nth-child(1){width:13%}th:nth-child(2),th:nth-child(5){width:12%}.single-team th:nth-child(2){width:17%}td.daily-time{font-weight:bold;background:#f2f6fa}td.daily-date{font-weight:bold;background:#fff3aa;vertical-align:middle;text-align:center}.daily-unit,.daily-remark{padding:3px 0;min-height:17px}.daily-unassigned{margin:8px}</style></head><body><h1>ELU Daily Appointments · '+esc(plannerDateLabel(dateInput.value||isoTodaySG()))+'</h1>'+body.innerHTML+'</body></html>');
     popup.document.close();
     setTimeout(()=>{popup.focus();popup.print()},250);
   });
