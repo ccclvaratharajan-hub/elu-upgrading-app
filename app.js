@@ -574,7 +574,7 @@ survey:["Survey Visit Register","Visit diary for resident calls: date, exact tim
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
-dailyplanner:["Daily Planner","Team 1 and Team 2 appointments for the selected date. Edit, cancel, print or download here."],
+dailyplanner:["Daily Planner","Team 1 and Team 2 appointments from Appointment Schedule, ready to print or share."],
 teams:["Appointment List","Appointment records by date, zone and team."],
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
 photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
@@ -595,7 +595,7 @@ function setView(view){
     const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
     if(!document.getElementById(editId).value)dateInput.value=today;
   }
-  if(view==="dailyplanner"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
+  if(view==="dailyplanner"&&!document.getElementById("teamDate").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();

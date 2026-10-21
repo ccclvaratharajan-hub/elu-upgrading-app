@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.109">
+  <link rel="stylesheet" href="styles.css?v=8.44.110">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -410,16 +410,16 @@
       <section class="view" id="teams">
         <div class="planner-hero simple-planner-hero">
           <div>
-            <span class="section-label">APPOINTMENT PLANNER</span>
-            <h2>Today’s appointment working sheet</h2>
-            <p>Enter appointments ahead of time. This daily sheet stays in sync with the Appointment Schedule.</p>
+            <span class="section-label">DAY BY DAY · APPOINTMENTS</span>
+            <h2>Daily Planner</h2>
+            <p>Appointments entered in Appointment Schedule appear here automatically. Choose the date and zone to share that day's sheet.</p>
           </div>
           <div class="simple-planner-controls">
-            <label>Zone<select id="plannerViewZone"></select></label>
-            <label>Date<input type="date" id="teamDate"></label>
+            <label>View Zone<select id="plannerViewZone"></select></label>
+            <label>Schedule Date<input type="date" id="teamDate"></label>
+            <button class="ghost-btn" id="plannerPrevDay" type="button">← Previous Day</button>
             <button class="ghost-btn" id="plannerToday" type="button">Today</button>
-            <button class="ghost-btn" id="plannerTomorrow" type="button">Tomorrow</button>
-            <button class="ghost-btn" id="plannerNext7" type="button">Next 7 Days</button>
+            <button class="ghost-btn" id="plannerNextDay" type="button">Next Day →</button>
             <button class="primary-btn" id="plannerExportDayBtn" type="button">Download Day Excel</button>
             <button class="ghost-btn" id="plannerPrintDayBtn" type="button">Print Day</button>
           </div>
@@ -428,10 +428,9 @@
         <article class="panel planner-daily-panel" id="plannerDailyPanel">
           <div class="planner-sheet-title">
             <div><span class="section-label">DAILY WORKING SHEET</span><h3 id="plannerDailyTitle">Daily appointments</h3></div>
-            <button class="ghost-btn" id="plannerDailyAddBtn" type="button">+ Add Appointment</button>
+            <button class="ghost-btn" type="button" data-go="appointments">Open Appointment Schedule</button>
           </div>
           <div id="plannerDailyGrid"></div>
-          <div id="plannerDailyEntry"></div>
         </article>
 
         <article class="panel simple-planner-panel">
@@ -452,8 +451,8 @@
 
         <div class="hidden" aria-hidden="true">
           <select id="plannerViewBlock"></select>
-          <button id="plannerPrevDay" type="button"></button>
-          <button id="plannerNextDay" type="button"></button>
+          <button id="plannerTomorrow" type="button"></button>
+          <button id="plannerNext7" type="button"></button>
 
           <form id="plannerForm">
             <input type="hidden" id="plannerEditId">
@@ -785,9 +784,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.109"></script>
+  <script src="app.js?v=8.44.110"></script>
   <script src="monthly-appointment-excel.js?v=8.44.109"></script>
-  <script src="daily-appointment-sheet.js?v=8.44.109"></script>
+  <script src="daily-appointment-sheet.js?v=8.44.110"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>

@@ -1548,32 +1548,30 @@ body.secure-locked .toast{visibility:hidden}
 .daily-zone-head{display:flex;justify-content:space-between;gap:10px;padding:9px 13px;background:#173b62;color:#fff;font-size:13px}
 .daily-zone-head span{font-size:11px}
 .daily-scroll{overflow-x:auto}
-.daily-table{width:100%;min-width:700px;border-collapse:collapse;table-layout:fixed}
+.daily-table{width:100%;min-width:880px;border-collapse:collapse;table-layout:fixed}
 .daily-table th{background:#d9e9f3;color:#173b62;text-align:left;padding:9px;border:1px solid #bbcedc}
-.daily-table th:nth-child(1),.daily-table th:nth-child(3){width:13%}
+.daily-table th:nth-child(1){width:13%}
+.daily-table th:nth-child(2),.daily-table th:nth-child(5){width:12%}
 .daily-table td{padding:7px 9px;border:1px solid #c8d9e6;vertical-align:top;color:#173b62;background:rgba(255,255,255,.88)}
+.daily-table .daily-date{background:#fff3aa;color:#263d4c;font-weight:800;text-align:center;vertical-align:middle}
 .daily-table .daily-time{font-weight:800;background:rgba(228,240,249,.88);white-space:nowrap}
+.daily-remark{min-height:27px;white-space:pre-wrap;font-size:11px;padding:4px 0}
 .daily-unit{padding:4px 0 7px;border-bottom:1px solid #dce8f0}
 .daily-unit strong{display:block;font-size:12px}
 .daily-unit span{display:block;font-size:11px;white-space:pre-wrap;margin-top:2px}
-.daily-actions{display:flex;gap:7px;margin-top:4px}
-.daily-actions button,.daily-plus{border:0;background:transparent;color:#1a6594;font-weight:800;cursor:pointer;padding:2px 0;font-size:11px}
-.daily-actions button:last-child{color:#a04447}
-.daily-plus{margin-top:5px}
+.daily-unit-open{border:0;background:transparent;color:#174f7c;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;text-align:left}
+.daily-unit-open:hover{text-decoration:underline}
 .daily-unassigned{padding:9px 13px}
 .daily-empty{padding:18px;color:#36516b}
-#plannerDailyEntry:not(:empty) #plannerForm:not(.hidden){margin-top:14px;padding:13px;border:1px solid #bdd1df;border-radius:10px;background:rgba(239,248,254,.96);display:flex;flex-wrap:wrap;gap:9px}
-#plannerDailyEntry #plannerForm select,#plannerDailyEntry #plannerForm input{min-height:37px;max-width:230px;border:1px solid #bdd1df;border-radius:7px;padding:6px;color:#173b62;background:#fff}
-#plannerDailyEntry #plannerForm button{padding:8px 12px;border-radius:7px;cursor:pointer}
-#plannerDailyEntry #plannerCustomTimeRow:not(.hidden){display:flex;gap:6px}
 .planner-bulk-export{margin-top:14px;padding:12px 16px}
 .planner-bulk-export summary{cursor:pointer;font-weight:800}
 .planner-bulk-controls{display:flex;align-items:end;gap:9px;margin-top:12px;flex-wrap:wrap}
 .planner-bulk-controls label{display:flex;flex-direction:column;gap:4px}
 body.theme-night .daily-zone{background:rgba(15,37,54,.93)}
 body.theme-night .daily-table td{background:rgba(19,46,66,.92);color:#f2f9ff}
+body.theme-night .daily-table .daily-date{background:#e5d383;color:#173048}
 body.theme-night .daily-table th,body.theme-night .daily-table .daily-time{background:#34536b;color:#f2f9ff}
-body.theme-night #plannerDailyEntry #plannerForm:not(.hidden){background:#17364d}
+body.theme-night .daily-unit-open{color:#c5e8ff}
 
 /* V7.54 · Block-wise Photo Report */
 .photo-block-report-panel{border:1px solid rgba(27,113,188,.18)}
