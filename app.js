@@ -574,7 +574,8 @@ survey:["Survey Visit Register","Visit diary for resident calls: date, exact tim
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
-teams:["Appointment Planner","Simple read-only daily view of appointments entered in Appointment Schedule."],
+dailyplanner:["Daily Planner","Team 1 and Team 2 appointments for the selected date. Edit, cancel, print or download here."],
+teams:["Appointment List","Appointment records by date, zone and team."],
 schedulemaster:["Master Appointment Schedule","Fast 22 → 21 cycle entry. The same live records feed Planner and Photo Report."],
 photos:["Photo Report","Daily photo inbox with Zone-wise and Block-wise Word / PDF outputs."],
 reports:["Weekly Meeting Report","Progress Summary calculated directly from the read-only Unit Register."],
@@ -594,7 +595,7 @@ function setView(view){
     const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
     if(!document.getElementById(editId).value)dateInput.value=today;
   }
-  if(view==="teams"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
+  if(view==="dailyplanner"&&!document.getElementById("plannerEditId").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
@@ -603,7 +604,7 @@ function setView(view){
   else if(view==="appointments"){} // Keep the current filtered table already on screen.
   else if(view==="units"){} // The register is refreshed by renderAll and its own filters.
   else if(view==="complaints")renderComplaintTable();
-  else if(view==="teams")renderPlanner();
+  else if(view==="teams"||view==="dailyplanner")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
   else if(view==="photos"){
     if(!photoEntryOpened){
@@ -1744,6 +1745,7 @@ function renderPlanner(){
 
   const badge=document.getElementById("plannerCountBadge");
   if(badge)badge.textContent=`${rows.length} appointment${rows.length===1?"":"s"}`;
+  if(window.renderPlannerDailySheet)window.renderPlannerDailySheet();
 
   if(!rows.length){
     document.getElementById("plannerTable").innerHTML=`<div class="empty-state">No appointments for this ${plannerDisplayMode==="week"?"7-day period":"date"}${zoneFilter==="all"?"":` in Zone ${zoneFilter}`}.</div>`;
@@ -3279,7 +3281,7 @@ function startApp(){
   renderAll();
   autoCompleteAppointments();
   photoAutoCleanup();
-  autoCompleteTimer=setInterval(()=>{autoCompleteAppointments(true);if(document.getElementById("dashboard").classList.contains("active")){renderTodayTeamBoard();renderDashboardToday()}if(document.getElementById("teams").classList.contains("active")&&plannerDisplayMode==="day"&&!document.getElementById("plannerEditId").value&&document.getElementById("teamDate").value===isoTodaySG()&&dashboardScheduleDate()!==isoTodaySG()){document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()}},60000)
+  autoCompleteTimer=setInterval(()=>{autoCompleteAppointments(true);if(document.getElementById("dashboard").classList.contains("active")){renderTodayTeamBoard();renderDashboardToday()}if(document.getElementById("dailyplanner").classList.contains("active")&&plannerDisplayMode==="day"&&!document.getElementById("plannerEditId").value&&document.getElementById("teamDate").value===isoTodaySG()&&dashboardScheduleDate()!==isoTodaySG()){document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()}},60000)
 }
 let scenePeekTimer;
 const scenePeekBtn=document.getElementById("scenePeekBtn");

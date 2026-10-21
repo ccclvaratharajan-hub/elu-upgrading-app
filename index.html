@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.102">
+  <link rel="stylesheet" href="styles.css?v=8.44.109">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -74,9 +74,10 @@
         <button class="nav-item" data-view="blockboard"><svg><use href="#i-building"/></svg><span>Block Board</span></button>
         <button class="nav-item" data-view="survey"><svg><use href="#i-survey"/></svg><span>Survey Visits</span></button>
         <button class="nav-item" data-view="appointments"><svg><use href="#i-calendar"/></svg><span>Appointment Schedule</span></button>
+        <button class="nav-item" data-view="dailyplanner"><svg><use href="#i-calendar"/></svg><span>Daily Planner</span></button>
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
-        <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment Planner</span></button>
+        <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment List</span></button>
         <button class="nav-item" data-view="photos"><svg><use href="#i-photo"/></svg><span>Photo Report</span></button>
         <button class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg><span>Meeting Report</span></button>
         <button class="nav-item" data-view="completion"><svg><use href="#i-calendar"/></svg><span>Completion Plan</span></button>
@@ -136,7 +137,7 @@
 
         <div class="dashboard-detail-tray" id="dashboardDetailTray" hidden>
           <article class="panel today-team-panel" id="todayTeamPanel" hidden>
-            <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Each Zone is separated first, with Team 1 and Team 2 shown inside that Zone.</p></div><div class="dashboard-detail-actions"><button class="text-btn" data-go="teams">Open Planner</button><button class="detail-close" type="button" data-dashboard-close aria-label="Close today's plan">×</button></div></div>
+            <div class="panel-head"><div><span class="section-label">TODAY · TEAM SCHEDULE</span><h3>Today's appointment deployment</h3><p>Each Zone is separated first, with Team 1 and Team 2 shown inside that Zone.</p></div><div class="dashboard-detail-actions"><button class="text-btn" data-go="dailyplanner">Open Planner</button><button class="detail-close" type="button" data-dashboard-close aria-label="Close today's plan">×</button></div></div>
             <div id="todayTeamBoard" class="today-team-board"></div>
           </article>
           <article class="panel attention-panel" id="upcomingVisitsPanel" hidden>
@@ -405,12 +406,13 @@
         </div>
       </section>
 
+      <section class="view" id="dailyplanner"></section>
       <section class="view" id="teams">
         <div class="planner-hero simple-planner-hero">
           <div>
             <span class="section-label">APPOINTMENT PLANNER</span>
             <h2>Today’s appointment working sheet</h2>
-            <p>Display only. Appointments come directly from Appointment Schedule. To add, edit, reschedule or cancel, open the appointment record.</p>
+            <p>Enter appointments ahead of time. This daily sheet stays in sync with the Appointment Schedule.</p>
           </div>
           <div class="simple-planner-controls">
             <label>Zone<select id="plannerViewZone"></select></label>
@@ -418,8 +420,19 @@
             <button class="ghost-btn" id="plannerToday" type="button">Today</button>
             <button class="ghost-btn" id="plannerTomorrow" type="button">Tomorrow</button>
             <button class="ghost-btn" id="plannerNext7" type="button">Next 7 Days</button>
+            <button class="primary-btn" id="plannerExportDayBtn" type="button">Download Day Excel</button>
+            <button class="ghost-btn" id="plannerPrintDayBtn" type="button">Print Day</button>
           </div>
         </div>
+
+        <article class="panel planner-daily-panel" id="plannerDailyPanel">
+          <div class="planner-sheet-title">
+            <div><span class="section-label">DAILY WORKING SHEET</span><h3 id="plannerDailyTitle">Daily appointments</h3></div>
+            <button class="ghost-btn" id="plannerDailyAddBtn" type="button">+ Add Appointment</button>
+          </div>
+          <div id="plannerDailyGrid"></div>
+          <div id="plannerDailyEntry"></div>
+        </article>
 
         <article class="panel simple-planner-panel">
           <div class="planner-sheet-title">
@@ -431,6 +444,11 @@
           </div>
           <div id="plannerTable" class="table-shell simple-planner-table"></div>
         </article>
+
+        <details class="panel planner-bulk-export">
+          <summary>Full month Excel (optional)</summary>
+          <div class="planner-bulk-controls"><label>Month<input type="month" id="plannerExportMonth"></label><button class="ghost-btn" id="plannerExportMonthBtn" type="button">Download Full Month</button></div>
+        </details>
 
         <div class="hidden" aria-hidden="true">
           <select id="plannerViewBlock"></select>
@@ -767,7 +785,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.102"></script>
+  <script src="app.js?v=8.44.109"></script>
+  <script src="monthly-appointment-excel.js?v=8.44.109"></script>
+  <script src="daily-appointment-sheet.js?v=8.44.109"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
