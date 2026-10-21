@@ -29,10 +29,22 @@ function normalizeTimeToken(h,mins,ampm){let hour=Number(h),minute=Number(mins||
 function legacySlot(text){const m=String(text||"").match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)\s*[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return"";const left=`${Number(m[1])}${m[2]?":"+m[2]:""}${m[3].toLowerCase()}`,right=`${Number(m[4])}${m[5]?":"+m[5]:""}${m[6].toLowerCase()}`;return `${left}–${right}`}
 function slotEndMinutes(slot){const m=String(slot||"").match(/[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return null;return normalizeTimeToken(m[1],m[2],m[3])}
 function slotStartMinutes(slot){const m=String(slot||"").match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);if(!m)return 9999;return normalizeTimeToken(m[1],m[2],m[3])}
+function plannerDisplaySlot(slot){
+  // An older saved 11pm-to-noon selection is an impossible same-day interval.
+  return /^11\s*pm\s*[-–]\s*12\s*pm$/i.test(String(slot||"").trim())?"11am–12pm":slot
+}
+function plannerSlotCovered(slot,bookedSlots){
+  const from=slotStartMinutes(slot),to=slotEndMinutes(slot);
+  if(to==null||from>=to)return false;
+  const intervals=bookedSlots.map(plannerDisplaySlot).filter(s=>s!==slot).map(s=>[slotStartMinutes(s),slotEndMinutes(s)]).filter(([a,b])=>b!=null&&a<b).sort((a,b)=>a[0]-b[0]);
+  let until=from;
+  for(const [a,b] of intervals)if(a<=until&&b>until)until=b;
+  return until>=to
+}
 // Keep saved team assignments intact; resolve only overlapping legacy KSK Team 1 entries for display/export.
 function zone4KskDisplayTeams(entries){
   const result=new Map(entries.map(a=>[a.id,a.team]));
-  const overlaps=(a,b)=>slotStartMinutes(a.slot)<slotEndMinutes(b.slot)&&slotStartMinutes(b.slot)<slotEndMinutes(a.slot);
+  const overlaps=(a,b)=>slotStartMinutes(plannerDisplaySlot(a.slot))<slotEndMinutes(plannerDisplaySlot(b.slot))&&slotStartMinutes(plannerDisplaySlot(b.slot))<slotEndMinutes(plannerDisplaySlot(a.slot));
   const byDate=new Map();
   entries.forEach(a=>{if(!byDate.has(a.date))byDate.set(a.date,[]);byDate.get(a.date).push(a)});
   byDate.forEach(day=>{
@@ -43,6 +55,22 @@ function zone4KskDisplayTeams(entries){
     })
   });
   return result
+}
+function plannerZoneGroups(entries){
+  const zones=[...new Set(entries.map(a=>Number(a.zone||zoneOfBlock(a.block))))].sort((a,b)=>a-b);
+  return zones.flatMap(zone=>{
+    const rows=entries.filter(a=>Number(a.zone||zoneOfBlock(a.block))===zone);
+    if(zone!==4)return [{zone,title:`Zone ${zone}`,rows}];
+    const ims=rows.filter(a=>[557,558].includes(Number(a.block)));
+    const ksk=rows.filter(a=>[559,560,561,562].includes(Number(a.block)));
+    const teams=zone4KskDisplayTeams(ksk);
+    return [
+      {zone,title:"Zone 4 · IMS · Blk 557–558",teamLabel:"IMS",rows:ims},
+      {zone,title:"Zone 4 · KSK · Team 1",teamLabel:"KSK · Team 1",rows:ksk.filter(a=>teams.get(a.id)==="Team 1")},
+      {zone,title:"Zone 4 · KSK · Team 2",teamLabel:"KSK · Team 2",rows:ksk.filter(a=>teams.get(a.id)==="Team 2")},
+      {zone,title:"Zone 4 · KSK · Team not assigned",teamLabel:"KSK · Unassigned",rows:ksk.filter(a=>!teams.get(a.id)||!['Team 1','Team 2'].includes(teams.get(a.id)))}
+    ].filter(g=>g.rows.length)
+  })
 }
 function time24ToLabel(v){if(!v)return"";const [h0,m0]=v.split(":").map(Number),ap=h0>=12?"pm":"am",h=h0%12||12;return `${h}${m0?":"+String(m0).padStart(2,"0"):""}${ap}`}
 function customSlotLabel(start,end){return `${time24ToLabel(start)}–${time24ToLabel(end)}`}
@@ -838,7 +866,7 @@ function fillAppointmentScheduleInputs(a){
       document.getElementById("appointmentCustomEnd").value="";
     }else{
       slot.value="CUSTOM";
-      const t=slotToCustomTimes(a.slot);
+      const t=slotToCustomTimes(plannerDisplaySlot(a.slot));
       document.getElementById("appointmentCustomStart").value=t.start;
       document.getElementById("appointmentCustomEnd").value=t.end;
     }
@@ -1065,12 +1093,11 @@ function renderDashboardToday(){
     return twentyFourHour?Number(twentyFourHour[1])*60+Number(twentyFourHour[2]):9999;
   };
   const active=state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===today&&preferredMasterAppointment(a.unitKey)===a)
+    .map(a=>({...a,slot:plannerDisplaySlot(a.slot)}))
     .sort((a,b)=>startMinutes(a.slot)-startMinutes(b.slot)||String(a.slot||"").localeCompare(String(b.slot||""))||Number(a.block)-Number(b.block)||String(a.unitDisplay||"").localeCompare(String(b.unitDisplay||"")));
   document.getElementById("dashboardTodayCount").textContent=active.length.toLocaleString();
-  document.getElementById("dashboardTodayRows").innerHTML=active.length?Array.from({length:6},(_,i)=>({
-    zone:i+1,rows:active.filter(a=>Number(a.zone||zoneOfBlock(a.block))===i+1)
-  })).filter(group=>group.rows.length).map(({zone,rows})=>
-    `<section class="dashboard-today-zone" aria-label="Zone ${zone} appointments"><div class="dashboard-today-zone-head"><strong>Zone ${zone}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div><div class="dashboard-today-zone-units">${rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong></div>`).join("")}</div></section>`
+  document.getElementById("dashboardTodayRows").innerHTML=active.length?plannerZoneGroups(active).map(({zone,title,rows})=>
+    `<section class="dashboard-today-zone" aria-label="${esc(title)} appointments"><div class="dashboard-today-zone-head"><strong>${esc(title)}</strong><span>${rows.length} appointment${rows.length===1?"":"s"}</span><button type="button" class="text-btn" data-today-photo-zone="${zone}">Photo Entry</button></div><div class="dashboard-today-zone-units">${rows.map(a=>`<div class="dashboard-today-row"><span class="dashboard-today-time">${esc(a.slot||"Time not set")}</span><strong>Blk ${esc(a.block)} · ${esc(a.unitDisplay||getUnit(a.unitKey)?.unitDisplay||a.unitKey||"")}</strong></div>`).join("")}</div></section>`
   ).join(""):`<div class="empty-state">No appointments scheduled for ${label.toLowerCase()}.</div>`;
 }
 let selectedBoardUnitKey="";
@@ -1366,6 +1393,7 @@ function saveDirectAppointment(){
   if(!date){toast("Select appointment date");return}
   if(!appointmentYearIsValid(date)){toast(`Appointment year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
+  if(slotEndMinutes(slot)<=slotStartMinutes(slot)){toast("End time must be after start time");return}
 
   if(editId){
     const a=state.appointments.find(x=>x.id===editId);if(!a)return;
@@ -1770,14 +1798,14 @@ function renderPlanner(){
     return
   }
 
-  document.getElementById("plannerTable").innerHTML=`<table>
+  document.getElementById("plannerTable").innerHTML=plannerZoneGroups(rows.map(a=>({...a,slot:plannerDisplaySlot(a.slot)}))).map(group=>`<section class="planner-live-group"><h4>${esc(group.title)} · ${group.rows.length} appointment${group.rows.length===1?"":"s"}</h4><table>
     <thead><tr><th>Date</th><th>Zone</th><th>Team</th><th>Time</th><th>Block</th><th>Unit</th><th>Owner / Contact</th><th>Remarks</th><th>Open</th></tr></thead>
-    <tbody>${rows.map(a=>{
+    <tbody>${group.rows.map(a=>{
       const u=getUnit(a.unitKey),owner=a.ownerName||u?.ownerName||"—",contact=a.contact||u?.contact||"—";
       return `<tr>
         <td><strong>${safeDate(a.date)}</strong></td>
         <td>Zone ${a.zone||zoneOfBlock(a.block)}</td>
-        <td>${esc(a.team||"—")}</td>
+        <td>${esc(group.teamLabel||a.team||"—")}</td>
         <td>${esc(a.slot||"—")}</td>
         <td>Blk ${a.block}</td>
         <td><strong>${esc(a.unitDisplay||unitDisplay(a.floor,a.unit))}</strong></td>
@@ -1786,7 +1814,7 @@ function renderPlanner(){
         <td><button class="table-action" type="button" data-planner-open="${a.id}">Open Appointment</button></td>
       </tr>`
     }).join("")}</tbody>
-  </table>`;
+  </table></section>`).join("");
 
   document.getElementById("plannerSpecialTimes").innerHTML="";
   document.getElementById("plannerUnassigned").innerHTML="";
@@ -1843,7 +1871,7 @@ function editPlannerAppointment(id){
     document.getElementById("plannerCustomEnd").value="";
   }else{
     document.getElementById("plannerSlot").value="CUSTOM";
-    const t=slotToCustomTimes(a.slot);
+    const t=slotToCustomTimes(plannerDisplaySlot(a.slot));
     document.getElementById("plannerCustomStart").value=t.start;
     document.getElementById("plannerCustomEnd").value=t.end;
   }
@@ -1863,6 +1891,7 @@ function savePlannerAppointment(){
   configureAppointmentYearInputs();
   if(!appointmentYearIsValid(date)){toast(`Planning year must be ${currentAppointmentYear()} · please correct the date`);return}
   if(!slot){toast("Enter custom Start and End time");return}
+  if(slotEndMinutes(slot)<=slotStartMinutes(slot)){toast("End time must be after start time");return}
 
   if(editId){
     const a=state.appointments.find(x=>x.id===editId);if(!a)return;

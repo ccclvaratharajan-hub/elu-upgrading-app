@@ -22,7 +22,7 @@
     const single=contractor==="IMS";
     const blocks=contractor==="IMS"?[557,558]:contractor==="KSK"?[559,560,561,562]:null;
     const byDate=new Map();
-    data.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z&&(!blocks||blocks.includes(Number(a.block)))).forEach(a=>{if(!byDate.has(a.date))byDate.set(a.date,[]);byDate.get(a.date).push(a)});
+    data.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z&&(!blocks||blocks.includes(Number(a.block)))).forEach(a=>{if(!byDate.has(a.date))byDate.set(a.date,[]);byDate.get(a.date).push({...a,slot:plannerDisplaySlot(a.slot)})});
     const displayTeams=contractor==="KSK"?zone4KskDisplayTeams([...byDate.values()].flat()):null;
     const teamOf=a=>displayTeams?.get(a.id)||a.team;
     const [year,mm]=month.split("-").map(Number),days=new Date(Date.UTC(year,mm,0)).getUTCDate(),merges=[],rows=[];
@@ -30,25 +30,25 @@
     let n=2;
     for(const day of selectedDate?[Number(selectedDate.slice(-2))]:Array.from({length:days},(_,i)=>i+1)){
       const iso=month+"-"+String(day).padStart(2,"0"),entries=byDate.get(iso)||[];
-      const custom=[...new Set(entries.map(a=>a.slot).filter(s=>s&&!SLOTS.includes(s)))].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b));
       const start=n;
-      const slots=[...SLOTS,...custom].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
+      const custom=[...new Set(entries.map(a=>a.slot).filter(s=>s&&!SLOTS.includes(s)))];
+      const slots=(selectedDate?[...new Set(entries.map(a=>a.slot).filter(Boolean))]:[...SLOTS,...custom]).sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
       const matching=(team,slot)=>entries.filter(a=>a.slot===slot&&(single||teamOf(a)===team));
-      const covered=(team,slot)=>!matching(team,slot).length&&entries.some(a=>(single||teamOf(a)===team)&&a.slot!==slot&&slotStartMinutes(a.slot)<=slotStartMinutes(slot)&&slotEndMinutes(a.slot)>=slotEndMinutes(slot));
-      const visibleSlots=slots.filter(slot=>!covered("Team 1",slot)||(!single&&!covered("Team 2",slot)));
+      const covered=(team,slot)=>!selectedDate&&!matching(team,slot).length&&plannerSlotCovered(slot,entries.filter(a=>single||teamOf(a)===team).map(a=>a.slot));
+      const visibleSlots=selectedDate?slots:slots.filter(slot=>!covered("Team 1",slot)||(!single&&!covered("Team 2",slot)));
       for(const slot of visibleSlots){
         const cells=[cell("A"+n,n===start?serial(iso):null,2)];
         for(const [offset,team] of single?[[1,"Team 1"]]:[[1,"Team 1"],[4,"Team 2"]]){
           const group=matching(team,slot).sort((a,b)=>Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit));
-          cells.push(cell("ABCDEFG"[offset]+n,covered(team,slot)?"":slot,3));
+          cells.push(cell("ABCDEFG"[offset]+n,covered(team,slot)||selectedDate&&!group.length?"":slot,3));
           cells.push(cell("ABCDEFG"[offset+1]+n,group.map(unit).join("\n"),3));
           cells.push(cell("ABCDEFG"[offset+2]+n,group.map(a=>String(a.remarks||"").trim()).filter(Boolean).join("\n"),3));
         }
         rows.push('<row r="'+n+'" ht="29" customHeight="1">'+cells.join("")+"</row>");n++;
       }
-      merges.push("A"+start+":A"+(n-1));
+      if(n>start)merges.push("A"+start+":A"+(n-1));
     }
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols>'+(single?[16,17,28,45]:[16,17,24,32,17,24,32]).map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join("")+'</cols><sheetData>'+rows.join("")+'</sheetData><mergeCells count="'+merges.length+'">'+merges.map(ref=>'<mergeCell ref="'+ref+'"/>').join("")+'</mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols>'+(single?[16,17,28,45]:[16,17,24,32,17,24,32]).map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join("")+'</cols><sheetData>'+rows.join("")+'</sheetData><mergeCells count="'+merges.length+'">'+merges.map(ref=>'<mergeCell ref="'+ref+'"/>').join("")+'</mergeCells><pageMargins left="0.25" right="0.25" top="0.25" bottom="0.25" header="0.15" footer="0.15"/><pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="'+(selectedDate?1:0)+'"/></worksheet>';
   }
   function unassignedSheet(data){
     const rows=['<row r="1">'+["Date","Zone","Time","Block","Unit","Remarks"].map((v,i)=>cell("ABCDEF"[i]+"1",v,1)).join("")+"</row>"];
