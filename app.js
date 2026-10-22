@@ -3161,7 +3161,7 @@ async function monthlyPhotoGroups(zone,cycle){
     ps.sort((a,b)=>a.order-b.order);const a=scheduleMap.get(k);
     groups.push({date:ps[0].date,unitKey:ps[0].unitKey,block:ps[0].block,unitDisplay:ps[0].unitDisplay,team:a?.team||ps[0].team||"",slot:a?.slot||ps[0].slot||"",photos:photoReportOrder(ps)})
   }
-  return groups.sort((a,b)=>a.date.localeCompare(b.date)||String(a.team).localeCompare(String(b.team))||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
+  return groups.sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||String(a.team).localeCompare(String(b.team))||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 
 function photoBlockOptions(zone){
@@ -3178,16 +3178,16 @@ function syncPhotoBlockReportBlocks(){
 }
 async function blockPhotoGroups(block,fromDate,toDate,zone){
   const allowed=new Set(ZONE_BLOCKS[zone]||[]);
-  const all=(await photoDbAll("photos")).filter(p=>(block==='all'?allowed.has(Number(p.block)):Number(p.block)===Number(block))&&p.date>=fromDate&&p.date<=toDate);
+  const all=(await photoDbAll("photos")).filter(p=>allowed.has(Number(p.block))&&(block==='all'||Number(p.block)===Number(block))&&p.date>=fromDate&&p.date<=toDate);
   const map=new Map();
   for(const p of all){const k=`${p.date}|${p.unitKey}`;if(!map.has(k))map.set(k,[]);map.get(k).push(p)}
   const groups=[];
   for(const ps of map.values()){
     ps.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
     groups.push({date:ps[0].date,unitKey:ps[0].unitKey,block:Number(ps[0].block),unitDisplay:ps[0].unitDisplay,
-      photos:photoReportOrder(ps),storedCount:ps.length})
+      photos:photoReportOrder(ps),storedCount:ps.length,slot:ps[0].slot||""})
   }
-  return groups.sort((a,b)=>block==='all'?a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true})||a.date.localeCompare(b.date):a.date.localeCompare(b.date)||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
+  return groups.sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)||a.block-b.block||a.unitDisplay.localeCompare(b.unitDisplay,undefined,{numeric:true}))
 }
 async function renderBlockPhotoSummary(){
   const box=document.getElementById("photoBlockSummary");if(!box)return;
