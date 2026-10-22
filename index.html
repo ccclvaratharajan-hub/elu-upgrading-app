@@ -338,6 +338,8 @@
               <div class="search-box small"><svg><use href="#i-search"/></svg><input id="unitSearch" placeholder="Search block / unit / owner / contact"></div>
               <select id="unitZoneFilter"></select>
               <select id="unitBlockFilter"></select>
+              <button type="button" class="ghost-btn" id="unitRegisterPrintBtn">Print Register</button>
+              <button type="button" class="ghost-btn" id="unitRegisterExcelBtn">Excel (.xlsx)</button>
             </div>
           </div>
           <div class="zone6-import-bar"><label for="zone6SurveyFile">Zone 6 survey Excel (Blk 551–556)</label><input type="file" id="zone6SurveyFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><div id="zone6ImportPreview" aria-live="polite">Select the survey Excel to review the changes.</div><button type="button" class="primary-btn" id="zone6ApplyImport" disabled>Update Zone 6 from Excel</button><button type="button" class="ghost-btn" id="zone6UndoImport" hidden>Undo last import</button></div>
@@ -787,6 +789,7 @@
   <script src="app.js?v=8.44.115"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
+  <script src="unit-register-export.js?v=8.44.116"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="zone6-import.js?v=8.29"></script>
