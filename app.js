@@ -79,6 +79,46 @@ function slotToCustomTimes(slot){return {start:minutesTo24(slotStartMinutes(slot
 
 
 function importedAppointmentId(block,floor,unit){return 600000000+Number(block)*100000+Number(floor)*1000+Number(unit)}
+// Correct the two address omissions in the Zone 4 block charts after decrypting
+// the seed. Keep the encrypted source file unchanged.
+function isExcludedZone4Unit(block,floor,unit){
+  return (Number(block)===558&&Number(floor)===1)||
+    (Number(block)===559&&Number(floor)===1&&Number(unit)===223)
+}
+function applyZone4BlockChartCorrections(){
+  const b558=PROJECT_LAYOUT[558]||PROJECT_LAYOUT['558'];
+  if(b558?.floors)delete b558.floors['1'];
+  const b559=PROJECT_LAYOUT[559]||PROJECT_LAYOUT['559'];
+  if(Array.isArray(b559?.floors?.['1']))b559.floors['1']=b559.floors['1'].filter(unit=>Number(unit)!==223);
+  SOURCE_APPOINTMENTS=SOURCE_APPOINTMENTS.filter(a=>{
+    const [block,floor,unit]=String(a.unitKey||'').split('-').map(Number);
+    return !isExcludedZone4Unit(a.block??block,a.floor??floor,a.unit??unit)
+  })
+}
+function archiveExcludedZone4Records(){
+  // Preserve any locally entered history for a removed address without letting
+  // a nonexistent unit appear in schedules, registers or report totals.
+  const excluded=a=>{
+    const parts=String(a?.unitKey||'').split('-').map(Number);
+    return isExcludedZone4Unit(a?.block??parts[0],a?.floor??parts[1],a?.unit??parts[2])
+  };
+  const archive=state.layoutCorrectionArchive||{appointments:[],surveys:[],complaints:[],statusOverrides:{}};
+  for(const field of ['appointments','surveys','complaints']){
+    const kept=[];
+    for(const item of state[field]){
+      if(excluded(item))archive[field].push(item);
+      else kept.push(item)
+    }
+    state[field]=kept
+  }
+  for(const [key,value] of Object.entries(state.statusOverrides||{})){
+    if(excluded({unitKey:key})){
+      archive.statusOverrides[key]=value;
+      delete state.statusOverrides[key]
+    }
+  }
+  state.layoutCorrectionArchive=archive
+}
 function seedAppointments(){
   return (SOURCE_APPOINTMENTS||[]).map(a=>({...a,remarks:"",scheduleState:a.scheduleState||"Active"}))
 }
@@ -123,6 +163,7 @@ function mergeSavedIntoFresh(saved){
   const fresh=makeInitialState();
   if(!saved)return fresh;
   fresh.zone6ImportData=saved.zone6ImportData||null;
+  fresh.layoutCorrectionArchive=saved.layoutCorrectionArchive||null;
 
   fresh.surveys=(saved.surveys||[]).map(s=>({
     ...s,
@@ -269,7 +310,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,layoutCorrectionArchive:state.layoutCorrectionArchive||null,statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -329,6 +370,7 @@ async function unlockSecureApp(password){
 
   PROJECT_LAYOUT=seed.PROJECT_LAYOUT||{};
   SOURCE_APPOINTMENTS=seed.SOURCE_APPOINTMENTS||[];
+  applyZone4BlockChartCorrections();
   SECURE_PROFILE_NAME=seed.profileName||"Secure User";
 
   let saved=null;
@@ -344,6 +386,7 @@ async function unlockSecureApp(password){
 
   secureSessionKey=key;
   state=saved?mergeSavedIntoFresh(saved):makeInitialState();
+  archiveExcludedZone4Records();
   applyZone1RequestedCorrections();
   normalizeManualOverrides();
   startApp();
