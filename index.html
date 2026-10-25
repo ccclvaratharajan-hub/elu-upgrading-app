@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.113">
+  <link rel="stylesheet" href="styles.css?v=8.44.122">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -760,6 +760,7 @@
         <section><h3>Survey visits</h3><div id="drawerSurveysHistory" class="unit360-list"></div></section>
         <section><h3>Complaints</h3><div id="drawerComplaintsHistory" class="unit360-list"></div></section>
         <section><h3>Photo register</h3><div id="drawerPhotoSummary" class="unit360-list">Loading photos…</div></section>
+        <section><h3>Opt-Out record</h3><div id="drawerOptOutCase" class="optout-case-editor"><label>Outcome<select id="drawerOptOutKind"><option value="">Select evidence type</option><option value="signed">Owner signed Opt-Out</option><option value="verbal">Declined, refused to sign</option><option value="no_access">Appointment / visit, no access</option></select></label><label>Record what happened<textarea id="drawerOptOutNote" rows="2" placeholder="E.g. owner verbally declined; would not sign"></textarea></label><button type="button" id="drawerOptOutSave" class="table-action">Save Opt-Out record</button></div><div id="drawerOptOutForm" class="unit360-list">Loading form…</div><label class="optout-upload-label">Attach form or visit record (PDF or image)<input type="file" id="drawerOptOutUpload" accept="application/pdf,image/jpeg,image/png,image/webp"></label></section>
         <section><h3>Status decisions</h3><div id="drawerStatusHistory" class="unit360-list"></div></section>
       </div>
       <div class="drawer-shortcuts">
@@ -786,7 +787,7 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.120"></script>
+  <script src="app.js?v=8.44.122"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>

@@ -1144,9 +1144,13 @@ function renderDashboardToday(){
   ).join(""):`<div class="empty-state">No appointments scheduled for ${label.toLowerCase()}.</div>`;
 }
 let selectedBoardUnitKey="";
+const OPT_OUT_KIND_LABELS={signed:"D · Opt-Out",verbal:"D · Refused (unsigned)",no_access:"D · No access (unsigned)"};
+function optOutKindForUnit(key){const kind=state.statusOverrides?.[key]?.optOutKind;return Object.hasOwn(OPT_OUT_KIND_LABELS,kind)?kind:""}
+function optOutKindClass(key){const kind=optOutKindForUnit(key);return kind&&kind!=="signed"?" optout-unsigned":""}
+function boardStatusForUnit(u){return u.response==="D"?(OPT_OUT_KIND_LABELS[optOutKindForUnit(u.key)]||statusLabel("D")):statusLabel(u.response)}
 function classicBlockBoardHtml(units,floorFilter,q){
   const floors=[...new Set(units.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
-  return floors.map(f=>{const fu=units.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
+  return floors.map(f=>{const fu=units.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}${x.response==="D"?optOutKindClass(x.key):""}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(boardStatusForUnit(x))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
 function renderBlockBoard(){
   const block=Number(document.getElementById("boardBlock").value),floorFilter=document.getElementById("boardFloor").value,q=document.getElementById("boardSearch").value.trim().toLowerCase(),raw=getBlockUnits(block);
@@ -1160,7 +1164,7 @@ function renderBlockBoard(){
   const total=u.length,a=u.filter(x=>x.response==="A").length,c=u.filter(x=>x.response==="C").length,p=u.filter(x=>x.response==="P").length,d=u.filter(x=>x.response==="D").length,nr=u.filter(x=>x.response==="NR").length,pct=n=>total?Math.round(n/total*100):0;
   document.getElementById("blockHeadline").innerHTML=`<div class="block-title-wrap"><span class="block-zone-tag">ZONE ${PROJECT_LAYOUT[block].zone}</span><h2>Block ${block}</h2><p>${total} exact project units · live appointment status</p></div><div class="block-summary-grid"><div class="summary-tile total"><span>Total Units</span><strong>${total}</strong><small>100%</small></div><div class="summary-tile a"><span>A · Opt-In</span><strong>${a}</strong><small>${pct(a)}%</small></div><div class="summary-tile c"><span>C · Confirmed</span><strong>${c}</strong><small>${pct(c)}%</small></div><div class="summary-tile p"><span>◷ P · Pending</span><strong>${p}</strong><small>${pct(p)}%</small></div><div class="summary-tile d"><span>D · Opt-Out</span><strong>${d}</strong><small>${pct(d)}%</small></div><div class="summary-tile nr"><span>NR · No Response</span><strong>${nr}</strong><small>${pct(nr)}%</small></div></div>`;
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
-  document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(statusLabel(x.response))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
+  document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}${x.response==="D"?optOutKindClass(x.key):""}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(boardStatusForUnit(x))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
 document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
 
@@ -1174,9 +1178,10 @@ function openDrawer(key){
   document.getElementById("drawerUnitKey").value=key;document.getElementById("drawerUnitTitle").textContent=`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;document.getElementById("drawerUnitMeta").textContent=`Zone ${u.zone} · Floor ${u.floor}`;
   const survey=latestById(state.surveys.filter(s=>s.unitKey===key));
   const surveyVisit=survey?.visitDate?`${safeDate(survey.visitDate)}${survey.visitTime?` · ${survey.visitTime}`:""}`:"—";
-  document.getElementById("drawerStatusText").textContent=statusLabel(u.response);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
+  document.getElementById("drawerStatusText").textContent=boardStatusForUnit(u);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
   const legacy=document.getElementById("drawerLegacy"),txt=[u.legacySchedule&&`Imported schedule: ${u.legacySchedule}`,u.legacyRemark&&`Imported Excel remark: ${u.legacyRemark}`].filter(Boolean).join("<br>");legacy.innerHTML=txt;legacy.classList.toggle("show",!!txt);
   renderUnit360(key);
+  renderOptOutForm(key);
   document.getElementById("drawerBackdrop").classList.add("open");document.getElementById("unitDrawer").classList.add("open");
 }
 function unit360Rows(target,rows,format){
@@ -1202,6 +1207,61 @@ function closeDrawer(){++unit360RenderToken;document.getElementById("drawerBackd
 document.getElementById("drawerClose").addEventListener("click",closeDrawer);document.getElementById("drawerBackdrop").addEventListener("click",closeDrawer);
 function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerUnitKey").value);if(!u)return;closeDrawer();setView(target);if(target==="survey"){document.getElementById("surveyZone").value=String(u.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(u.block);syncSurveyUnits();document.getElementById("surveyUnit").value=u.key;autofillSurvey()}else{document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment")}}
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));
+async function renderOptOutForm(key){
+  const area=document.getElementById("drawerOptOutForm"),upload=document.getElementById("drawerOptOutUpload");
+  area.textContent="Loading form…";
+  const unit=getUnit(key),isOptOut=unit?.response==="D",decision=state.statusOverrides?.[key];
+  upload.disabled=!isOptOut;
+  document.getElementById("drawerOptOutCase").hidden=!isOptOut;
+  document.getElementById("drawerOptOutKind").value=isOptOut?optOutKindForUnit(key):"";
+  document.getElementById("drawerOptOutNote").value=isOptOut?String(decision?.optOutNote||""):"";
+  try{
+    const form=(await photoDbAll("optOutForms")).find(row=>row.unitKey===key);
+    if(document.getElementById("drawerUnitKey").value!==key)return;
+    area.innerHTML=form?`<div class="unit360-row"><strong>${esc(form.name)}</strong><span>Attached ${esc(new Date(form.savedAt).toLocaleDateString("en-SG"))}</span><div class="optout-form-actions"><button type="button" data-optout-action="view">View form</button><button type="button" data-optout-action="download">Download</button><button type="button" data-optout-action="remove">Remove</button></div></div>`:`<p class="unit360-empty">No signed Opt-Out form attached to this unit.</p>`;
+    upload.parentElement.hidden=!isOptOut;
+  }catch(error){console.error(error);area.textContent="Form storage unavailable on this browser."}
+}
+document.getElementById("drawerOptOutSave").addEventListener("click",async()=>{
+  const key=document.getElementById("drawerUnitKey").value,kind=document.getElementById("drawerOptOutKind").value,note=document.getElementById("drawerOptOutNote").value.trim();
+  if(!key||getUnit(key)?.response!=="D")return;
+  if(!Object.hasOwn(OPT_OUT_KIND_LABELS,kind)){toast("Select the Opt-Out evidence type");return}
+  if(kind!=="signed"&&!note){toast("Record what happened when no owner signature was obtained");return}
+  if(kind==="signed"){
+    try{if(!(await photoDbAll("optOutForms")).some(form=>form.unitKey===key)){toast("Attach the signed form before marking this as signed");return}}
+    catch(error){console.error(error);toast("Form storage unavailable");return}
+  }
+  setManualStatusDecision(key,"D",OPT_OUT_KIND_LABELS[kind]);
+  state.statusOverrides[key].optOutKind=kind;
+  state.statusOverrides[key].optOutNote=note;
+  save("Opt-Out evidence type saved");
+  document.getElementById("drawerStatusText").textContent=OPT_OUT_KIND_LABELS[kind];
+});
+document.getElementById("drawerOptOutUpload").addEventListener("change",async e=>{
+  const file=e.target.files?.[0],key=document.getElementById("drawerUnitKey").value;
+  if(!file||!getUnit(key))return;
+  if(getUnit(key).response!=="D"){toast("Mark this unit Opt-Out before attaching its form");e.target.value="";return}
+  if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)||file.size>15*1024*1024){toast("Choose a PDF or image under 15 MB");e.target.value="";return}
+  try{await photoDbPut("optOutForms",{unitKey:key,name:file.name,type:file.type,blob:file,savedAt:new Date().toISOString()});toast("Opt-Out form attached to this unit");await renderOptOutForm(key)}
+  catch(error){console.error(error);toast("Could not attach Opt-Out form")}finally{e.target.value=""}
+});
+document.getElementById("drawerOptOutForm").addEventListener("click",async e=>{
+  const action=e.target.closest("[data-optout-action]")?.dataset.optoutAction,key=document.getElementById("drawerUnitKey").value;if(!action||!key)return;
+  const preview=action==="view"?window.open("","_blank"):null;
+  if(preview)preview.opener=null;
+  try{
+    const form=(await photoDbAll("optOutForms")).find(row=>row.unitKey===key);if(!form?.blob){preview?.close();return}
+    if(action==="remove"){
+      if(optOutKindForUnit(key)==="signed"){toast("Change the signed evidence type before removing its form");return}
+      if(!confirm(`Remove the attached Opt-Out form for ${document.getElementById("drawerUnitTitle").textContent}?`))return;
+      await photoDbDelete("optOutForms",key);await renderOptOutForm(key);toast("Opt-Out form removed");return
+    }
+    const url=URL.createObjectURL(form.blob);
+    if(action==="download"){const link=document.createElement("a");link.href=url;link.download=form.name;document.body.append(link);link.click();link.remove()}
+    else if(preview)preview.location.href=url;else toast("Allow pop-ups to view the form");
+    setTimeout(()=>URL.revokeObjectURL(url),300000);
+  }catch(error){preview?.close();console.error(error);toast("Could not open Opt-Out form")}
+});
 
 function setSurveyVisitTime(value=""){
   const hour=document.getElementById("surveyVisitHour"),minute=document.getElementById("surveyVisitMinute"),period=document.getElementById("surveyVisitPeriod");
@@ -2516,6 +2576,7 @@ function exportBlockBoardPrint(){
   #blockboard .unit-card.status-out{
     background:#f7e99b!important;border-color:#d3af21!important;box-shadow:inset 5px 0 0 #c99f10!important
   }
+  #blockboard .unit-card.status-out.optout-unsigned{background:#e7e8f3!important;border-color:#9ea8c7!important;box-shadow:inset 5px 0 0 #717fa7!important}
   #blockboard .unit-card.status-nr{
     background:#f5b8bd!important;border-color:#df4d5d!important;box-shadow:inset 5px 0 0 #c91f31!important
   }
@@ -2705,7 +2766,7 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=3;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=4;
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
@@ -2714,7 +2775,8 @@ function photoDb(){
       if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"});
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
       if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"})
+      if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("optOutForms"))db.createObjectStore("optOutForms",{keyPath:"unitKey"})
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -2738,12 +2800,12 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
-const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=2;
+const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=3;
 let selectedFullBackup=null,safetyCopyDownloaded=false,backupBusy=false;
 async function fullBackupBlob(){
   await securePersistChain;
-  const [photos,schedule,meta,complaintPhotos]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos")]);
-  const zip=new JSZip(),entries=[],complaintEntries=[];
+  const [photos,schedule,meta,complaintPhotos,optOutForms]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos"),photoDbAll("optOutForms")]);
+  const zip=new JSZip(),entries=[],complaintEntries=[],optOutEntries=[];
   for(const [index,photo] of photos.entries()){
     const {blob,...details}=photo;
     if(!(blob instanceof Blob))throw new Error("A stored photo is missing its image data. Backup stopped.");
@@ -2755,13 +2817,19 @@ async function fullBackupBlob(){
     const path=`complaint-images/${String(index).padStart(6,"0")}.bin`;
     zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});complaintEntries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
   }
+  for(const [index,form] of optOutForms.entries()){
+    const {blob,...details}=form;if(!(blob instanceof Blob))throw new Error("An Opt-Out form is missing its file data. Backup stopped.");
+    const path=`optout-forms/${String(index).padStart(6,"0")}.bin`;
+    zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});optOutEntries.push({...details,blobPath:path,blobType:blob.type||form.type||"application/pdf",blobSize:blob.size})
+  }
   const snapshot=secureSnapshot();
-  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length}}));
+  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length,optOutForms:optOutForms.length}}));
   zip.file("records.json",JSON.stringify(snapshot));
   zip.file("photos.json",JSON.stringify(entries));
   zip.file("photo-schedule.json",JSON.stringify(schedule));
   zip.file("photo-meta.json",JSON.stringify(meta));
   zip.file("complaint-photos.json",JSON.stringify(complaintEntries));
+  zip.file("optout-forms.json",JSON.stringify(optOutEntries));
   return zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:4}})
 }
 async function downloadFullBackup(){
@@ -2781,19 +2849,21 @@ function closeBackupDialog(){document.getElementById("backupBackdrop").hidden=tr
 document.getElementById("restoreBackupBtn").addEventListener("click",()=>{document.getElementById("backupBackdrop").hidden=false;document.getElementById("backupPreview").textContent="No backup selected."});
 document.getElementById("backupClose").addEventListener("click",closeBackupDialog);
 document.getElementById("backupSafetyBtn").addEventListener("click",e=>runFullBackup(e.currentTarget,true));
-function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[]){
+function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[],optOutForms=[]){
   if(!records||typeof records!=="object"||Array.isArray(records))throw new Error("Invalid records in backup.");
   for(const k of ["surveys","appointments","complaints","statusAudit","zone1CorrectionsApplied"])if(!Array.isArray(records[k]))throw new Error(`Missing ${k} records.`);
   if(!records.statusOverrides||typeof records.statusOverrides!=="object"||Array.isArray(records.statusOverrides))throw new Error("Invalid status decisions.");
-  if(![photos,schedule,meta,complaintPhotos].every(Array.isArray))throw new Error("Invalid photo register.");
+  if(![photos,schedule,meta,complaintPhotos,optOutForms].every(Array.isArray))throw new Error("Invalid file register.");
   const counts=manifest.counts||{};
   for(const [key,actual] of Object.entries({surveys:records.surveys.length,appointments:records.appointments.length,complaints:records.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}))if(counts[key]!==actual)throw new Error(`Backup count mismatch: ${key}.`);
-  if(manifest.version===2&&counts.complaintPhotos!==complaintPhotos.length)throw new Error("Backup count mismatch: complaint photos.");
-  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"]]){
+  if(manifest.version>=2&&counts.complaintPhotos!==complaintPhotos.length)throw new Error("Backup count mismatch: complaint photos.");
+  if(manifest.version>=3&&counts.optOutForms!==optOutForms.length)throw new Error("Backup count mismatch: Opt-Out forms.");
+  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"],[optOutForms,"unitKey"]]){
     const ids=new Set();for(const row of items){if(!row||typeof row!=="object"||row[key]==null||ids.has(row[key]))throw new Error(`Invalid or duplicate photo ${key}.`);ids.add(row[key])}
   }
   if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
   if(complaintPhotos.some(p=>typeof p.blobPath!=="string"||!/^complaint-images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!records.complaints.some(c=>c.id===p.caseId)))throw new Error("Invalid complaint photo in backup.");
+  if(optOutForms.some(f=>typeof f.blobPath!=="string"||!/^optout-forms\/\d{6}\.bin$/.test(f.blobPath)||!Number.isSafeInteger(f.blobSize)||f.blobSize<0||!["application/pdf","image/jpeg","image/png","image/webp"].includes(f.blobType)))throw new Error("Invalid Opt-Out form in backup.");
 }
 async function readFullBackup(file,withImages=false){
   if(typeof JSZip==="function"&&file.size>2*1024*1024*1024)throw new Error("Backup is too large for this browser.");
@@ -2801,14 +2871,15 @@ async function readFullBackup(file,withImages=false){
   const required=["manifest.json","records.json","photos.json","photo-schedule.json","photo-meta.json"];
   if(required.some(name=>!zip.file(name)))throw new Error("This is not an ELU full backup ZIP.");
   const [manifest,records,photos,schedule,meta]=await Promise.all(required.map(async name=>JSON.parse(await zip.file(name).async("string"))));
-  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2].includes(manifest.version))throw new Error("Unsupported backup version.");
-  const complaintPhotos=manifest.version===2?JSON.parse(await zip.file("complaint-photos.json")?.async("string")||"null"):[];
-  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos);
-  if([...photos,...complaintPhotos].some(p=>!zip.file(p.blobPath)))throw new Error("A photo image is missing from the backup.");
+  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2,3].includes(manifest.version))throw new Error("Unsupported backup version.");
+  const complaintPhotos=manifest.version>=2?JSON.parse(await zip.file("complaint-photos.json")?.async("string")||"null"):[];
+  const optOutForms=manifest.version>=3?JSON.parse(await zip.file("optout-forms.json")?.async("string")||"null"):[];
+  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos,optOutForms);
+  if([...photos,...complaintPhotos,...optOutForms].some(p=>!zip.file(p.blobPath)))throw new Error("An attached file is missing from the backup.");
   if(withImages){
-    for(const row of [...photos,...complaintPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Photo image size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
+    for(const row of [...photos,...complaintPhotos,...optOutForms]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
   }
-  return {manifest,records,photos,schedule,meta,complaintPhotos}
+  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms}
 }
 document.getElementById("backupFile").addEventListener("change",async e=>{
   selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
@@ -2820,8 +2891,8 @@ document.getElementById("backupFile").addEventListener("change",async e=>{
 async function replacePhotoStores(data){
   const db=await photoDb();
   return new Promise((resolve,reject)=>{
-    const tx=db.transaction(["photos","schedule","meta","complaintPhotos"],"readwrite");
-    for(const name of ["photos","schedule","meta","complaintPhotos"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
+    const tx=db.transaction(["photos","schedule","meta","complaintPhotos","optOutForms"],"readwrite");
+    for(const name of ["photos","schedule","meta","complaintPhotos","optOutForms"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
     tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>{db.close();reject(tx.error||new Error("Photo restore transaction failed."))};tx.onerror=()=>{}
   })
 }
@@ -2832,11 +2903,11 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
   try{
     const imported=await readFullBackup(selectedFullBackup,true);
     // Validate against the loaded project register before changing browser storage.
-    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
+    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule,...imported.optOutForms])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
     for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
     await securePersistChain;
     const encrypted=await encryptPayload(imported.records,secureSessionKey);
-    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos")};
+    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos"),optOutForms:await photoDbAll("optOutForms")};
     button.textContent="Restoring…";
     await replacePhotoStores(imported);
     try{localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(encrypted))}

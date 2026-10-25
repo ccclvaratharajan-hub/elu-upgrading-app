@@ -666,3 +666,10 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 
 ### Example
 `Blk 537 #08-54`: if the last user action is **Opt-Out**, it stays D after reload. If the user later creates a new appointment, the newer appointment becomes the current status. If Opt-Out is selected again after that, D becomes current again.
+# V8.44.122 — Unit Opt-Out evidence
+
+- Open an Opt-Out unit on the Block Board to classify its outcome: signed form, verbal refusal without signature, or no access after an appointment/visit.
+- Signed classification requires a stored form and keeps the existing brown/yellow Opt-Out Block Board style. Unsigned outcomes require a factual note, show an unsigned label and share a distinct muted color, without claiming that an unsigned form was signed.
+- Attach one PDF or image form/visit record per unit; view, download, replace, or remove it from the unit drawer.
+- Full Backup ZIP v3 includes these attachments and restores them. Existing v1/v2 full backups remain readable. No project seed or other schedule rule is changed.
+
