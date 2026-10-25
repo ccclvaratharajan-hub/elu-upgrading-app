@@ -673,3 +673,10 @@ The workbook's `Progress Summary` does not fully agree with some detailed unit r
 - Attach one PDF or image form/visit record per unit; view, download, replace, or remove it from the unit drawer.
 - Full Backup ZIP v3 includes these attachments and restores them. Existing v1/v2 full backups remain readable. No project seed or other schedule rule is changed.
 
+# V8.44.123 — NR Visit Evidence
+
+- Separate NR Visit Evidence page, filtered by zone and block, with day, night and weekend date/time/photo entries for each NR unit.
+- Final review requires all three dated visit photos and a factual note. This review does not change NR into Opt-Out or Completed.
+- A4 zone print follows the supplied three-photo reference, with blank contractor and consultant witness lines. Zone Excel includes the three embedded photos per unit and is set for A4 landscape printing.
+- Full Backup ZIP v4 includes NR visit metadata and photos; older v1-v3 backups remain readable. Existing Block Board, appointment and unit data are retained.
+

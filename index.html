@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.122">
+  <link rel="stylesheet" href="styles.css?v=8.44.124">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -76,6 +76,7 @@
         <button class="nav-item" data-view="appointments"><svg><use href="#i-calendar"/></svg><span>Appointment Schedule</span></button>
         <button class="nav-item" data-view="dailyplanner"><svg><use href="#i-calendar"/></svg><span>Daily Planner</span></button>
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
+        <button class="nav-item" data-view="nrevidence"><svg><use href="#i-photo"/></svg><span>NR Visit Evidence</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment List</span></button>
         <button class="nav-item" data-view="photos"><svg><use href="#i-photo"/></svg><span>Photo Report</span></button>
@@ -691,6 +692,21 @@
         <div class="completion-summary" id="completionSummary"></div><div id="completionZones"></div>
         <p class="completion-note">Working estimate only. Done % follows the Meeting Report: completed / total units. Balance % is (NR + P) / total units. Empty slots in not-started blocks are forecast capacity, not booked appointments. Active closeout blocks with fewer than 10 NR are almost completed; their unbooked follow-up does not push the main target. Confirmed pink appointments keep their dates.</p>
       </section>
+      <section class="view" id="nrevidence">
+        <div class="report-hero"><div><span class="section-label">NON RESPONSIVE UNITS</span><h2>NR Visit Evidence</h2><p>Day, night and weekend visits with a dated photo for each unit.</p></div></div>
+        <article class="panel nr-evidence-panel">
+          <div class="panel-head register-head"><div><h3>Zone report</h3><p id="nrEvidenceCount">Choose a zone to see its NR units.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="nrEvidenceZone"><option value="">Select Zone</option></select></label><label class="mini-filter">Block<select id="nrEvidenceBlock"><option value="all">All blocks</option></select></label><button type="button" class="ghost-btn" id="nrEvidenceExcel">Download Excel</button><button type="button" class="primary-btn" id="nrEvidencePrint">Print A4 evidence</button></div></div>
+          <div id="nrEvidenceList" class="nr-evidence-list"><p class="empty-state">Select a zone.</p></div>
+        </article>
+        <article class="panel nr-entry-panel" id="nrEvidenceEditor" hidden>
+          <div class="panel-head"><div><span class="section-label">UNIT VISIT RECORD</span><h3 id="nrEvidenceUnitTitle">Unit</h3><p>Zone, block and unit come from the selected Block Board record. Verify the photo date and time before saving; camera location labels are ignored.</p></div></div>
+          <div id="nrEvidenceVisitForms" class="nr-visit-forms"></div>
+          <label class="nr-review-line"><input type="checkbox" id="nrEvidenceReviewed"> Three visits reviewed; resident could not be contacted</label>
+          <label class="nr-review-note">Final review note<textarea id="nrEvidenceFinalNote" rows="2" placeholder="Record what happened after the three visits"></textarea></label>
+          <button type="button" class="primary-btn" id="nrEvidenceSave">Save visit record</button>
+          <p id="nrEvidenceSaved" class="nr-evidence-saved"></p>
+        </article>
+      </section>
       <section class="view" id="sitefiles">
         <div class="report-hero">
           <div><span class="section-label">SITE EXCEL REPORTS</span><h2>Site Report Files</h2><p>Select a zone and open any report below. Download its Excel file when needed.</p></div>
@@ -766,6 +782,7 @@
       <div class="drawer-shortcuts">
         <button type="button" class="primary-btn" id="drawerSurveyBtn">Survey Visit</button>
         <button type="button" class="ghost-btn" id="drawerAppointmentBtn">Appointment</button>
+        <button type="button" class="ghost-btn" id="drawerNREvidenceBtn">NR Visits</button>
       </div>
     </div>
   </aside>
@@ -787,7 +804,8 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.122"></script>
+  <script src="app.js?v=8.44.124"></script>
+  <script src="nr-evidence.js?v=8.44.124"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>

@@ -145,7 +145,7 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],nrEvidence:{},statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:new Date().toISOString()};
 }
 function applyZone6ImportSeed(records){
   for(const [key,entry] of Object.entries(records||{})){
@@ -172,6 +172,7 @@ function mergeSavedIntoFresh(saved){
     createdAt:s.createdAt||new Date(Number(s.id)||Date.now()).toISOString()
   }));
   fresh.complaints=saved.complaints||[];
+  fresh.nrEvidence=saved.nrEvidence&&typeof saved.nrEvidence==="object"&&!Array.isArray(saved.nrEvidence)?saved.nrEvidence:{};
 
   const savedAppointments=saved.appointments||[];
   const savedIds=new Set(savedAppointments.map(a=>String(a.id)));
@@ -245,7 +246,9 @@ function mergeSavedIntoFresh(saved){
         source:o?.source==="Zone6 Survey Import"?"Zone6 Survey Import":"Manual",
         reason:o?.reason||"Manual latest status",
         updatedAt:o?.updatedAt||new Date().toISOString(),
-        decisionId:o?.decisionId||null
+        decisionId:o?.decisionId||null,
+        optOutKind:o?.optOutKind||"",
+        optOutNote:o?.optOutNote||""
       }
     })
   }
@@ -281,7 +284,7 @@ function loadLegacyPlainState(){
   }
   return null
 }
-let state={units:{},surveys:[],appointments:[],complaints:[],statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:""};
+let state={units:{},surveys:[],appointments:[],complaints:[],nrEvidence:{},statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:""};
 let secureSessionKey=null;
 let securePersistChain=Promise.resolve();
 let appStarted=false;
@@ -310,7 +313,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,layoutCorrectionArchive:state.layoutCorrectionArchive||null,statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,nrEvidence:state.nrEvidence||{},statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,layoutCorrectionArchive:state.layoutCorrectionArchive||null,statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -659,6 +662,7 @@ blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel fi
 survey:["Survey Visit Register","Visit diary for resident calls: date, exact time and contact reference."],
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
+nrevidence:["NR Visit Evidence","Zone-wise day, night and weekend visit records with photos."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 dailyplanner:["Daily Planner","Team 1 and Team 2 appointments from Appointment Schedule, ready to print or share."],
 teams:["Appointment List","Appointment records by date, zone and team."],
@@ -689,6 +693,7 @@ function setView(view){
   else if(view==="survey")renderSurveyTable();
   else if(view==="appointments"){} // Keep the current filtered table already on screen.
   else if(view==="units"){} // The register is refreshed by renderAll and its own filters.
+  else if(view==="nrevidence")window.renderNREvidence?.();
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams"||view==="dailyplanner")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
@@ -1166,7 +1171,16 @@ function renderBlockBoard(){
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
   document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}${x.response==="D"?optOutKindClass(x.key):""}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(boardStatusForUnit(x))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
-document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
+document.getElementById("floorBoard").addEventListener("click",e=>{
+  const b=e.target.closest("[data-unit-key]");if(!b)return;
+  const u=getUnit(b.dataset.unitKey);
+  if(u&&currentUnitAppointmentState(u.key).status==="NR"){
+    setView("nrevidence");
+    document.getElementById("nrEvidenceZone").value=String(u.zone);
+    document.getElementById("nrEvidenceBlock").value="all";
+    window.renderNREvidence?.(u.key)
+  }else openDrawer(b.dataset.unitKey)
+});
 
 function latestAppointment(key){return preferredMasterAppointment(key)||latestById(state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a)))}
 let unit360PhotoUrls=[];
@@ -1176,6 +1190,7 @@ function openDrawer(key){
   const u=getUnit(key);if(!u)return;const a=latestAppointment(key);
   ++unit360RenderToken;clearUnit360Photos();
   document.getElementById("drawerUnitKey").value=key;document.getElementById("drawerUnitTitle").textContent=`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;document.getElementById("drawerUnitMeta").textContent=`Zone ${u.zone} · Floor ${u.floor}`;
+  document.getElementById("drawerNREvidenceBtn").style.display=u.response==="NR"||state.nrEvidence?.[key]?"":"none";
   const survey=latestById(state.surveys.filter(s=>s.unitKey===key));
   const surveyVisit=survey?.visitDate?`${safeDate(survey.visitDate)}${survey.visitTime?` · ${survey.visitTime}`:""}`:"—";
   document.getElementById("drawerStatusText").textContent=boardStatusForUnit(u);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
@@ -1207,6 +1222,7 @@ function closeDrawer(){++unit360RenderToken;document.getElementById("drawerBackd
 document.getElementById("drawerClose").addEventListener("click",closeDrawer);document.getElementById("drawerBackdrop").addEventListener("click",closeDrawer);
 function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerUnitKey").value);if(!u)return;closeDrawer();setView(target);if(target==="survey"){document.getElementById("surveyZone").value=String(u.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(u.block);syncSurveyUnits();document.getElementById("surveyUnit").value=u.key;autofillSurvey()}else{document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment")}}
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));
+document.getElementById("drawerNREvidenceBtn").addEventListener("click",()=>{const key=document.getElementById("drawerUnitKey").value,u=getUnit(key);if(!u)return;closeDrawer();setView("nrevidence");document.getElementById("nrEvidenceZone").value=String(u.zone);document.getElementById("nrEvidenceBlock").value="all";window.renderNREvidence?.(key)});
 async function renderOptOutForm(key){
   const area=document.getElementById("drawerOptOutForm"),upload=document.getElementById("drawerOptOutUpload");
   area.textContent="Loading form…";
@@ -2649,7 +2665,7 @@ document.getElementById("exportBlockChartPdfBtn").addEventListener("click",expor
 function csvCell(v){return`"${String(v??"").replace(/"/g,'""')}"`}function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\n")}function download(name,content,type="text/csv;charset=utf-8"){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 document.getElementById("exportProgressBtn").addEventListener("click",()=>{const z=document.getElementById("reportZoneFilter").value,b=document.getElementById("reportBlockFilter").value,r=buildReportRows(z,b),t=reportTotals(r);download(`ELU_Weekly_Progress_${z==="all"?"All_Zones":"Zone_"+z}.csv`,toCSV([["S/N","BLK NO.","TOTAL UNITS","OPT-IN A+C","OPT-IN %","WORK COMPLETED","COMPLETED %","PENDING P","P %","OPT-OUT D","D %","NO RESPONSE NR + P","NR %"],...r.map((x,i)=>[i+1,x.block,x.total,x.agree,pct(x.agreePct),x.done,pct(x.donePct),x.p,pct(x.pPct),x.d,pct(x.dPct),x.nr+x.p,pct(x.total?(x.nr+x.p)/x.total*100:0)]),["","TOTAL DU",t.total,t.agree,pct(t.agreePct),t.done,pct(t.donePct),t.p,pct(t.pPct),t.d,pct(t.dPct),t.nr+t.p,pct(t.total?(t.nr+t.p)/t.total*100:0)] ]))});
 document.getElementById("exportUnitsBtn").addEventListener("click",()=>{const r=managerReportData(),rows=unitSummaryRowsForReport();download(`ELU_Unit_Summary_${reportSafeFileScope(r)}_${isoTodaySG()}.csv`,toCSV([["Zone","Block No","Unit No","Status","Work Status","Appointment Date","Appointment Slot","Team"],...rows.map(u=>[u.zone,u.block,unitDisplay(u.floor,u.unit),u.response||"",u.workStatus||"",u.appointmentDate||"",u.appointmentSlot||"",u.team||""])]));});
-document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,statusDecisionSchema:2},null,2),"application/json")});
+document.getElementById("exportBackupBtn").addEventListener("click",()=>{if(!confirm("Backup contains resident and appointment data. Keep it private. Continue?"))return;download(`ELU_Backup_${isoTodaySG()}.json`,JSON.stringify({surveys:state.surveys,appointments:state.appointments,complaints:state.complaints,nrEvidence:state.nrEvidence||{},statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,statusDecisionSchema:2},null,2),"application/json")});
 
 
 /* V7.45 — Master Schedule + integrated Photo Inbox */
@@ -2766,7 +2782,7 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=4;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=5;
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
@@ -2776,7 +2792,8 @@ function photoDb(){
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
       if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"});
       if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("optOutForms"))db.createObjectStore("optOutForms",{keyPath:"unitKey"})
+      if(!db.objectStoreNames.contains("optOutForms"))db.createObjectStore("optOutForms",{keyPath:"unitKey"});
+      if(!db.objectStoreNames.contains("nrVisitPhotos"))db.createObjectStore("nrVisitPhotos",{keyPath:"id"})
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -2800,12 +2817,12 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
-const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=3;
+const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=4;
 let selectedFullBackup=null,safetyCopyDownloaded=false,backupBusy=false;
 async function fullBackupBlob(){
   await securePersistChain;
-  const [photos,schedule,meta,complaintPhotos,optOutForms]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos"),photoDbAll("optOutForms")]);
-  const zip=new JSZip(),entries=[],complaintEntries=[],optOutEntries=[];
+  const [photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos"),photoDbAll("optOutForms"),photoDbAll("nrVisitPhotos")]);
+  const zip=new JSZip(),entries=[],complaintEntries=[],optOutEntries=[],nrEntries=[];
   for(const [index,photo] of photos.entries()){
     const {blob,...details}=photo;
     if(!(blob instanceof Blob))throw new Error("A stored photo is missing its image data. Backup stopped.");
@@ -2822,14 +2839,20 @@ async function fullBackupBlob(){
     const path=`optout-forms/${String(index).padStart(6,"0")}.bin`;
     zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});optOutEntries.push({...details,blobPath:path,blobType:blob.type||form.type||"application/pdf",blobSize:blob.size})
   }
+  for(const [index,photo] of nrVisitPhotos.entries()){
+    const {blob,...details}=photo;if(!(blob instanceof Blob))throw new Error("An NR visit photo is missing. Backup stopped.");
+    const path=`nr-visit-photos/${String(index).padStart(6,"0")}.bin`;
+    zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});nrEntries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
+  }
   const snapshot=secureSnapshot();
-  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length,optOutForms:optOutForms.length}}));
+  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length,optOutForms:optOutForms.length,nrVisitPhotos:nrVisitPhotos.length}}));
   zip.file("records.json",JSON.stringify(snapshot));
   zip.file("photos.json",JSON.stringify(entries));
   zip.file("photo-schedule.json",JSON.stringify(schedule));
   zip.file("photo-meta.json",JSON.stringify(meta));
   zip.file("complaint-photos.json",JSON.stringify(complaintEntries));
   zip.file("optout-forms.json",JSON.stringify(optOutEntries));
+  zip.file("nr-visit-photos.json",JSON.stringify(nrEntries));
   return zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:4}})
 }
 async function downloadFullBackup(){
@@ -2849,21 +2872,25 @@ function closeBackupDialog(){document.getElementById("backupBackdrop").hidden=tr
 document.getElementById("restoreBackupBtn").addEventListener("click",()=>{document.getElementById("backupBackdrop").hidden=false;document.getElementById("backupPreview").textContent="No backup selected."});
 document.getElementById("backupClose").addEventListener("click",closeBackupDialog);
 document.getElementById("backupSafetyBtn").addEventListener("click",e=>runFullBackup(e.currentTarget,true));
-function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[],optOutForms=[]){
+function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[],optOutForms=[],nrVisitPhotos=[]){
   if(!records||typeof records!=="object"||Array.isArray(records))throw new Error("Invalid records in backup.");
   for(const k of ["surveys","appointments","complaints","statusAudit","zone1CorrectionsApplied"])if(!Array.isArray(records[k]))throw new Error(`Missing ${k} records.`);
   if(!records.statusOverrides||typeof records.statusOverrides!=="object"||Array.isArray(records.statusOverrides))throw new Error("Invalid status decisions.");
-  if(![photos,schedule,meta,complaintPhotos,optOutForms].every(Array.isArray))throw new Error("Invalid file register.");
+  if(manifest.version>=4&&(!records.nrEvidence||typeof records.nrEvidence!=="object"||Array.isArray(records.nrEvidence)))throw new Error("Invalid NR visit records.");
+  if(![photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos].every(Array.isArray))throw new Error("Invalid file register.");
   const counts=manifest.counts||{};
   for(const [key,actual] of Object.entries({surveys:records.surveys.length,appointments:records.appointments.length,complaints:records.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}))if(counts[key]!==actual)throw new Error(`Backup count mismatch: ${key}.`);
   if(manifest.version>=2&&counts.complaintPhotos!==complaintPhotos.length)throw new Error("Backup count mismatch: complaint photos.");
   if(manifest.version>=3&&counts.optOutForms!==optOutForms.length)throw new Error("Backup count mismatch: Opt-Out forms.");
-  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"],[optOutForms,"unitKey"]]){
+  if(manifest.version>=4&&counts.nrVisitPhotos!==nrVisitPhotos.length)throw new Error("Backup count mismatch: NR visit photos.");
+  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"],[optOutForms,"unitKey"],[nrVisitPhotos,"id"]]){
     const ids=new Set();for(const row of items){if(!row||typeof row!=="object"||row[key]==null||ids.has(row[key]))throw new Error(`Invalid or duplicate photo ${key}.`);ids.add(row[key])}
   }
   if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
   if(complaintPhotos.some(p=>typeof p.blobPath!=="string"||!/^complaint-images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!records.complaints.some(c=>c.id===p.caseId)))throw new Error("Invalid complaint photo in backup.");
   if(optOutForms.some(f=>typeof f.blobPath!=="string"||!/^optout-forms\/\d{6}\.bin$/.test(f.blobPath)||!Number.isSafeInteger(f.blobSize)||f.blobSize<0||!["application/pdf","image/jpeg","image/png","image/webp"].includes(f.blobType)))throw new Error("Invalid Opt-Out form in backup.");
+  if(nrVisitPhotos.some(p=>typeof p.blobPath!=="string"||!/^nr-visit-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||!getUnit(p.unitKey)||!["day","night","weekend"].includes(p.kind)))throw new Error("Invalid NR visit photo in backup.");
+  if(manifest.version>=4&&Object.keys(records.nrEvidence).some(key=>!getUnit(key)))throw new Error("Unknown unit in NR visit records.");
 }
 async function readFullBackup(file,withImages=false){
   if(typeof JSZip==="function"&&file.size>2*1024*1024*1024)throw new Error("Backup is too large for this browser.");
@@ -2871,15 +2898,16 @@ async function readFullBackup(file,withImages=false){
   const required=["manifest.json","records.json","photos.json","photo-schedule.json","photo-meta.json"];
   if(required.some(name=>!zip.file(name)))throw new Error("This is not an ELU full backup ZIP.");
   const [manifest,records,photos,schedule,meta]=await Promise.all(required.map(async name=>JSON.parse(await zip.file(name).async("string"))));
-  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2,3].includes(manifest.version))throw new Error("Unsupported backup version.");
+  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2,3,4].includes(manifest.version))throw new Error("Unsupported backup version.");
   const complaintPhotos=manifest.version>=2?JSON.parse(await zip.file("complaint-photos.json")?.async("string")||"null"):[];
   const optOutForms=manifest.version>=3?JSON.parse(await zip.file("optout-forms.json")?.async("string")||"null"):[];
-  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos,optOutForms);
-  if([...photos,...complaintPhotos,...optOutForms].some(p=>!zip.file(p.blobPath)))throw new Error("An attached file is missing from the backup.");
+  const nrVisitPhotos=manifest.version>=4?JSON.parse(await zip.file("nr-visit-photos.json")?.async("string")||"null"):[];
+  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos);
+  if([...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos].some(p=>!zip.file(p.blobPath)))throw new Error("An attached file is missing from the backup.");
   if(withImages){
-    for(const row of [...photos,...complaintPhotos,...optOutForms]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
+    for(const row of [...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
   }
-  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms}
+  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos}
 }
 document.getElementById("backupFile").addEventListener("change",async e=>{
   selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
@@ -2891,8 +2919,8 @@ document.getElementById("backupFile").addEventListener("change",async e=>{
 async function replacePhotoStores(data){
   const db=await photoDb();
   return new Promise((resolve,reject)=>{
-    const tx=db.transaction(["photos","schedule","meta","complaintPhotos","optOutForms"],"readwrite");
-    for(const name of ["photos","schedule","meta","complaintPhotos","optOutForms"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
+    const tx=db.transaction(["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos"],"readwrite");
+    for(const name of ["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
     tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>{db.close();reject(tx.error||new Error("Photo restore transaction failed."))};tx.onerror=()=>{}
   })
 }
@@ -2903,11 +2931,11 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
   try{
     const imported=await readFullBackup(selectedFullBackup,true);
     // Validate against the loaded project register before changing browser storage.
-    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule,...imported.optOutForms])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
+    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule,...imported.optOutForms,...imported.nrVisitPhotos])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
     for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
     await securePersistChain;
     const encrypted=await encryptPayload(imported.records,secureSessionKey);
-    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos"),optOutForms:await photoDbAll("optOutForms")};
+    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos"),optOutForms:await photoDbAll("optOutForms"),nrVisitPhotos:await photoDbAll("nrVisitPhotos")};
     button.textContent="Restoring…";
     await replacePhotoStores(imported);
     try{localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(encrypted))}
