@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.127">
+  <link rel="stylesheet" href="styles.css?v=8.44.128">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -699,17 +699,14 @@
         <p class="completion-note">Working estimate only. Done % follows the Meeting Report: completed / total units. Balance % is (NR + P) / total units. Empty slots in not-started blocks are forecast capacity, not booked appointments. Active closeout blocks with fewer than 10 NR are almost completed; their unbooked follow-up does not push the main target. Confirmed pink appointments keep their dates.</p>
       </section>
       <section class="view" id="nrevidence">
-        <div class="report-hero"><div><span class="section-label">NON RESPONSIVE UNITS</span><h2>NR Visit Evidence</h2><p>Day, night and weekend visits with a dated photo for each unit.</p></div></div>
+        <div class="report-hero"><div><span class="section-label">NON RESPONSIVE UNITS</span><h2>NR Visit Evidence</h2><p>Upload day, night and weekend photos for each unit. Each photo saves automatically.</p></div></div>
         <article class="panel nr-evidence-panel">
           <div class="panel-head register-head"><div><h3>Zone report</h3><p id="nrEvidenceCount">Choose a zone to see its NR units.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="nrEvidenceZone"><option value="">Select Zone</option></select></label><label class="mini-filter">Block<select id="nrEvidenceBlock"><option value="all">All blocks</option></select></label><button type="button" class="ghost-btn" id="nrEvidenceExcel">Download Excel</button><button type="button" class="primary-btn" id="nrEvidencePrint">Print A4 evidence</button></div></div>
           <div id="nrEvidenceList" class="nr-evidence-list"><p class="empty-state">Select a zone.</p></div>
         </article>
         <article class="panel nr-entry-panel" id="nrEvidenceEditor" hidden>
-          <div class="panel-head"><div><span class="section-label">UNIT VISIT RECORD</span><h3 id="nrEvidenceUnitTitle">Unit</h3><p>Zone, block and unit come from the selected Block Board record. Verify the photo date and time before saving; camera location labels are ignored.</p></div></div>
+          <div class="panel-head"><div><span class="section-label">UNIT VISIT RECORD</span><h3 id="nrEvidenceUnitTitle">Unit</h3><p>Upload the three timestamped visit photos. The unit, block and zone are taken from the Block Board; no remarks or extra form is required.</p></div></div>
           <div id="nrEvidenceVisitForms" class="nr-visit-forms"></div>
-          <label class="nr-review-line"><input type="checkbox" id="nrEvidenceReviewed"> Three visits reviewed; resident could not be contacted</label>
-          <label class="nr-review-note">Final review note<textarea id="nrEvidenceFinalNote" rows="2" placeholder="Record what happened after the three visits"></textarea></label>
-          <button type="button" class="primary-btn" id="nrEvidenceSave">Save visit record</button>
           <p id="nrEvidenceSaved" class="nr-evidence-saved"></p>
         </article>
       </section>
@@ -719,7 +716,7 @@
           <div class="panel-head register-head"><div><h3>Choose zone</h3><p>Downloads use the saved unit records and attached original files.</p></div><label class="mini-filter">Zone<select id="evidenceDownloadZone"></select></label></div>
           <div class="evidence-download-grid">
             <section class="evidence-download-card"><h3>Opt-Out forms</h3><p id="evidenceOptOutCount">Loading…</p><p>Includes an index of all Opt-Out units in the zone. Attached signed forms and visit records are grouped by block and unit.</p><button type="button" class="primary-btn" id="evidenceOptOutDownload">Download Opt-Out ZIP</button></section>
-            <section class="evidence-download-card"><h3>NR · Three visits</h3><p id="evidenceNRCount">Loading…</p><p>Includes only units with dated Day, Night and Weekend photos, with a visit index and the original photos.</p><button type="button" class="primary-btn" id="evidenceNRDownload">Download NR photos ZIP</button></section>
+            <section class="evidence-download-card"><h3>NR · Three visits</h3><p id="evidenceNRCount">Loading…</p><p>Includes units with Day, Night and Weekend photos, with a visit index and the original timestamped photos.</p><button type="button" class="primary-btn" id="evidenceNRDownload">Download NR photos ZIP</button></section>
           </div>
           <p class="evidence-download-note" id="evidenceDownloadMessage" aria-live="polite"></p>
         </article>
@@ -822,9 +819,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.127"></script>
-  <script src="nr-evidence.js?v=8.44.127"></script>
-  <script src="evidence-downloads.js?v=8.44.127"></script>
+  <script src="app.js?v=8.44.128"></script>
+  <script src="nr-evidence.js?v=8.44.128"></script>
+  <script src="evidence-downloads.js?v=8.44.128"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>

@@ -1,3 +1,11 @@
+# V8.44.128 — NR three-visit photo evidence
+
+- Select an NR unit in the sidebar or Block Board and upload Day, Night, and Weekend timestamped photos. Each photo saves immediately with no remarks, review checkbox, or extra date/time fields.
+- Replace or delete a photo if the wrong one was selected; cancelling the file picker leaves the saved photo unchanged.
+- The selected unit supplies zone, block, and unit number. The saved original photo remains the source for date and time; timestamp recognition fills report captions when it succeeds, without blocking upload.
+- Zone report shows units in block order. Print uses one A4 page per unit, with the three-photo table and witness fields from the supplied sample. The Excel report embeds all three photos and has an A4 portrait page break per unit.
+- Zone Evidence Downloads recognizes units with all three saved photos even when no separate date/time record exists.
+
 # V8.44.127 — Zone Photo Report grouped by block
 
 - Photo Report Word and Print/PDF outputs now group all photos for one block before the next block. Dates and times stay in order within each block.
