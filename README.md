@@ -1,3 +1,12 @@
+# V8.44.132 — NR PDF and Excel export
+
+- Print / Save PDF (A4) uses the same zone-wise, block-wise page layout as the Excel report. Select Save as PDF in the print dialog for one PDF covering the selected zone.
+
+# V8.44.131 — NR page divider and sample layout
+
+- The block heading appears once per page. A clear horizontal divider separates the three-visit rows for consecutive units.
+- Up to three units from one block fit on an A4 page, followed by one aligned contractor and consultant witness section.
+
 # V8.44.130 — NR zone report, three units per page
 
 - Zone Print and Excel keep blocks and units in order in one continuous zone report. A page contains up to three units from the same block, with three visit photos per unit.
