@@ -1,3 +1,10 @@
+# V8.44.129 — NR A4 report, two units per page
+
+- The corrected sample layout is used for NR Print and Excel: First, Second, and Weekend visit photos with centered three-line visit captions and aligned witness signature lines under each unit.
+- Two complete NR units fit on one A4 portrait page; the zone export follows block and unit order. Photos retain their original aspect ratio.
+- Zone 3 headings use Pasir Ris Dr 1; all other zones use Pasir Ris St 51. Consultant company and personal names stay blank; Contractor is M/s Shin Khai Construction Pte Ltd.
+- Uploading each of three timestamped photos saves immediately, with replacement and delete controls. No extra remarks or date/time entry is required.
+
 # V8.44.128 — NR three-visit photo evidence
 
 - Select an NR unit in the sidebar or Block Board and upload Day, Night, and Weekend timestamped photos. Each photo saves immediately with no remarks, review checkbox, or extra date/time fields.
