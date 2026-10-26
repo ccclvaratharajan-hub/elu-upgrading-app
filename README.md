@@ -1,3 +1,11 @@
+# V8.44.127 — Zone Photo Report grouped by block
+
+- Photo Report Word and Print/PDF outputs now group all photos for one block before the next block. Dates and times stay in order within each block.
+- The report defaults to the last completed 21st-to-22nd range (for example, 21 September to 22 October) and the From/To dates can be changed.
+- Each block starts a new report section. A separate Word ZIP for all blocks remains available.
+- Stored photos are retained for later reports across monthly cycles; entering the Photo Report no longer runs automatic post-export cleanup.
+- Evidence Downloads still provides zone-wise Opt-Out forms and completed NR three-visit photos.
+
 # V8.34 — Upcoming Survey Register
 
 - Default Survey Register shows only survey visit dates from the current Singapore date onward, across every zone.

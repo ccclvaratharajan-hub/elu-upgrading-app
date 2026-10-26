@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.126">
+  <link rel="stylesheet" href="styles.css?v=8.44.127">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -586,9 +586,11 @@
 
         <article class="panel photo-monthly-panel">
           <div class="panel-head register-head">
-            <div><span class="section-label">MONTHLY OUTPUT</span><h3 id="photoCycleTitle">22 → 21 Photo Report</h3><p>Generate Zone-wise Word or Print/PDF from stored photos. Report order is date → team → time → block/unit.</p></div>
+            <div><span class="section-label">ZONE PHOTO REPORT</span><h3 id="photoCycleTitle">Block-wise Zone Photo Report</h3><p>Each block stays together. Within each block, photos follow date and time order for the selected range.</p></div>
             <div class="register-tools">
-              <label class="mini-filter">Cycle Reference Date<input type="date" id="photoCycleDate"></label>
+              <input type="hidden" id="photoCycleDate">
+              <label class="mini-filter">From<input type="date" id="photoReportFrom"></label>
+              <label class="mini-filter">To<input type="date" id="photoReportTo"></label>
               <button class="primary-btn" id="photoWordBtn" type="button">Generate Word</button>
               <button class="ghost-btn" id="photoPdfBtn" type="button">Print / PDF</button>
             </div>
@@ -599,19 +601,22 @@
         <article class="panel photo-block-report-panel">
           <div class="panel-head register-head">
             <div><span class="section-label">BLOCK-WISE OUTPUT</span><h3>Block-wise Photo Report</h3>
-              <p>Select one block or All blocks in the zone. Photos are listed continuously across the chosen date range.</p>
+              <p>Select a zone, block and date range. Download one block, or collect every block as separate Word files in one ZIP. The 21st-to-22nd cycle is prefilled.</p>
             </div>
             <div class="register-tools block-photo-tools">
               <label class="mini-filter">Zone<select id="photoBlockReportZone"></select></label>
               <label class="mini-filter">Block<select id="photoBlockReportBlock"></select></label>
               <label class="mini-filter">From<input type="date" id="photoBlockReportFrom"></label>
               <label class="mini-filter">To<input type="date" id="photoBlockReportTo"></label>
+              <button class="ghost-btn" id="photoBlockCycleBtn" type="button">Set 21 → 22</button>
               <button class="primary-btn" id="photoBlockWordBtn" type="button">Download Word</button>
               <button class="ghost-btn" id="photoBlockPdfBtn" type="button">Print / PDF</button>
+              <button class="primary-btn" id="photoAllBlocksZipBtn" type="button">All blocks · separate Word ZIP</button>
             </div>
           </div>
           <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
           <div id="photoBlockSummary" class="photo-monthly-summary"></div>
+          <div id="photoBlockBreakdown" class="photo-block-breakdown"></div>
         </article>
       </section>
 
@@ -817,9 +822,9 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.126"></script>
-  <script src="nr-evidence.js?v=8.44.126"></script>
-  <script src="evidence-downloads.js?v=8.44.126"></script>
+  <script src="app.js?v=8.44.127"></script>
+  <script src="nr-evidence.js?v=8.44.127"></script>
+  <script src="evidence-downloads.js?v=8.44.127"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>
