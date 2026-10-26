@@ -12,6 +12,19 @@
   const photoFor=(items,key,kind)=>items.find(p=>p.id===photoId(key,kind));
   const fmt=v=>v?safeDate(v):'—';
   const unitText=u=>`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;
+  window.openNRInDrawer=key=>{
+    const u=getUnit(key),editor=document.getElementById('nrEvidenceEditor');if(!u)return;
+    zoneEl.value=String(u.zone);blockEl.value='all';
+    document.getElementById('drawerNRVisitMount').append(editor);
+    renderEditor(key).catch(error=>{
+      console.error(error);
+      document.getElementById('nrEvidenceSaved').textContent='Photo storage could not be opened. Please reload the app and try again.'
+    })
+  };
+  window.closeNRInDrawer=()=>{
+    const editor=document.getElementById('nrEvidenceEditor');
+    document.querySelector('#nrevidence .nr-evidence-panel').after(editor)
+  };
   function visitRule(kind,date,time){
     if(!date||!time)return '';
     const day=new Date(`${date}T12:00:00`).getDay(),mins=Number(time.slice(0,2))*60+Number(time.slice(3,5));

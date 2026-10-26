@@ -663,6 +663,7 @@ survey:["Survey Visit Register","Visit diary for resident calls: date, exact tim
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 nrevidence:["NR Visit Evidence","Zone-wise day, night and weekend visit records with photos."],
+evidencedownloads:["Evidence Downloads","Zone-wise Opt-Out forms and completed NR three-visit photos."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 dailyplanner:["Daily Planner","Team 1 and Team 2 appointments from Appointment Schedule, ready to print or share."],
 teams:["Appointment List","Appointment records by date, zone and team."],
@@ -693,7 +694,12 @@ function setView(view){
   else if(view==="survey")renderSurveyTable();
   else if(view==="appointments"){} // Keep the current filtered table already on screen.
   else if(view==="units"){} // The register is refreshed by renderAll and its own filters.
-  else if(view==="nrevidence")window.renderNREvidence?.();
+  else if(view==="nrevidence"){
+    const zone=document.getElementById("nrEvidenceZone");
+    if(!zone.value)zone.value=document.getElementById("boardZone").value||"1";
+    window.renderNREvidence?.()
+  }
+  else if(view==="evidencedownloads")window.renderEvidenceDownloads?.();
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams"||view==="dailyplanner")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
@@ -1171,16 +1177,7 @@ function renderBlockBoard(){
   const floors=[...new Set(u.map(x=>x.floor))].sort((a,b)=>b-a).filter(f=>floorFilter==="all"||Number(floorFilter)===f);
   document.getElementById("floorBoard").innerHTML=floors.map(f=>{const fu=u.filter(x=>x.floor===f).filter(x=>!q||unitDisplay(x.floor,x.unit).toLowerCase().includes(q)||String(x.unit).includes(q));if(!fu.length)return"";return`<div class="floor-row"><div class="floor-label"><strong>${f}</strong><span>Floor</span></div><div class="unit-grid">${fu.map(x=>{const sc=x.response==="A"?"status-a":x.response==="C"?"status-c":x.response==="P"?"status-p":x.response==="D"?"status-out":x.response==="NR"?"status-nr":"";const dateLine=x.appointmentDate&&(x.response==="A"||x.response==="C")?`<div class="u-date ${x.response==="A"?"done-date":"appt-date"}"><span>${x.response==="A"?"Done":"Appt"}</span>${esc(shortBoardDate(x.appointmentDate))}</div>`:"";const pendingIcon=x.response==="P"?'<span class="pending-inline-icon">◷</span>':"";return`<button class="unit-card ${sc}${x.response==="D"?optOutKindClass(x.key):""}" data-unit-key="${x.key}"><div class="u-no">${unitDisplay(x.floor,x.unit)}</div><div class="u-status">${pendingIcon}${esc(boardStatusForUnit(x))}</div>${dateLine}</button>`}).join("")}</div></div>`}).join("")||`<div class="empty-state">No units match this filter.</div>`;
 }
-document.getElementById("floorBoard").addEventListener("click",e=>{
-  const b=e.target.closest("[data-unit-key]");if(!b)return;
-  const u=getUnit(b.dataset.unitKey);
-  if(u&&currentUnitAppointmentState(u.key).status==="NR"){
-    setView("nrevidence");
-    document.getElementById("nrEvidenceZone").value=String(u.zone);
-    document.getElementById("nrEvidenceBlock").value="all";
-    window.renderNREvidence?.(u.key)
-  }else openDrawer(b.dataset.unitKey)
-});
+document.getElementById("floorBoard").addEventListener("click",e=>{const b=e.target.closest("[data-unit-key]");if(b)openDrawer(b.dataset.unitKey)});
 
 function latestAppointment(key){return preferredMasterAppointment(key)||latestById(state.appointments.filter(a=>a.unitKey===key&&!isInactiveSchedule(a)))}
 let unit360PhotoUrls=[];
@@ -1190,7 +1187,9 @@ function openDrawer(key){
   const u=getUnit(key);if(!u)return;const a=latestAppointment(key);
   ++unit360RenderToken;clearUnit360Photos();
   document.getElementById("drawerUnitKey").value=key;document.getElementById("drawerUnitTitle").textContent=`Blk ${u.block} · ${unitDisplay(u.floor,u.unit)}`;document.getElementById("drawerUnitMeta").textContent=`Zone ${u.zone} · Floor ${u.floor}`;
-  document.getElementById("drawerNREvidenceBtn").style.display=u.response==="NR"||state.nrEvidence?.[key]?"":"none";
+  const hasNRVisits=u.response==="NR"||Boolean(state.nrEvidence?.[key]);
+  document.getElementById("drawerNREvidenceBtn").style.display=hasNRVisits?"":"none";
+  document.getElementById("drawerNRVisitSection").hidden=!hasNRVisits;
   const survey=latestById(state.surveys.filter(s=>s.unitKey===key));
   const surveyVisit=survey?.visitDate?`${safeDate(survey.visitDate)}${survey.visitTime?` · ${survey.visitTime}`:""}`:"—";
   document.getElementById("drawerStatusText").textContent=boardStatusForUnit(u);document.getElementById("drawerOwnerText").textContent=u.ownerName||"—";document.getElementById("drawerContactText").textContent=u.contact||"—";document.getElementById("drawerFollowupText").textContent=surveyVisit;document.getElementById("drawerRemarksText").textContent=u.remarks||"—";document.getElementById("drawerAppointmentText").textContent=u.appointmentDate?`${safeDate(u.appointmentDate)} · ${u.appointmentSlot}`:"—";document.getElementById("drawerTeamText").textContent=u.team||"—";
@@ -1198,6 +1197,7 @@ function openDrawer(key){
   renderUnit360(key);
   renderOptOutForm(key);
   document.getElementById("drawerBackdrop").classList.add("open");document.getElementById("unitDrawer").classList.add("open");
+  if(hasNRVisits)window.openNRInDrawer?.(key)
 }
 function unit360Rows(target,rows,format){
   document.getElementById(target).innerHTML=rows.length?rows.slice(0,12).map(format).join(""):'<p class="unit360-empty">No record for this unit.</p>'
@@ -1218,7 +1218,7 @@ function renderUnit360(key){
     el.innerHTML=`<div class="unit360-row"><strong>${items.length} stored photo${items.length===1?"":"s"}</strong><span>${visits.length} photo register date${visits.length===1?"":"s"}${items.length?` · Latest ${date(items.map(p=>p.date).sort().at(-1))}`:""}</span></div>${thumbnails?`<div class="unit360-photos">${thumbnails}</div>`:""}`
   }).catch(()=>{if(token===unit360RenderToken&&document.getElementById("drawerUnitKey").value===key)el.textContent="Photo register unavailable on this browser."})
 }
-function closeDrawer(){++unit360RenderToken;document.getElementById("drawerBackdrop").classList.remove("open");document.getElementById("unitDrawer").classList.remove("open");clearUnit360Photos()}
+function closeDrawer(){++unit360RenderToken;window.closeNRInDrawer?.();document.getElementById("drawerBackdrop").classList.remove("open");document.getElementById("unitDrawer").classList.remove("open");clearUnit360Photos()}
 document.getElementById("drawerClose").addEventListener("click",closeDrawer);document.getElementById("drawerBackdrop").addEventListener("click",closeDrawer);
 function jumpFromDrawer(target){const u=getUnit(document.getElementById("drawerUnitKey").value);if(!u)return;closeDrawer();setView(target);if(target==="survey"){document.getElementById("surveyZone").value=String(u.zone);syncSurveyBlocks();document.getElementById("surveyBlock").value=String(u.block);syncSurveyUnits();document.getElementById("surveyUnit").value=u.key;autofillSurvey()}else{document.getElementById("appointmentZone").value=String(u.zone);syncAppointmentBlocks();document.getElementById("appointmentBlock").value=String(u.block);syncPairUnits("appointment");document.getElementById("appointmentUnit").value=u.key;autofillPair("appointment")}}
 document.getElementById("drawerSurveyBtn").addEventListener("click",()=>jumpFromDrawer("survey"));document.getElementById("drawerAppointmentBtn").addEventListener("click",()=>jumpFromDrawer("appointments"));

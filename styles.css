@@ -3556,3 +3556,22 @@ body.theme-night .completion-head{background:rgba(9,30,53,.88)}body.theme-night 
 body.theme-night .completion-countdown-card{background:rgba(16,35,57,.93);border-color:#456782;color:#eff7ff}body.theme-night .completion-countdown-days{color:#c3e7ff}
 @media(max-width:800px){.completion-countdown{grid-template-columns:1fr}}
 @media(max-width:800px){.completion-head{display:block}.completion-head button{margin-top:12px}.completion-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Keep the three NR visit photo slots readable inside the selected unit drawer. */
+.unit360-sections #drawerNRVisitSection{border-color:#55a7be;background:rgba(223,245,251,.96);padding:10px}
+#drawerNRVisitMount .nr-entry-panel{margin:0;padding:12px;border-radius:12px;background:#f6fcfe;box-shadow:none}
+#drawerNRVisitMount .nr-visit-forms{grid-template-columns:1fr}
+#drawerNRVisitMount .nr-visit-card{background:#fff}
+#drawerNRVisitMount .nr-entry-panel .panel-head{margin-bottom:10px}
+#drawerNRVisitMount .nr-entry-panel .panel-head p{font-size:11px;line-height:1.45}
+
+/* Zone-wise evidence packages. */
+.evidence-download-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.evidence-download-card{padding:20px;border:1px solid #a7cddd;border-radius:16px;background:rgba(239,250,253,.86);color:#17415c}
+.evidence-download-card h3{font-size:18px;margin:0 0 10px}
+.evidence-download-card p{font-size:12px;line-height:1.5;margin:7px 0 13px;color:#385f74}
+.evidence-download-card p:first-of-type{font-size:14px;font-weight:800;color:#145b78}
+.evidence-download-card button{margin-top:7px}
+.evidence-download-card button:disabled{opacity:.55;cursor:not-allowed}
+.evidence-download-note{font-size:12px;color:#215873;margin:14px 0 0}
+@media(max-width:760px){.evidence-download-grid{grid-template-columns:1fr}}
