@@ -200,20 +200,30 @@
     }finally{URL.revokeObjectURL(url)}
   }
   async function reportRows(){const items=await photos();return chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}))}
+  function reportPages(rows){
+    const pages=[];
+    for(const row of rows){
+      let page=pages[pages.length-1];
+      if(!page||page.length===3||page[0].u.block!==row.u.block||page[0].u.zone!==row.u.zone){page=[];pages.push(page)}
+      page.push(row)
+    }
+    return pages
+  }
+  const witnessHtml=()=>['Contractor (M/s Shin Khai Construction Pte Ltd)','Consultant'].map(label=>`<div class="witness"><b>Witness by ${label}</b><div class="signatures"><span>___________________<br>Name / Designation</span><span>___________________<br>Signature</span><span>____________<br>Date</span></div></div>`).join('');
   document.getElementById('nrEvidencePrint').addEventListener('click',async()=>{
     const tab=window.open('','_blank','width=1000,height=900');if(!tab){toast('Allow pop-ups to print the NR report');return}
     try{
       const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));
       if(!rows.length){tab.close();toast('No unit has all three saved visit photos in this zone / block');return}
       const urls=[],pages=[];
-      for(let i=0;i<rows.length;i+=2){
-        const records=rows.slice(i,i+2).map(({u,r,p})=>{
+      for(const group of reportPages(rows)){
+        const records=group.map(({u,r,p})=>{
           const cards=`<div class="visit-row"><div class="unit">${esc(unitDisplay(u.floor,u.unit))}</div>${TYPES.map(([kind],j)=>{const url=URL.createObjectURL(p[j].blob),v=r.visits?.[kind];urls.push(url);return `<div class="photo"><b>${['First Visit','Second Visit','Weekend Visit'][j]}</b><img src="${url}"><small>Visited on<br>${v?.date&&v?.time?`${esc(reportDate(v.date))}<br>${esc(reportTime(v.time))}`:'Date / time on photo'}</small></div>`}).join('')}</div>`;
-          return `<div class="record"><h2>Blk ${u.block} · ${esc(reportAddress(u.zone))}</h2><div class="visit-table">${cards}</div><div class="witness">Witness by Contractor (M/s Shin Khai Construction Pte Ltd)<div class="signatures"><span>___________________<br>Name / Designation</span><span>___________________<br>Signature</span><span>____________<br>Date</span></div></div><div class="witness">Witness by Consultant<div class="signatures"><span>___________________<br>Name / Designation</span><span>___________________<br>Signature</span><span>____________<br>Date</span></div></div></div>`
+          return `<div class="record"><h2>Blk ${u.block} · ${esc(reportAddress(u.zone))}</h2><div class="visit-table">${cards}</div></div>`
         }).join('');
-        pages.push(`<section class="page"><h1>Non Responsive Unit</h1>${records}</section>`)
+        pages.push(`<section class="page"><h1>Non Responsive Unit</h1>${records}<div class="page-witness">${witnessHtml()}</div></section>`)
       }
-      tab.document.open();tab.document.write(`<!doctype html><html><head><title>NR Visit Evidence · Zone ${zoneEl.value}</title><style>@page{size:A4 portrait;margin:10mm 13mm}*{box-sizing:border-box}body{font:10px Arial;margin:0;color:#1e2e39}.page{break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}.record{break-inside:avoid;page-break-inside:avoid;margin-bottom:7mm}h1{text-align:center;color:#d64248;font-size:16px;margin:0;border:1px solid #4d5b61;padding:4px}h2{text-align:center;font-size:10px;border:1px solid #4d5b61;border-top:0;margin:0;padding:4px}.visit-row{display:grid;grid-template-columns:22% repeat(3,1fr);border-left:1px solid #4d5b61;border-bottom:1px solid #4d5b61}.visit-row>*{border-right:1px solid #4d5b61}.unit{padding:5px;text-align:center;font-weight:bold;font-size:13px}.photo{text-align:center;min-width:0}.photo b{display:block;border-bottom:1px solid #4d5b61;padding:3px;font-size:9px}.photo img{display:block;width:100%;height:35mm;object-fit:contain}.photo small{display:block;border-top:1px solid #4d5b61;padding:3px;line-height:1.15;font-size:9px;min-height:11mm}.witness{margin-top:5mm;font-size:10px}.signatures{display:flex;justify-content:space-around;gap:6px;text-align:center}.witness span{display:inline-block;margin-top:7mm;font-size:9px;white-space:nowrap;line-height:1.4}@media print{button{display:none}}</style></head><body>${pages.join('')}<script>onload=()=>setTimeout(()=>print(),500)<\/script></body></html>`);tab.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),300000)
+      tab.document.open();tab.document.write(`<!doctype html><html><head><title>NR Visit Evidence · Zone ${zoneEl.value}</title><style>@page{size:A4 portrait;margin:10mm 13mm}*{box-sizing:border-box}body{font:10px Arial;margin:0;color:#1e2e39}.page{break-after:page;page-break-after:always;min-height:270mm;display:flex;flex-direction:column}.page:last-child{break-after:auto;page-break-after:auto}.record{break-inside:avoid;page-break-inside:avoid;margin-bottom:2mm}h1{text-align:center;color:#d64248;font-size:16px;margin:0;border:1px solid #4d5b61;padding:4px}h2{text-align:center;font-size:10px;border:1px solid #4d5b61;border-top:0;margin:0;padding:4px}.visit-row{display:grid;grid-template-columns:22% repeat(3,1fr);border-left:1px solid #4d5b61;border-bottom:1px solid #4d5b61}.visit-row>*{border-right:1px solid #4d5b61}.unit{padding:5px;text-align:center;font-weight:bold;font-size:13px}.photo{text-align:center;min-width:0}.photo b{display:block;border-bottom:1px solid #4d5b61;padding:3px;font-size:9px}.photo img{display:block;width:100%;height:35mm;object-fit:contain}.photo small{display:block;border-top:1px solid #4d5b61;padding:3px;line-height:1.15;font-size:9px;min-height:11mm}.page-witness{margin-top:auto;break-inside:avoid;page-break-inside:avoid}.witness{margin-top:2mm;font-size:10px}.signatures{display:flex;justify-content:space-around;gap:6px;text-align:center}.witness span{display:inline-block;margin-top:3mm;font-size:9px;white-space:nowrap;line-height:1.4}@media print{button{display:none}}</style></head><body>${pages.join('')}<script>onload=()=>setTimeout(()=>print(),500)<\/script></body></html>`);tab.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),300000)
     }catch(error){tab.close();console.error(error);toast('NR print could not be prepared')}
   });
   document.getElementById('nrEvidenceExcel').addEventListener('click',async()=>{
@@ -222,8 +232,9 @@
     const cell=(ref,v,style=3)=>`<c r="${ref}" s="${style}" t="inlineStr"><is><t>${xml(v)}</t></is></c>`;
     sheetRows.push(`<row r="1" ht="33" customHeight="1">${cell('A1','Non Responsive Unit',1)}${cell('D1','',3)}</row>`);
     let n=2;
-    for(let i=0;i<rows.length;i++){
-      const {u,r,p}=rows[i];
+    const groups=reportPages(rows);
+    for(let g=0;g<groups.length;g++){
+      for(const {u,r,p} of groups[g]){
       sheetRows.push(`<row r="${n}" ht="19" customHeight="1">${cell(`A${n}`,`Blk ${u.block} · ${reportAddress(u.zone)}`,2)}${cell(`D${n}`,'',3)}</row>`);merges.push(`A${n}:D${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${['Unit','First Visit','Second Visit','Weekend Visit'].map((v,j)=>cell(`${'ABCD'[j]}${n}`,v,2)).join('')}</row>`);n++;
       const unitRow=n;
@@ -236,14 +247,14 @@
       }
       n++;
       sheetRows.push(`<row r="${n}" ht="32" customHeight="1">${cell(`A${n}`,'',3)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,v?.date&&v?.time?`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`:'Visited on\nDate / time on photo',5)}).join('')}</row>`);merges.push(`A${unitRow}:A${n}`);n++;
+      }
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Contractor (M/s Shin Khai Construction Pte Ltd)',6)}</row>`);merges.push(`A${n}:D${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',7)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',7)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Consultant',6)}</row>`);merges.push(`A${n}:D${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',7)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',7)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
-      if(i%2===0&&i<rows.length-1){sheetRows.push(`<row r="${n}" ht="14" customHeight="1"/>`);n++}
-      if((i+1)%2===0&&i<rows.length-1)pageBreaks.push(n-1)
+      if(g<groups.length-1)pageBreaks.push(n-1)
     }
     const types=`<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>`;
     zip.file('[Content_Types].xml',types);

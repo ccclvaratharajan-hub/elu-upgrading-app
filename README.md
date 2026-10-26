@@ -1,3 +1,8 @@
+# V8.44.130 — NR zone report, three units per page
+
+- Zone Print and Excel keep blocks and units in order in one continuous zone report. A page contains up to three units from the same block, with three visit photos per unit.
+- Contractor and consultant witness lines appear once at the bottom of each page, after its unit photos. The next block starts a new page.
+
 # V8.44.129 — NR A4 report, two units per page
 
 - The corrected sample layout is used for NR Print and Excel: First, Second, and Weekend visit photos with centered three-line visit captions and aligned witness signature lines under each unit.
