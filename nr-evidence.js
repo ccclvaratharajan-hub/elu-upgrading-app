@@ -4,7 +4,7 @@
   const zoneEl=document.getElementById('nrEvidenceZone'),blockEl=document.getElementById('nrEvidenceBlock');
   if(!zoneEl)return;
   zoneEl.innerHTML='<option value="">Select Zone</option>'+Object.keys(ZONE_BLOCKS).map(z=>`<option value="${z}">Zone ${z}</option>`).join('');
-  let selected='',photoUrls=[],renderNonce=0,timestampQueue=Promise.resolve();
+  let selected='',photoUrls=[],renderNonce=0;
   const clearUrls=()=>{photoUrls.forEach(URL.revokeObjectURL);photoUrls=[]};
   const photoId=(key,kind)=>`${key}|${kind}`;
   const record=key=>state.nrEvidence?.[key]||{visits:{},reviewed:false,finalNote:''};
@@ -28,89 +28,6 @@
     const editor=document.getElementById('nrEvidenceEditor');
     document.querySelector('#nrevidence .nr-evidence-panel').after(editor)
   };
-  function visitRule(kind,date,time){
-    if(!date||!time)return '';
-    const day=new Date(`${date}T12:00:00`).getDay(),mins=Number(time.slice(0,2))*60+Number(time.slice(3,5));
-    if(kind==='day'&&(day<1||day>5||mins>1080))return 'Day visit: Monday to Friday, before 6 PM';
-    if(kind==='weekend'&&day!==6)return 'Weekend visit: Saturday only';
-    if(kind==='night'&&mins<=1080)return 'Night visit: after 6 PM';
-    return ''
-  }
-  async function exifDateTime(file){
-    if(file.type!=='image/jpeg')return null;
-    const bytes=await file.arrayBuffer(),v=new DataView(bytes);
-    const ascii=(offset,length)=>{if(offset<0||offset+length>v.byteLength)return '';let s='';for(let i=0;i<length;i++)s+=String.fromCharCode(v.getUint8(offset+i));return s};
-    const decode=raw=>{const m=raw.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2})/);return m?{date:`${m[1]}-${m[2]}-${m[3]}`,time:`${m[4]}:${m[5]}`}:null};
-    if(v.byteLength<16||v.getUint16(0)!==0xffd8)return null;
-    let p=2;
-    while(p+4<v.byteLength){
-      if(v.getUint8(p)!==0xff)break;
-      const marker=v.getUint8(p+1);if(marker===0xda)break;
-      const length=v.getUint16(p+2);if(length<2||p+2+length>v.byteLength)break;
-      if(marker===0xe1&&ascii(p+4,6)==='Exif\0\0'){
-        const start=p+10,little=ascii(start,2)==='II';
-        if(!little&&ascii(start,2)!=='MM')return null;
-        const u16=o=>v.getUint16(o,little),u32=o=>v.getUint32(o,little);
-        const dir=(offset,tag)=>{const at=start+offset;if(at<start||at+2>v.byteLength)return null;const count=u16(at);if(count>200)return null;for(let i=0;i<count;i++){const e=at+2+i*12;if(e+12>v.byteLength)return null;if(u16(e)===tag)return {type:u16(e+2),count:u32(e+4),value:u32(e+8),entry:e}}return null};
-        try{
-          const root=u32(start+4),sub=dir(root,0x8769),stamp=sub&&dir(sub.value,0x9003)||dir(root,0x0132);
-          if(stamp?.type===2&&stamp.count>=19&&stamp.count<=40){const at=stamp.count<=4?stamp.entry+8:start+stamp.value;return decode(ascii(at,stamp.count))}
-        }catch{}
-        return null
-      }
-      p+=2+length
-    }
-    return null
-  }
-  // Timestamp Camera can burn the clock into pixels while stripping EXIF (as in
-  // the supplied sample). Load OCR only when such a photo is selected.
-  let ocrScript;
-  async function loadOCR(){
-    if(window.Tesseract)return window.Tesseract;
-    ocrScript=ocrScript||new Promise((resolve,reject)=>{
-      const script=document.createElement('script');script.src='./vendor/tesseract/tesseract.min.js';
-      script.onload=()=>resolve(window.Tesseract);script.onerror=()=>reject(new Error('OCR unavailable'));
-      document.head.append(script)
-    });
-    return ocrScript
-  }
-  async function readPrintedTimestamp(file,sharedWorker){
-    const OCR=await loadOCR(),url=URL.createObjectURL(file);
-    let worker=sharedWorker;
-    try{
-      const img=new Image();img.src=url;await img.decode();
-      const w=img.naturalWidth,h=img.naturalHeight;
-      // The sample's white clock and date are in the lower-left of the photo.
-      // Keep a manual edit path for other watermark layouts or uncertain OCR.
-      const crop=(x,y,cw,ch,threshold)=>{
-        const canvas=document.createElement('canvas');canvas.width=Math.round(cw*w*3);canvas.height=Math.round(ch*h*3);
-        const ctx=canvas.getContext('2d',{willReadFrequently:true});
-        ctx.drawImage(img,x*w,y*h,cw*w,ch*h,0,0,canvas.width,canvas.height);
-        if(threshold){const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
-          for(let i=0;i<pixels.data.length;i+=4){const gray=(pixels.data[i]*.299+pixels.data[i+1]*.587+pixels.data[i+2]*.114);const v=gray>threshold?0:255;pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=v}
-          ctx.putImageData(pixels,0,0)}
-        return canvas
-      };
-      worker=worker||await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true});
-      await worker.setParameters({tessedit_pageseg_mode:8,tessedit_char_whitelist:'0123456789:/APMapm. '});
-      const timePattern=/(?:^|\D)([01]?\d|2[0-3])[:.](\d{2})\s*([AP]M)?(?:\D|$)/i;
-      const datePattern=/(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})/;
-      const read=async(candidates,pattern)=>{
-        for(const [x,y,cw,ch,threshold] of candidates){
-          const found=(await worker.recognize(crop(x,y,cw,ch,threshold))).data.text.trim();
-          const match=found.match(pattern);if(match)return match
-        }
-        return null
-      };
-      const tm=await read([[.02,.78,.195,.085,180],[.02,.78,.195,.085,0],[.015,.76,.22,.11,160],[.015,.76,.22,.11,0]],timePattern);
-      const dm=await read([[.235,.775,.215,.05,180],[.235,.775,.215,.05,0],[.22,.75,.31,.095,160],[.22,.75,.31,.095,0]],datePattern);
-      if(!tm||!dm)return null;
-      const date=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
-      if(new Date(`${date}T12:00:00`).toISOString().slice(0,10)!==date)return null;
-      let hour=Number(tm[1]);if(tm[3])hour=hour%12+(tm[3].toUpperCase()==='PM'?12:0);
-      return {date,time:`${String(hour).padStart(2,'0')}:${tm[2]}`}
-    }finally{URL.revokeObjectURL(url);if(!sharedWorker)await worker?.terminate()}
-  }
   function chosenRows(){
     const z=Number(zoneEl.value),block=blockEl.value;
     if(!z)return [];
@@ -127,10 +44,11 @@
     document.getElementById('nrEvidenceVisitForms').innerHTML=TYPES.map(([kind,label])=>{
       const p=photoFor(items,key,kind),url=p?.blob instanceof Blob?URL.createObjectURL(p.blob):'';
       if(url)photoUrls.push(url);
-      return `<fieldset class="nr-visit-card" data-nr-kind="${kind}"><legend>${label}</legend>${url?`<div class="nr-photo-current"><a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label} evidence"></a><span>Saved photo</span></div>`:'<small>No photo attached</small>'}<div class="nr-photo-actions"><label class="nr-file-action">${url?'Replace photo':'Upload photo'}<input type="file" data-field="photo" accept="image/jpeg,image/png,image/webp"></label>${url?`<button type="button" data-remove-photo="${kind}">Delete photo</button>`:''}</div></fieldset>`
+      const visit=record(key).visits?.[kind]||{};
+      return `<fieldset class="nr-visit-card" data-nr-kind="${kind}"><legend>${label}</legend>${url?`<div class="nr-photo-current"><a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label} evidence"></a><span>Original photo saved</span></div>`:'<small>No photo attached</small>'}<div class="nr-photo-actions"><label class="nr-file-action">${url?'Replace photo':'Upload photo'}<input type="file" data-field="photo" accept="image/jpeg,image/png,image/webp"></label>${url?`<button type="button" data-remove-photo="${kind}">Delete photo</button>`:''}</div>${url?`<div class="nr-visit-edit"><div class="nr-visit-fields"><label>Visited on · Date<input type="date" data-field="date" value="${esc(visit.date||'')}"></label><label>Time<input type="time" data-field="time" value="${esc(visit.time||'')}"></label></div></div>`:''}</fieldset>`
     }).join('');
     const count=TYPES.filter(([kind])=>photoFor(items,key,kind)?.blob instanceof Blob).length;
-    document.getElementById('nrEvidenceSaved').textContent=`${count}/3 visit photos saved${count===3?' · Ready for report':''}. Date and time are shown on the photos.`;
+    document.getElementById('nrEvidenceSaved').textContent=`${count}/3 original photos saved. Enter each visit date and time for the report; changes save automatically.`;
   }
   async function render(key){
     const nonce=++renderNonce;
@@ -141,7 +59,8 @@
     document.getElementById('nrEvidenceCount').textContent=z?`${rows.length} current NR or recorded units in Zone ${z}`:'Choose a zone to see its NR units.';
     document.getElementById('nrEvidenceList').innerHTML=rows.length?rows.map(u=>{
       const done=TYPES.filter(([kind])=>photoFor(items,u.key,kind)?.blob instanceof Blob).length;
-      return `<button type="button" class="nr-unit-row ${u.key===selected?'selected':''}" data-nr-unit="${esc(u.key)}"><strong>${esc(unitText(u))}</strong><span>${u.response==='NR'?'NR':esc(statusLabel(u.response))} · ${done}/3 photos${done===3?' · Report ready':''}</span></button>`
+      const stamped=TYPES.filter(([kind])=>record(u.key).visits?.[kind]?.date&&record(u.key).visits?.[kind]?.time).length;
+      return `<button type="button" class="nr-unit-row ${u.key===selected?'selected':''}" data-nr-unit="${esc(u.key)}"><strong>${esc(unitText(u))}</strong><span>${u.response==='NR'?'NR':esc(statusLabel(u.response))} · ${done}/3 photos · ${stamped}/3 visit times${done===3&&stamped===3?' · Report ready':''}</span></button>`
     }).join(''):'<p class="empty-state">No NR units for this selection.</p>';
     if(key&&rows.some(u=>u.key===key))await renderEditor(key);
     else if(selected&&rows.some(u=>u.key===selected))await renderEditor(selected);
@@ -163,6 +82,17 @@
     await render(selected)
   });
   document.getElementById('nrEvidenceVisitForms').addEventListener('change',async e=>{
+    if(e.target.dataset.field==='date'||e.target.dataset.field==='time'){
+      const kind=e.target.closest('[data-nr-kind]')?.dataset.nrKind,key=selected;
+      if(!kind||!key)return;
+      const previous=record(key),visits={...(previous.visits||{})};
+      visits[kind]={...(visits[kind]||{}),[e.target.dataset.field]:e.target.value};
+      state.nrEvidence=state.nrEvidence||{};
+      state.nrEvidence[key]={...previous,visits,updatedAt:new Date().toISOString()};
+      save('NR visit date/time updated');
+      document.getElementById('nrEvidenceSaved').textContent='Visit date and time saved.';
+      return
+    }
     if(e.target.dataset.field!=='photo'||!e.target.files?.[0])return;
     const kind=e.target.closest('[data-nr-kind]')?.dataset.nrKind,file=e.target.files[0],key=selected;
     if(!kind||!key)return;
@@ -177,17 +107,6 @@
       const visits={...(previous.visits||{})};delete visits[kind];
       state.nrEvidence[key]={...previous,visits,reviewed:false,finalNote:'',reviewedAt:'',updatedAt:savedAt};
       save('NR visit photo saved');await render(key);
-      // Recognition is best effort. The original timestamp remains visible on the saved photo.
-      timestampQueue=timestampQueue.then(async()=>{
-        try{
-          const stamp=await exifDateTime(file).catch(()=>null)||await readPrintedTimestamp(file).catch(()=>null);
-          if(!stamp||visitRule(kind,stamp.date,stamp.time))return;
-          const current=(await photos()).find(p=>p.id===photoId(key,kind));
-          if(current?.savedAt!==savedAt)return;
-          const r=record(key);r.visits={...(r.visits||{}),[kind]:stamp};r.updatedAt=new Date().toISOString();
-          state.nrEvidence[key]=r;save('NR photo timestamp recognized')
-        }catch(error){console.warn('NR timestamp recognition unavailable',error)}
-      }).catch(error=>console.warn('NR timestamp recognition unavailable',error))
     }catch(error){console.error(error);toast('Photo could not be saved. Please try again.')}
     finally{inputs.forEach(input=>input.disabled=false)}
   });
@@ -206,27 +125,11 @@
     }finally{URL.revokeObjectURL(url)}
   }
   async function reportRows(){
-    await timestampQueue;
-    const items=await photos(),rows=chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}));
-    let updated=false,worker,workerUnavailable=false;
-    try{
-      for(const row of rows.filter(({p})=>p.every(photo=>photo?.blob instanceof Blob))){
-        for(let j=0;j<TYPES.length;j++){
-          const kind=TYPES[j][0];if(row.r.visits?.[kind]?.date&&row.r.visits?.[kind]?.time)continue;
-          let stamp=await exifDateTime(row.p[j].blob).catch(()=>null);
-          if(!stamp&&!workerUnavailable){
-            if(!worker){const OCR=await loadOCR().catch(()=>null);if(OCR)worker=await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true}).catch(()=>null);if(!worker)workerUnavailable=true}
-            if(worker)stamp=await readPrintedTimestamp(row.p[j].blob,worker).catch(()=>null)
-          }
-          if(!stamp||visitRule(kind,stamp.date,stamp.time))continue;
-          state.nrEvidence=state.nrEvidence||{};
-          row.r={...row.r,visits:{...(row.r.visits||{}),[kind]:stamp}};
-          state.nrEvidence[row.u.key]=row.r;updated=true
-        }
-      }
-    }finally{await worker?.terminate()}
-    if(updated)save('NR photo timestamps recognized for report');
-    return rows
+    const items=await photos();
+    return chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}))
+  }
+  function missingVisitTimes(rows){
+    return rows.flatMap(({u,r})=>TYPES.filter(([kind])=>!r.visits?.[kind]?.date||!r.visits?.[kind]?.time).map(([,label])=>`${unitDisplay(u.floor,u.unit)} ${label}`))
   }
   function reportPages(rows){
     const pages=[];
@@ -241,16 +144,6 @@
     const converted=await excelImage(blob);
     const bytes=await converted.blob.arrayBuffer();
     return converted.blob.type==='image/png'?document.embedPng(bytes):document.embedJpg(bytes)
-  }
-  async function stampCrop(blob){
-    const url=URL.createObjectURL(blob);
-    try{
-      const img=new Image();img.src=url;await img.decode();
-      const w=img.naturalWidth,h=img.naturalHeight,canvas=document.createElement('canvas');
-      canvas.width=900;canvas.height=135;
-      canvas.getContext('2d').drawImage(img,.015*w,.765*h,.52*w,.115*h,0,0,900,135);
-      return await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Timestamp crop failed')),'image/jpeg',.95))
-    }finally{URL.revokeObjectURL(url)}
   }
   async function downloadEvidencePdf(rows){
     const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
@@ -281,10 +174,7 @@
           const v=r.visits?.[TYPES[j][0]],cx=left+unitW+j*photoW;
           center(page,'Visited on',cx,photoW,imageBottom-11,8.5,bold);
           if(v?.date&&v?.time){center(page,reportDate(v.date),cx,photoW,imageBottom-21,8.5);center(page,reportTime(v.time),cx,photoW,imageBottom-31,8.5)}
-          else{
-            const crop=await stampCrop(p[j].blob),stamp=await document.embedJpg(await crop.arrayBuffer());
-            page.drawImage(stamp,{x:cx+9,y:imageBottom-35,width:photoW-18,height:19})
-          }
+          else{center(page,'Date: __________',cx,photoW,imageBottom-21,8);center(page,'Time: __________',cx,photoW,imageBottom-31,8)}
         }
         y=captionBottom
       }
@@ -303,6 +193,7 @@
     try{
       const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));
       if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
+      const missing=missingVisitTimes(rows);if(missing.length){toast(`Enter visit date and time for ${missing.length} photo(s). First: ${missing[0]}`);return}
       const pdf=await downloadEvidencePdf(rows);
       downloadBlob(`ELU_NR_Evidence_Zone${zoneEl.value}_${isoTodaySG()}.pdf`,pdf);
       toast('Zone NR PDF downloaded')
@@ -311,6 +202,7 @@
   });
   document.getElementById('nrEvidenceExcel').addEventListener('click',async()=>{
     const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
+    const missing=missingVisitTimes(rows);if(missing.length){toast(`Enter visit date and time for ${missing.length} photo(s). First: ${missing[0]}`);return}
     const zip=new JSZip(),sheetRows=[],drawings=[],relations=[],media=[],pageBreaks=[],merges=['A1:D1'];
     const cell=(ref,v,style=3)=>`<c r="${ref}" s="${style}" t="inlineStr"><is><t>${xml(v)}</t></is></c>`;
     sheetRows.push(`<row r="1" ht="33" customHeight="1">${cell('A1','Non Responsive Unit',1)}${cell('D1','',3)}</row>`);
@@ -330,14 +222,7 @@
         drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>${x}</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>${y}</xdr:rowOff></xdr:from><xdr:ext cx="${w}" cy="${h}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id}" name="Visit photo ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${id}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
       }
       n++;
-      sheetRows.push(`<row r="${n}" ht="37" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,v?.date&&v?.time?`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`:'Visited on',v?.date&&v?.time?8:9)}).join('')}</row>`);
-      for(let j=0;j<TYPES.length;j++){
-        const v=r.visits?.[TYPES[j][0]];
-        if(v?.date&&v?.time)continue;
-        const blob=await stampCrop(p[j].blob),id=media.length+1;
-        media.push({path:`image${id}.jpg`,blob});relations.push(`<Relationship Id="rId${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}.jpg"/>`);
-        drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>200000</xdr:rowOff></xdr:from><xdr:ext cx="1100000" cy="220000"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id}" name="Visit timestamp ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${id}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
-      }
+      sheetRows.push(`<row r="${n}" ht="32" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`,8)}).join('')}</row>`);
       merges.push(`A${unitRow}:A${n}`);n++;
       }
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Contractor (M/s Shin Khai Construction Pte Ltd)',6)}</row>`);merges.push(`A${n}:D${n}`);n++;

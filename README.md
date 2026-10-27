@@ -1,3 +1,9 @@
+# V8.44.134 — Manual NR visit date and time
+
+- Each saved original photo has Date and Time fields. Edits save to that unit and visit, and the values appear below “Visited on” in PDF and Excel.
+- OCR and timestamp crops are removed. The photo is kept unchanged. Reports prompt for missing visit dates/times instead of silently exporting incomplete captions.
+- Zone PDF downloads directly as A4 with a single witness area after each page group. Download URLs remain available longer so large report files can finish saving.
+
 # V8.44.133 — NR evidence PDF page and timestamp correction
 
 - Download PDF produces a true A4 file with one page for up to three units from one block, followed by one aligned contractor and consultant witness section. The next block starts on a new page.

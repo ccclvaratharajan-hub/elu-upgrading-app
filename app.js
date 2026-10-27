@@ -2307,7 +2307,7 @@ function managerReportData(){
   const stamp=new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
   return{zone,block,scope,stamp,rows,totals,status,zones}
 }
-function downloadBlob(name,blob){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
+function downloadBlob(name,blob){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
 function reportSafeFileScope(r){return r.zone==="all"?"All_Zones":`Zone_${r.zone}${r.block!=="all"?`_Block_${r.block}`:""}`}
 
 /* ---------- Native PDF generator: aggregate manager report only; no PII ---------- */
