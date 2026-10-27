@@ -4,7 +4,7 @@
   const zoneEl=document.getElementById('nrEvidenceZone'),blockEl=document.getElementById('nrEvidenceBlock');
   if(!zoneEl)return;
   zoneEl.innerHTML='<option value="">Select Zone</option>'+Object.keys(ZONE_BLOCKS).map(z=>`<option value="${z}">Zone ${z}</option>`).join('');
-  let selected='',photoUrls=[],renderNonce=0;
+  let selected='',photoUrls=[],renderNonce=0,timestampQueue=Promise.resolve();
   const clearUrls=()=>{photoUrls.forEach(URL.revokeObjectURL);photoUrls=[]};
   const photoId=(key,kind)=>`${key}|${kind}`;
   const record=key=>state.nrEvidence?.[key]||{visits:{},reviewed:false,finalNote:''};
@@ -28,6 +28,83 @@
     const editor=document.getElementById('nrEvidenceEditor');
     document.querySelector('#nrevidence .nr-evidence-panel').after(editor)
   };
+  function visitRule(kind,date,time){
+    if(!date||!time)return '';
+    const day=new Date(`${date}T12:00:00`).getDay(),mins=Number(time.slice(0,2))*60+Number(time.slice(3,5));
+    if(kind==='day'&&(day<1||day>5||mins>1080))return 'Day visit: Monday to Friday, before 6 PM';
+    if(kind==='weekend'&&day!==6)return 'Weekend visit: Saturday only';
+    if(kind==='night'&&mins<=1080)return 'Night visit: after 6 PM';
+    return ''
+  }
+  async function exifDateTime(file){
+    if(file.type!=='image/jpeg')return null;
+    const bytes=await file.arrayBuffer(),v=new DataView(bytes);
+    const ascii=(offset,length)=>{if(offset<0||offset+length>v.byteLength)return '';let s='';for(let i=0;i<length;i++)s+=String.fromCharCode(v.getUint8(offset+i));return s};
+    const decode=raw=>{const m=raw.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2})/);return m?{date:`${m[1]}-${m[2]}-${m[3]}`,time:`${m[4]}:${m[5]}`}:null};
+    if(v.byteLength<16||v.getUint16(0)!==0xffd8)return null;
+    let p=2;
+    while(p+4<v.byteLength){
+      if(v.getUint8(p)!==0xff)break;
+      const marker=v.getUint8(p+1);if(marker===0xda)break;
+      const length=v.getUint16(p+2);if(length<2||p+2+length>v.byteLength)break;
+      if(marker===0xe1&&ascii(p+4,6)==='Exif\0\0'){
+        const start=p+10,little=ascii(start,2)==='II';
+        if(!little&&ascii(start,2)!=='MM')return null;
+        const u16=o=>v.getUint16(o,little),u32=o=>v.getUint32(o,little);
+        const dir=(offset,tag)=>{const at=start+offset;if(at<start||at+2>v.byteLength)return null;const count=u16(at);if(count>200)return null;for(let i=0;i<count;i++){const e=at+2+i*12;if(e+12>v.byteLength)return null;if(u16(e)===tag)return {type:u16(e+2),count:u32(e+4),value:u32(e+8),entry:e}}return null};
+        try{
+          const root=u32(start+4),sub=dir(root,0x8769),stamp=sub&&dir(sub.value,0x9003)||dir(root,0x0132);
+          if(stamp?.type===2&&stamp.count>=19&&stamp.count<=40){const at=stamp.count<=4?stamp.entry+8:start+stamp.value;return decode(ascii(at,stamp.count))}
+        }catch{}
+        return null
+      }
+      p+=2+length
+    }
+    return null
+  }
+  // Timestamp Camera can burn the clock into pixels while stripping EXIF (as in
+  // the supplied sample). Load OCR only when such a photo is selected.
+  let ocrScript;
+  async function loadOCR(){
+    if(window.Tesseract)return window.Tesseract;
+    ocrScript=ocrScript||new Promise((resolve,reject)=>{
+      const script=document.createElement('script');script.src='./vendor/tesseract/tesseract.min.js';
+      script.onload=()=>resolve(window.Tesseract);script.onerror=()=>reject(new Error('OCR unavailable'));
+      document.head.append(script)
+    });
+    return ocrScript
+  }
+  async function readPrintedTimestamp(file){
+    const OCR=await loadOCR(),url=URL.createObjectURL(file);
+    let worker;
+    try{
+      const img=new Image();img.src=url;await img.decode();
+      const w=img.naturalWidth,h=img.naturalHeight;
+      // The sample's white clock and date are in the lower-left of the photo.
+      // Keep a manual edit path for other watermark layouts or uncertain OCR.
+      const crop=(x,y,cw,ch,threshold)=>{
+        const canvas=document.createElement('canvas');canvas.width=Math.round(cw*w*3);canvas.height=Math.round(ch*h*3);
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        ctx.drawImage(img,x*w,y*h,cw*w,ch*h,0,0,canvas.width,canvas.height);
+        if(threshold){const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+          for(let i=0;i<pixels.data.length;i+=4){const gray=(pixels.data[i]*.299+pixels.data[i+1]*.587+pixels.data[i+2]*.114);const v=gray>threshold?0:255;pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=v}
+          ctx.putImageData(pixels,0,0)}
+        return canvas
+      };
+      worker=await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true});
+      await worker.setParameters({tessedit_pageseg_mode:8,tessedit_char_whitelist:'0123456789:/APMapm. '});
+      const timeImage=crop(.02,.78,.195,.085,180),dateImage=crop(.235,.775,.215,.05,180);
+      const timeText=(await worker.recognize(timeImage)).data.text.trim();
+      const dateText=(await worker.recognize(dateImage)).data.text.trim();
+      const tm=timeText.match(/(?:^|\D)([01]?\d|2[0-3])[:.](\d{2})\s*([AP]M)?(?:\D|$)/i);
+      const dm=dateText.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})/);
+      if(!tm||!dm)return null;
+      const date=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+      if(new Date(`${date}T12:00:00`).toISOString().slice(0,10)!==date)return null;
+      let hour=Number(tm[1]);if(tm[3])hour=hour%12+(tm[3].toUpperCase()==='PM'?12:0);
+      return {date,time:`${String(hour).padStart(2,'0')}:${tm[2]}`}
+    }finally{URL.revokeObjectURL(url);await worker?.terminate()}
+  }
   function chosenRows(){
     const z=Number(zoneEl.value),block=blockEl.value;
     if(!z)return [];
@@ -45,10 +122,10 @@
       const p=photoFor(items,key,kind),url=p?.blob instanceof Blob?URL.createObjectURL(p.blob):'';
       if(url)photoUrls.push(url);
       const visit=record(key).visits?.[kind]||{};
-      return `<fieldset class="nr-visit-card" data-nr-kind="${kind}"><legend>${label}</legend>${url?`<div class="nr-photo-current"><a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label} evidence"></a><span>Original photo saved</span></div>`:'<small>No photo attached</small>'}<div class="nr-photo-actions"><label class="nr-file-action">${url?'Replace photo':'Upload photo'}<input type="file" data-field="photo" accept="image/jpeg,image/png,image/webp"></label>${url?`<button type="button" data-remove-photo="${kind}">Delete photo</button>`:''}</div>${url?`<div class="nr-visit-edit"><div class="nr-visit-fields"><label>Visited on · Date<input type="date" data-field="date" value="${esc(visit.date||'')}"></label><label>Time<input type="time" data-field="time" value="${esc(visit.time||'')}"></label></div></div>`:''}</fieldset>`
+      return `<fieldset class="nr-visit-card" data-nr-kind="${kind}"><legend>${label}</legend>${url?`<div class="nr-photo-current"><a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label} evidence"></a><span>Saved photo</span></div>`:'<small>No photo attached</small>'}<div class="nr-photo-actions"><label class="nr-file-action">${url?'Replace photo':'Upload photo'}<input type="file" data-field="photo" accept="image/jpeg,image/png,image/webp"></label>${url?`<button type="button" data-remove-photo="${kind}">Delete photo</button>`:''}</div><div class="nr-visit-stamp"><label>Visited on <input type="date" data-field="visit-date" value="${esc(visit.date||'')}"></label><label>Time <input type="time" data-field="visit-time" value="${esc(visit.time||'')}"></label><button type="button" data-save-visit="${kind}">Save date / time</button></div></fieldset>`
     }).join('');
     const count=TYPES.filter(([kind])=>photoFor(items,key,kind)?.blob instanceof Blob).length;
-    document.getElementById('nrEvidenceSaved').textContent=`${count}/3 original photos saved. Enter each visit date and time for the report; changes save automatically.`;
+    document.getElementById('nrEvidenceSaved').textContent=`${count}/3 visit photos saved${count===3?' · Ready for report':''}. Check and save the date and time for each visit.`;
   }
   async function render(key){
     const nonce=++renderNonce;
@@ -59,8 +136,7 @@
     document.getElementById('nrEvidenceCount').textContent=z?`${rows.length} current NR or recorded units in Zone ${z}`:'Choose a zone to see its NR units.';
     document.getElementById('nrEvidenceList').innerHTML=rows.length?rows.map(u=>{
       const done=TYPES.filter(([kind])=>photoFor(items,u.key,kind)?.blob instanceof Blob).length;
-      const stamped=TYPES.filter(([kind])=>record(u.key).visits?.[kind]?.date&&record(u.key).visits?.[kind]?.time).length;
-      return `<button type="button" class="nr-unit-row ${u.key===selected?'selected':''}" data-nr-unit="${esc(u.key)}"><strong>${esc(unitText(u))}</strong><span>${u.response==='NR'?'NR':esc(statusLabel(u.response))} · ${done}/3 photos · ${stamped}/3 visit times${done===3&&stamped===3?' · Report ready':''}</span></button>`
+      return `<button type="button" class="nr-unit-row ${u.key===selected?'selected':''}" data-nr-unit="${esc(u.key)}"><strong>${esc(unitText(u))}</strong><span>${u.response==='NR'?'NR':esc(statusLabel(u.response))} · ${done}/3 photos${done===3?' · Report ready':''}</span></button>`
     }).join(''):'<p class="empty-state">No NR units for this selection.</p>';
     if(key&&rows.some(u=>u.key===key))await renderEditor(key);
     else if(selected&&rows.some(u=>u.key===selected))await renderEditor(selected);
@@ -74,6 +150,14 @@
     if(key)renderEditor(key).then(()=>{document.getElementById('nrEvidenceEditor').scrollIntoView({block:'nearest'})}).catch(console.error)
   });
   document.getElementById('nrEvidenceVisitForms').addEventListener('click',async e=>{
+    const stampKind=e.target.closest('[data-save-visit]')?.dataset.saveVisit;
+    if(stampKind&&selected){
+      const card=e.target.closest('[data-nr-kind]'),date=card.querySelector('[data-field="visit-date"]').value,time=card.querySelector('[data-field="visit-time"]').value;
+      const r=record(selected);r.visits={...(r.visits||{}),[stampKind]:{date,time}};r.updatedAt=new Date().toISOString();
+      state.nrEvidence=state.nrEvidence||{};state.nrEvidence[selected]=r;save('NR visit date and time saved');
+      document.getElementById('nrEvidenceSaved').textContent=`${unitText(getUnit(selected))} · ${TYPES.find(([kind])=>kind===stampKind)?.[1]} date / time saved.`;
+      return
+    }
     const kind=e.target.closest('[data-remove-photo]')?.dataset.removePhoto;
     if(!kind||!selected)return;
     if(!confirm('Delete this visit photo? You can upload it again later.'))return;
@@ -82,17 +166,6 @@
     await render(selected)
   });
   document.getElementById('nrEvidenceVisitForms').addEventListener('change',async e=>{
-    if(e.target.dataset.field==='date'||e.target.dataset.field==='time'){
-      const kind=e.target.closest('[data-nr-kind]')?.dataset.nrKind,key=selected;
-      if(!kind||!key)return;
-      const previous=record(key),visits={...(previous.visits||{})};
-      visits[kind]={...(visits[kind]||{}),[e.target.dataset.field]:e.target.value};
-      state.nrEvidence=state.nrEvidence||{};
-      state.nrEvidence[key]={...previous,visits,updatedAt:new Date().toISOString()};
-      save('NR visit date/time updated');
-      document.getElementById('nrEvidenceSaved').textContent='Visit date and time saved.';
-      return
-    }
     if(e.target.dataset.field!=='photo'||!e.target.files?.[0])return;
     const kind=e.target.closest('[data-nr-kind]')?.dataset.nrKind,file=e.target.files[0],key=selected;
     if(!kind||!key)return;
@@ -107,6 +180,18 @@
       const visits={...(previous.visits||{})};delete visits[kind];
       state.nrEvidence[key]={...previous,visits,reviewed:false,finalNote:'',reviewedAt:'',updatedAt:savedAt};
       save('NR visit photo saved');await render(key);
+      // Recognition is best effort. The original timestamp remains visible on the saved photo.
+      timestampQueue=timestampQueue.then(async()=>{
+        try{
+          const stamp=await readPrintedTimestamp(file).catch(()=>null)||await exifDateTime(file).catch(()=>null);
+          if(!stamp||visitRule(kind,stamp.date,stamp.time))return;
+          const current=(await photos()).find(p=>p.id===photoId(key,kind));
+          if(current?.savedAt!==savedAt)return;
+          const r=record(key);if(r.visits?.[kind]?.date||r.visits?.[kind]?.time)return;
+          r.visits={...(r.visits||{}),[kind]:stamp};r.updatedAt=new Date().toISOString();
+          state.nrEvidence[key]=r;save('NR photo timestamp recognized')
+        }catch(error){console.warn('NR timestamp recognition unavailable',error)}
+      }).catch(error=>console.warn('NR timestamp recognition unavailable',error))
     }catch(error){console.error(error);toast('Photo could not be saved. Please try again.')}
     finally{inputs.forEach(input=>input.disabled=false)}
   });
@@ -124,13 +209,7 @@
       return {blob,ratio}
     }finally{URL.revokeObjectURL(url)}
   }
-  async function reportRows(){
-    const items=await photos();
-    return chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}))
-  }
-  function missingVisitTimes(rows){
-    return rows.flatMap(({u,r})=>TYPES.filter(([kind])=>!r.visits?.[kind]?.date||!r.visits?.[kind]?.time).map(([,label])=>`${unitDisplay(u.floor,u.unit)} ${label}`))
-  }
+  async function reportRows(){const items=await photos();return chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}))}
   function reportPages(rows){
     const pages=[];
     for(const row of rows){
@@ -140,74 +219,33 @@
     }
     return pages
   }
-  async function pdfPhoto(document,blob){
-    const converted=await excelImage(blob);
-    const bytes=await converted.blob.arrayBuffer();
-    return converted.blob.type==='image/png'?document.embedPng(bytes):document.embedJpg(bytes)
-  }
-  async function downloadEvidencePdf(rows){
-    const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
-    const document=await PDFDocument.create(),regular=await document.embedFont(StandardFonts.Helvetica),bold=await document.embedFont(StandardFonts.HelveticaBold);
-    const ink=rgb(.12,.18,.22),red=rgb(.84,.25,.28),line=rgb(.29,.35,.38);
-    const W=595.28,H=841.89,left=32,right=563.28,width=right-left,unitW=96,photoW=(width-unitW)/3;
-    const txt=(page,value,x,y,size=9,font=regular,color=ink)=>page.drawText(String(value),{x,y,size,font,color});
-    const center=(page,value,x,w,y,size=9,font=regular,color=ink)=>txt(page,value,x+(w-font.widthOfTextAtSize(String(value),size))/2,y,size,font,color);
-    const hLine=(page,y,x1=left,x2=right,thickness=0.8)=>page.drawLine({start:{x:x1,y},end:{x:x2,y},thickness,color:line});
-    const vLine=(page,x,y1,y2)=>page.drawLine({start:{x,y:y1},end:{x,y:y2},thickness:.8,color:line});
-    for(const group of reportPages(rows)){
-      const page=document.addPage([W,H]);let y=H-34;
-      hLine(page,y);center(page,'Non Responsive Unit',left,width,y-19,15,bold,red);y-=29;hLine(page,y);
-      const heading=`Blk ${group[0].u.block} · ${reportAddress(group[0].u.zone)}`;
-      center(page,heading,left,width,y-14,10,bold);y-=21;hLine(page,y);
-      for(const {u,r,p} of group){
-        const headerTop=y,headerBottom=y-19,imageBottom=headerBottom-130,captionBottom=imageBottom-37;
-        hLine(page,headerBottom);hLine(page,imageBottom,left+unitW,right);hLine(page,captionBottom,left,right,1.2);
-        for(let j=0;j<4;j++)vLine(page,left+(j===0?0:unitW+(j-1)*photoW),captionBottom,headerTop);
-        vLine(page,right,captionBottom,headerTop);
-        center(page,'Unit',left,unitW,headerBottom+5,9,bold);
-        for(let j=0;j<3;j++)center(page,['First Visit','Second Visit','Weekend Visit'][j],left+unitW+j*photoW,photoW,headerBottom+5,9,bold);
-        center(page,unitDisplay(u.floor,u.unit),left,unitW,imageBottom+62,13,bold);
-        for(let j=0;j<3;j++){
-          const picture=await pdfPhoto(document,p[j].blob),scale=Math.min((photoW-9)/picture.width,124/picture.height);
-          const w=picture.width*scale,h=picture.height*scale,x=left+unitW+j*photoW+(photoW-w)/2;
-          page.drawImage(picture,{x,y:imageBottom+(130-h)/2,width:w,height:h});
-          const v=r.visits?.[TYPES[j][0]],cx=left+unitW+j*photoW;
-          center(page,'Visited on',cx,photoW,imageBottom-11,8.5,bold);
-          if(v?.date&&v?.time){center(page,reportDate(v.date),cx,photoW,imageBottom-21,8.5);center(page,reportTime(v.time),cx,photoW,imageBottom-31,8.5)}
-          else{center(page,'Date: __________',cx,photoW,imageBottom-21,8);center(page,'Time: __________',cx,photoW,imageBottom-31,8)}
-        }
-        y=captionBottom
-      }
-      const witness=(label,top)=>{
-        txt(page,`Witness by ${label}`,left+2,top-14,9.5);
-        const columns=[{x:left+6,w:150,label:'Name / Designation'},{x:left+190,w:150,label:'Signature'},{x:right-100,w:95,label:'Date'}];
-        for(const col of columns){hLine(page,top-36,col.x,col.x+col.w,.7);center(page,col.label,col.x,col.w,top-48,8)}
-      };
-      witness('Contractor (M/s Shin Khai Construction Pte Ltd)',y-8);
-      witness('Consultant',y-67)
-    }
-    return new Blob([await document.save()],{type:'application/pdf'})
-  }
+  const witnessHtml=()=>['Contractor (M/s Shin Khai Construction Pte Ltd)','Consultant'].map(label=>`<div class="witness"><b>Witness by ${label}</b><div class="signatures"><span>___________________<br>Name / Designation</span><span>___________________<br>Signature</span><span>____________<br>Date</span></div></div>`).join('');
   document.getElementById('nrEvidencePrint').addEventListener('click',async()=>{
-    const button=document.getElementById('nrEvidencePrint');button.disabled=true;
+    const tab=window.open('','_blank','width=1000,height=900');if(!tab){toast('Allow pop-ups to print the NR report');return}
     try{
       const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));
-      if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
-      const missing=missingVisitTimes(rows);if(missing.length){toast(`Enter visit date and time for ${missing.length} photo(s). First: ${missing[0]}`);return}
-      const pdf=await downloadEvidencePdf(rows);
-      downloadBlob(`ELU_NR_Evidence_Zone${zoneEl.value}_${isoTodaySG()}.pdf`,pdf);
-      toast('Zone NR PDF downloaded')
-    }catch(error){console.error(error);toast('NR PDF could not be prepared')}
-    finally{button.disabled=false}
+      if(!rows.length){tab.close();toast('No unit has all three saved visit photos in this zone / block');return}
+      const urls=[],pages=[];
+      for(const group of reportPages(rows)){
+        const records=group.map(({u,r,p})=>{
+          const cards=`<div class="visit-row"><div class="unit">${esc(unitDisplay(u.floor,u.unit))}</div>${TYPES.map(([kind],j)=>{const url=URL.createObjectURL(p[j].blob),v=r.visits?.[kind];urls.push(url);return `<div class="photo"><b>${['First Visit','Second Visit','Weekend Visit'][j]}</b><img src="${url}"><small>Visited on<br>${v?.date&&v?.time?`${esc(reportDate(v.date))}<br>${esc(reportTime(v.time))}`:'Date / time on photo'}</small></div>`}).join('')}</div>`;
+          return `<div class="record"><div class="visit-table">${cards}</div></div>`
+        }).join('');
+        pages.push(`<section class="page"><h1>Non Responsive Unit</h1><h2>Blk ${group[0].u.block} · ${esc(reportAddress(group[0].u.zone))}</h2>${records}<div class="page-witness">${witnessHtml()}</div></section>`)
+      }
+      tab.document.open();tab.document.write(`<!doctype html><html><head><title>NR Visit Evidence · Zone ${zoneEl.value}</title><style>@page{size:A4 portrait;margin:10mm 13mm}*{box-sizing:border-box}body{font:10px Arial;margin:0;color:#1e2e39}.page{break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}.record{break-inside:avoid;page-break-inside:avoid;margin-bottom:2mm;border-bottom:2px solid #4d5b61}h1{text-align:center;color:#d64248;font-size:16px;margin:0;border:1px solid #4d5b61;padding:4px}h2{text-align:center;font-size:10px;border:1px solid #4d5b61;border-top:0;margin:0;padding:4px}.visit-row{display:grid;grid-template-columns:22% repeat(3,1fr);border-left:1px solid #4d5b61;border-bottom:1px solid #4d5b61}.visit-row>*{border-right:1px solid #4d5b61}.unit{padding:5px;text-align:center;font-weight:bold;font-size:13px}.photo{text-align:center;min-width:0}.photo b{display:block;border-bottom:1px solid #4d5b61;padding:3px;font-size:9px}.photo img{display:block;width:100%;height:35mm;object-fit:contain}.photo small{display:block;border-top:1px solid #4d5b61;padding:3px;line-height:1.15;font-size:9px;min-height:11mm}.page-witness{margin-top:2mm;break-inside:avoid;page-break-inside:avoid}.witness{margin-top:2mm;font-size:10px}.signatures{display:grid;grid-template-columns:50% 30% 20%;text-align:center}.signatures span:first-child{text-align:left}.witness span{display:inline-block;margin-top:2mm;font-size:9px;white-space:nowrap;line-height:1.4}@media print{button{display:none}}</style></head><body>${pages.join('')}<script>onload=()=>setTimeout(()=>print(),500)<\/script></body></html>`);tab.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),300000)
+    }catch(error){tab.close();console.error(error);toast('NR print could not be prepared')}
   });
   document.getElementById('nrEvidenceExcel').addEventListener('click',async()=>{
     const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
-    const missing=missingVisitTimes(rows);if(missing.length){toast(`Enter visit date and time for ${missing.length} photo(s). First: ${missing[0]}`);return}
-    const zip=new JSZip(),sheetRows=[],drawings=[],relations=[],media=[],pageBreaks=[],merges=['A1:D1'];
+    const zip=new JSZip(),media=[],blocks=[...new Set(rows.map(({u})=>u.block))];
     const cell=(ref,v,style=3)=>`<c r="${ref}" s="${style}" t="inlineStr"><is><t>${xml(v)}</t></is></c>`;
+    for(let sheetIndex=0;sheetIndex<blocks.length;sheetIndex++){
+    const blockRows=rows.filter(({u})=>u.block===blocks[sheetIndex]);
+    const sheetRows=[],drawings=[],relations=[],pageBreaks=[],merges=['A1:D1'];
     sheetRows.push(`<row r="1" ht="33" customHeight="1">${cell('A1','Non Responsive Unit',1)}${cell('D1','',3)}</row>`);
     let n=2;
-    const groups=reportPages(rows);
+    const groups=reportPages(blockRows);
     for(let g=0;g<groups.length;g++){
       const first=groups[g][0].u;
       sheetRows.push(`<row r="${n}" ht="19" customHeight="1">${cell(`A${n}`,`Blk ${first.block} · ${reportAddress(first.zone)}`,2)}${cell(`D${n}`,'',3)}</row>`);merges.push(`A${n}:D${n}`);n++;
@@ -218,31 +256,31 @@
       for(let j=0;j<3;j++)if(p[j]?.blob instanceof Blob){
         const {blob:b,ratio}=await excelImage(p[j].blob),ext=b.type==='image/png'?'png':'jpg',id=media.length+1;
         const maxW=1100000,maxH=1330000,w=Math.round(Math.min(maxW,maxH*ratio)),h=Math.round(w/ratio),x=Math.round((maxW-w)/2),y=Math.round((maxH-h)/2);
-        media.push({path:`image${id}.${ext}`,blob:b});relations.push(`<Relationship Id="rId${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}.${ext}"/>`);
-        drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>${x}</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>${y}</xdr:rowOff></xdr:from><xdr:ext cx="${w}" cy="${h}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id}" name="Visit photo ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${id}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
+        media.push({path:`image${id}.${ext}`,blob:b});const rel=relations.length+1;relations.push(`<Relationship Id="rId${rel}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}.${ext}"/>`);
+        drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>${x}</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>${y}</xdr:rowOff></xdr:from><xdr:ext cx="${w}" cy="${h}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${rel}" name="Visit photo ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${rel}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
       }
       n++;
-      sheetRows.push(`<row r="${n}" ht="32" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`,8)}).join('')}</row>`);
-      merges.push(`A${unitRow}:A${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="32" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,v?.date&&v?.time?`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`:'Visited on\nDate / time on photo',8)}).join('')}</row>`);merges.push(`A${unitRow}:A${n}`);n++;
       }
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Contractor (M/s Shin Khai Construction Pte Ltd)',6)}</row>`);merges.push(`A${n}:D${n}`);n++;
-      sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',7)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
-      sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',7)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',9)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',9)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Consultant',6)}</row>`);merges.push(`A${n}:D${n}`);n++;
-      sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',7)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
-      sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',7)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',9)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="14" customHeight="1">${cell(`A${n}`,'Name / Designation',9)}${cell(`C${n}`,'Signature',7)}${cell(`D${n}`,'Date',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
       if(g<groups.length-1)pageBreaks.push(n-1)
     }
-    const types=`<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>`;
+    zip.file(`xl/worksheets/sheet${sheetIndex+1}.xml`,`<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="18" customWidth="1"/><col min="2" max="4" width="27" customWidth="1"/></cols><sheetData>${sheetRows.join('')}</sheetData><mergeCells count="${merges.length}">${merges.map(ref=>`<mergeCell ref="${ref}"/>`).join('')}</mergeCells><printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.55" bottom="0.45" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>${pageBreaks.length?`<rowBreaks count="${pageBreaks.length}" manualBreakCount="${pageBreaks.length}">${pageBreaks.map(id=>`<brk id="${id}" min="0" max="16383" man="1"/>`).join('')}</rowBreaks>`:''}<drawing r:id="rId1"/></worksheet>`);
+    zip.file(`xl/worksheets/_rels/sheet${sheetIndex+1}.xml.rels`,`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${sheetIndex+1}.xml"/></Relationships>`);
+    zip.file(`xl/drawings/drawing${sheetIndex+1}.xml`,`<?xml version="1.0"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${drawings.join('')}</xdr:wsDr>`);
+    zip.file(`xl/drawings/_rels/drawing${sheetIndex+1}.xml.rels`,`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relations.join('')}</Relationships>`);
+    }
+    const types=`<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${blocks.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/drawings/drawing${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`).join('')}</Types>`;
     zip.file('[Content_Types].xml',types);
     zip.file('_rels/.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
-    zip.file('xl/workbook.xml',`<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Zone ${zoneEl.value} NR Evidence" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'Zone ${zoneEl.value} NR Evidence'!$1:$1</definedName></definedNames></workbook>`);
-    zip.file('xl/_rels/workbook.xml.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-    zip.file('xl/styles.xml','<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="18"/><color rgb="FFD64248"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="medium"/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
-    zip.file('xl/worksheets/sheet1.xml',`<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="18" customWidth="1"/><col min="2" max="4" width="27" customWidth="1"/></cols><sheetData>${sheetRows.join('')}</sheetData><mergeCells count="${merges.length}">${merges.map(ref=>`<mergeCell ref="${ref}"/>`).join('')}</mergeCells><printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.55" bottom="0.45" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>${pageBreaks.length?`<rowBreaks count="${pageBreaks.length}" manualBreakCount="${pageBreaks.length}">${pageBreaks.map(id=>`<brk id="${id}" min="0" max="16383" man="1"/>`).join('')}</rowBreaks>`:''}<drawing r:id="rId1"/></worksheet>`);
-    zip.file('xl/worksheets/_rels/sheet1.xml.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>');
-    zip.file('xl/drawings/drawing1.xml',`<?xml version="1.0"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${drawings.join('')}</xdr:wsDr>`);
-    zip.file('xl/drawings/_rels/drawing1.xml.rels',`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relations.join('')}</Relationships>`);
+    zip.file('xl/workbook.xml',`<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${blocks.map((block,i)=>`<sheet name="Blk ${block}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`);
+    zip.file('xl/_rels/workbook.xml.rels',`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${blocks.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${blocks.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+    zip.file('xl/styles.xml','<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="18"/><color rgb="FFD64248"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="medium"/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
     for(const m of media)zip.file(`xl/media/${m.path}`,await m.blob.arrayBuffer());
     const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
     downloadBlob(`ELU_NR_Evidence_Zone${zoneEl.value}_${isoTodaySG()}.xlsx`,blob);toast('Zone NR Excel downloaded')

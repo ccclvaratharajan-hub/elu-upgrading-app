@@ -1,24 +1,17 @@
-# V8.44.134 — Manual NR visit date and time
+# V8.44.133 — NR report page grouping
 
-- Each saved original photo has Date and Time fields. Edits save to that unit and visit, and the values appear below “Visited on” in PDF and Excel.
-- OCR and timestamp crops are removed. The photo is kept unchanged. Reports prompt for missing visit dates/times instead of silently exporting incomplete captions.
-- Zone PDF downloads directly as A4 with a single witness area after each page group. Download URLs remain available longer so large report files can finish saving.
+- All NR units use the same three visit photo and date/time fields. Report pages contain up to three complete units from one block; a remainder of one or two units stays on its own page without empty placeholders.
+- In print, contractor and consultant witness sections follow the actual unit rows instead of being pushed to the bottom of a partly filled page. Their first signing lines align to the left with the witness heading. Excel keeps one block per tab and the same three-unit grouping.
 
-# V8.44.133 — NR evidence PDF page and timestamp correction
+# V8.44.132 — NR date and time entry per unit
 
-- Download PDF produces a true A4 file with one page for up to three units from one block, followed by one aligned contractor and consultant witness section. The next block starts on a new page.
-- The zone Excel export follows the same page grouping, with a clear divider between units.
-- Date and time are checked again from each saved photo before export. When OCR cannot read the timestamp, the actual watermark from that photo is placed beneath it instead of a blank date or time.
-- Original photos remain unmodified. The new PDF export uses the bundled pdf-lib browser library.
+- Each of the three visit photo cards has editable Visited on date and time fields and a Save date / time button. Values persist separately for each unit and visit and feed both Excel and print reports.
+- The optional photo timestamp reader fills only an empty visit, so a manually saved correction is not overwritten.
 
-# V8.44.132 — NR PDF and Excel export
+# V8.44.131 — NR Excel block tabs
 
-- Print / Save PDF (A4) uses the same zone-wise, block-wise page layout as the Excel report. Select Save as PDF in the print dialog for one PDF covering the selected zone.
-
-# V8.44.131 — NR page divider and sample layout
-
-- The block heading appears once per page. A clear horizontal divider separates the three-visit rows for consecutive units.
-- Up to three units from one block fit on an A4 page, followed by one aligned contractor and consultant witness section.
+- Each block with complete three-photo NR evidence gets its own worksheet, named Blk <number>, in one zone workbook. Three units fit on each A4 print page; larger blocks continue within their tab.
+- Witness signing lines and Name / Designation start under the witness heading at the same left edge.
 
 # V8.44.130 — NR zone report, three units per page
 
