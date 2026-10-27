@@ -1,3 +1,10 @@
+# V8.44.133 — NR evidence PDF page and timestamp correction
+
+- Download PDF produces a true A4 file with one page for up to three units from one block, followed by one aligned contractor and consultant witness section. The next block starts on a new page.
+- The zone Excel export follows the same page grouping, with a clear divider between units.
+- Date and time are checked again from each saved photo before export. When OCR cannot read the timestamp, the actual watermark from that photo is placed beneath it instead of a blank date or time.
+- Original photos remain unmodified. The new PDF export uses the bundled pdf-lib browser library.
+
 # V8.44.132 — NR PDF and Excel export
 
 - Print / Save PDF (A4) uses the same zone-wise, block-wise page layout as the Excel report. Select Save as PDF in the print dialog for one PDF covering the selected zone.

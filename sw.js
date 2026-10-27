@@ -1,5 +1,5 @@
-const CACHE='elu-v8-44-132-shell';
-const CORE=['./','./index.html','./styles.css?v=8.44.132','./app.js?v=8.44.132','./nr-evidence.js?v=8.44.132','./evidence-downloads.js?v=8.44.132','./monthly-appointment-excel.js?v=8.44.115','./daily-appointment-sheet.js?v=8.44.115','./unit-register-export.js?v=8.44.118','./completion-plan.js?v=8.44.107','./data.js?v=7.56','./map-data.js?v=7.61','./manifest.webmanifest?v=8.44a'];
+const CACHE='elu-v8-44-133-shell';
+const CORE=['./','./index.html','./styles.css?v=8.44.133','./app.js?v=8.44.133','./vendor/pdf-lib.min.js','./nr-evidence.js?v=8.44.133','./evidence-downloads.js?v=8.44.133','./monthly-appointment-excel.js?v=8.44.115','./daily-appointment-sheet.js?v=8.44.115','./unit-register-export.js?v=8.44.118','./completion-plan.js?v=8.44.107','./data.js?v=7.56','./map-data.js?v=7.61','./manifest.webmanifest?v=8.44a'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));});

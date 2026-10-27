@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.132">
+  <link rel="stylesheet" href="styles.css?v=8.44.133">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -701,7 +701,7 @@
       <section class="view" id="nrevidence">
         <div class="report-hero"><div><span class="section-label">NON RESPONSIVE UNITS</span><h2>NR Visit Evidence</h2><p>Upload day, night and weekend photos for each unit. Each photo saves automatically.</p></div></div>
         <article class="panel nr-evidence-panel">
-          <div class="panel-head register-head"><div><h3>Zone report</h3><p id="nrEvidenceCount">Choose a zone to see its NR units.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="nrEvidenceZone"><option value="">Select Zone</option></select></label><label class="mini-filter">Block<select id="nrEvidenceBlock"><option value="all">All blocks</option></select></label><button type="button" class="ghost-btn" id="nrEvidenceExcel">Download Excel</button><button type="button" class="primary-btn" id="nrEvidencePrint">Print / Save PDF (A4)</button></div></div>
+          <div class="panel-head register-head"><div><h3>Zone report</h3><p id="nrEvidenceCount">Choose a zone to see its NR units.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="nrEvidenceZone"><option value="">Select Zone</option></select></label><label class="mini-filter">Block<select id="nrEvidenceBlock"><option value="all">All blocks</option></select></label><button type="button" class="ghost-btn" id="nrEvidenceExcel">Download Excel</button><button type="button" class="primary-btn" id="nrEvidencePrint">Download PDF (A4)</button></div></div>
           <div id="nrEvidenceList" class="nr-evidence-list"><p class="empty-state">Select a zone.</p></div>
         </article>
         <article class="panel nr-entry-panel" id="nrEvidenceEditor" hidden>
@@ -819,9 +819,10 @@
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.132"></script>
-  <script src="nr-evidence.js?v=8.44.132"></script>
-  <script src="evidence-downloads.js?v=8.44.132"></script>
+  <script src="app.js?v=8.44.133"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="nr-evidence.js?v=8.44.133"></script>
+  <script src="evidence-downloads.js?v=8.44.133"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>

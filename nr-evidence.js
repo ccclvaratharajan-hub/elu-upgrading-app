@@ -74,9 +74,9 @@
     });
     return ocrScript
   }
-  async function readPrintedTimestamp(file){
+  async function readPrintedTimestamp(file,sharedWorker){
     const OCR=await loadOCR(),url=URL.createObjectURL(file);
-    let worker;
+    let worker=sharedWorker;
     try{
       const img=new Image();img.src=url;await img.decode();
       const w=img.naturalWidth,h=img.naturalHeight;
@@ -91,19 +91,25 @@
           ctx.putImageData(pixels,0,0)}
         return canvas
       };
-      worker=await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true});
+      worker=worker||await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true});
       await worker.setParameters({tessedit_pageseg_mode:8,tessedit_char_whitelist:'0123456789:/APMapm. '});
-      const timeImage=crop(.02,.78,.195,.085,180),dateImage=crop(.235,.775,.215,.05,180);
-      const timeText=(await worker.recognize(timeImage)).data.text.trim();
-      const dateText=(await worker.recognize(dateImage)).data.text.trim();
-      const tm=timeText.match(/(?:^|\D)([01]?\d|2[0-3])[:.](\d{2})\s*([AP]M)?(?:\D|$)/i);
-      const dm=dateText.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})/);
+      const timePattern=/(?:^|\D)([01]?\d|2[0-3])[:.](\d{2})\s*([AP]M)?(?:\D|$)/i;
+      const datePattern=/(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})/;
+      const read=async(candidates,pattern)=>{
+        for(const [x,y,cw,ch,threshold] of candidates){
+          const found=(await worker.recognize(crop(x,y,cw,ch,threshold))).data.text.trim();
+          const match=found.match(pattern);if(match)return match
+        }
+        return null
+      };
+      const tm=await read([[.02,.78,.195,.085,180],[.02,.78,.195,.085,0],[.015,.76,.22,.11,160],[.015,.76,.22,.11,0]],timePattern);
+      const dm=await read([[.235,.775,.215,.05,180],[.235,.775,.215,.05,0],[.22,.75,.31,.095,160],[.22,.75,.31,.095,0]],datePattern);
       if(!tm||!dm)return null;
       const date=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
       if(new Date(`${date}T12:00:00`).toISOString().slice(0,10)!==date)return null;
       let hour=Number(tm[1]);if(tm[3])hour=hour%12+(tm[3].toUpperCase()==='PM'?12:0);
       return {date,time:`${String(hour).padStart(2,'0')}:${tm[2]}`}
-    }finally{URL.revokeObjectURL(url);await worker?.terminate()}
+    }finally{URL.revokeObjectURL(url);if(!sharedWorker)await worker?.terminate()}
   }
   function chosenRows(){
     const z=Number(zoneEl.value),block=blockEl.value;
@@ -174,7 +180,7 @@
       // Recognition is best effort. The original timestamp remains visible on the saved photo.
       timestampQueue=timestampQueue.then(async()=>{
         try{
-          const stamp=await readPrintedTimestamp(file).catch(()=>null)||await exifDateTime(file).catch(()=>null);
+          const stamp=await exifDateTime(file).catch(()=>null)||await readPrintedTimestamp(file).catch(()=>null);
           if(!stamp||visitRule(kind,stamp.date,stamp.time))return;
           const current=(await photos()).find(p=>p.id===photoId(key,kind));
           if(current?.savedAt!==savedAt)return;
@@ -199,7 +205,29 @@
       return {blob,ratio}
     }finally{URL.revokeObjectURL(url)}
   }
-  async function reportRows(){const items=await photos();return chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}))}
+  async function reportRows(){
+    await timestampQueue;
+    const items=await photos(),rows=chosenRows().map(u=>({u,r:record(u.key),p:TYPES.map(([kind])=>photoFor(items,u.key,kind))}));
+    let updated=false,worker,workerUnavailable=false;
+    try{
+      for(const row of rows.filter(({p})=>p.every(photo=>photo?.blob instanceof Blob))){
+        for(let j=0;j<TYPES.length;j++){
+          const kind=TYPES[j][0];if(row.r.visits?.[kind]?.date&&row.r.visits?.[kind]?.time)continue;
+          let stamp=await exifDateTime(row.p[j].blob).catch(()=>null);
+          if(!stamp&&!workerUnavailable){
+            if(!worker){const OCR=await loadOCR().catch(()=>null);if(OCR)worker=await OCR.createWorker('eng',1,{workerPath:new URL('./vendor/tesseract/worker.min.js',location.href).href,corePath:new URL('./vendor/tesseract/',location.href).href,langPath:new URL('./vendor/tesseract/',location.href).href,gzip:true}).catch(()=>null);if(!worker)workerUnavailable=true}
+            if(worker)stamp=await readPrintedTimestamp(row.p[j].blob,worker).catch(()=>null)
+          }
+          if(!stamp||visitRule(kind,stamp.date,stamp.time))continue;
+          state.nrEvidence=state.nrEvidence||{};
+          row.r={...row.r,visits:{...(row.r.visits||{}),[kind]:stamp}};
+          state.nrEvidence[row.u.key]=row.r;updated=true
+        }
+      }
+    }finally{await worker?.terminate()}
+    if(updated)save('NR photo timestamps recognized for report');
+    return rows
+  }
   function reportPages(rows){
     const pages=[];
     for(const row of rows){
@@ -209,22 +237,77 @@
     }
     return pages
   }
-  const witnessHtml=()=>['Contractor (M/s Shin Khai Construction Pte Ltd)','Consultant'].map(label=>`<div class="witness"><b>Witness by ${label}</b><div class="signatures"><span>___________________<br>Name / Designation</span><span>___________________<br>Signature</span><span>____________<br>Date</span></div></div>`).join('');
+  async function pdfPhoto(document,blob){
+    const converted=await excelImage(blob);
+    const bytes=await converted.blob.arrayBuffer();
+    return converted.blob.type==='image/png'?document.embedPng(bytes):document.embedJpg(bytes)
+  }
+  async function stampCrop(blob){
+    const url=URL.createObjectURL(blob);
+    try{
+      const img=new Image();img.src=url;await img.decode();
+      const w=img.naturalWidth,h=img.naturalHeight,canvas=document.createElement('canvas');
+      canvas.width=900;canvas.height=135;
+      canvas.getContext('2d').drawImage(img,.015*w,.765*h,.52*w,.115*h,0,0,900,135);
+      return await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Timestamp crop failed')),'image/jpeg',.95))
+    }finally{URL.revokeObjectURL(url)}
+  }
+  async function downloadEvidencePdf(rows){
+    const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
+    const document=await PDFDocument.create(),regular=await document.embedFont(StandardFonts.Helvetica),bold=await document.embedFont(StandardFonts.HelveticaBold);
+    const ink=rgb(.12,.18,.22),red=rgb(.84,.25,.28),line=rgb(.29,.35,.38);
+    const W=595.28,H=841.89,left=32,right=563.28,width=right-left,unitW=96,photoW=(width-unitW)/3;
+    const txt=(page,value,x,y,size=9,font=regular,color=ink)=>page.drawText(String(value),{x,y,size,font,color});
+    const center=(page,value,x,w,y,size=9,font=regular,color=ink)=>txt(page,value,x+(w-font.widthOfTextAtSize(String(value),size))/2,y,size,font,color);
+    const hLine=(page,y,x1=left,x2=right,thickness=0.8)=>page.drawLine({start:{x:x1,y},end:{x:x2,y},thickness,color:line});
+    const vLine=(page,x,y1,y2)=>page.drawLine({start:{x,y:y1},end:{x,y:y2},thickness:.8,color:line});
+    for(const group of reportPages(rows)){
+      const page=document.addPage([W,H]);let y=H-34;
+      hLine(page,y);center(page,'Non Responsive Unit',left,width,y-19,15,bold,red);y-=29;hLine(page,y);
+      const heading=`Blk ${group[0].u.block} · ${reportAddress(group[0].u.zone)}`;
+      center(page,heading,left,width,y-14,10,bold);y-=21;hLine(page,y);
+      for(const {u,r,p} of group){
+        const headerTop=y,headerBottom=y-19,imageBottom=headerBottom-130,captionBottom=imageBottom-37;
+        hLine(page,headerBottom);hLine(page,imageBottom,left+unitW,right);hLine(page,captionBottom,left,right,1.2);
+        for(let j=0;j<4;j++)vLine(page,left+(j===0?0:unitW+(j-1)*photoW),captionBottom,headerTop);
+        vLine(page,right,captionBottom,headerTop);
+        center(page,'Unit',left,unitW,headerBottom+5,9,bold);
+        for(let j=0;j<3;j++)center(page,['First Visit','Second Visit','Weekend Visit'][j],left+unitW+j*photoW,photoW,headerBottom+5,9,bold);
+        center(page,unitDisplay(u.floor,u.unit),left,unitW,imageBottom+62,13,bold);
+        for(let j=0;j<3;j++){
+          const picture=await pdfPhoto(document,p[j].blob),scale=Math.min((photoW-9)/picture.width,124/picture.height);
+          const w=picture.width*scale,h=picture.height*scale,x=left+unitW+j*photoW+(photoW-w)/2;
+          page.drawImage(picture,{x,y:imageBottom+(130-h)/2,width:w,height:h});
+          const v=r.visits?.[TYPES[j][0]],cx=left+unitW+j*photoW;
+          center(page,'Visited on',cx,photoW,imageBottom-11,8.5,bold);
+          if(v?.date&&v?.time){center(page,reportDate(v.date),cx,photoW,imageBottom-21,8.5);center(page,reportTime(v.time),cx,photoW,imageBottom-31,8.5)}
+          else{
+            const crop=await stampCrop(p[j].blob),stamp=await document.embedJpg(await crop.arrayBuffer());
+            page.drawImage(stamp,{x:cx+9,y:imageBottom-35,width:photoW-18,height:19})
+          }
+        }
+        y=captionBottom
+      }
+      const witness=(label,top)=>{
+        txt(page,`Witness by ${label}`,left+2,top-14,9.5);
+        const columns=[{x:left+6,w:150,label:'Name / Designation'},{x:left+190,w:150,label:'Signature'},{x:right-100,w:95,label:'Date'}];
+        for(const col of columns){hLine(page,top-36,col.x,col.x+col.w,.7);center(page,col.label,col.x,col.w,top-48,8)}
+      };
+      witness('Contractor (M/s Shin Khai Construction Pte Ltd)',y-8);
+      witness('Consultant',y-67)
+    }
+    return new Blob([await document.save()],{type:'application/pdf'})
+  }
   document.getElementById('nrEvidencePrint').addEventListener('click',async()=>{
-    const tab=window.open('','_blank','width=1000,height=900');if(!tab){toast('Allow pop-ups to print the NR report');return}
+    const button=document.getElementById('nrEvidencePrint');button.disabled=true;
     try{
       const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));
-      if(!rows.length){tab.close();toast('No unit has all three saved visit photos in this zone / block');return}
-      const urls=[],pages=[];
-      for(const group of reportPages(rows)){
-        const records=group.map(({u,r,p})=>{
-          const cards=`<div class="visit-row"><div class="unit">${esc(unitDisplay(u.floor,u.unit))}</div>${TYPES.map(([kind],j)=>{const url=URL.createObjectURL(p[j].blob),v=r.visits?.[kind];urls.push(url);return `<div class="photo"><b>${['First Visit','Second Visit','Weekend Visit'][j]}</b><img src="${url}"><small>Visited on<br>${v?.date&&v?.time?`${esc(reportDate(v.date))}<br>${esc(reportTime(v.time))}`:'Date / time on photo'}</small></div>`}).join('')}</div>`;
-          return `<div class="record"><div class="visit-table">${cards}</div></div>`
-        }).join('');
-        pages.push(`<section class="page"><h1>Non Responsive Unit</h1><h2>Blk ${group[0].u.block} · ${esc(reportAddress(group[0].u.zone))}</h2>${records}<div class="page-witness">${witnessHtml()}</div></section>`)
-      }
-      tab.document.open();tab.document.write(`<!doctype html><html><head><title>NR Visit Evidence · Zone ${zoneEl.value}</title><style>@page{size:A4 portrait;margin:10mm 13mm}*{box-sizing:border-box}body{font:10px Arial;margin:0;color:#1e2e39}.page{break-after:page;page-break-after:always;min-height:270mm;display:flex;flex-direction:column}.page:last-child{break-after:auto;page-break-after:auto}.record{break-inside:avoid;page-break-inside:avoid;margin-bottom:2mm;border-bottom:2px solid #4d5b61}h1{text-align:center;color:#d64248;font-size:16px;margin:0;border:1px solid #4d5b61;padding:4px}h2{text-align:center;font-size:10px;border:1px solid #4d5b61;border-top:0;margin:0;padding:4px}.visit-row{display:grid;grid-template-columns:22% repeat(3,1fr);border-left:1px solid #4d5b61;border-bottom:1px solid #4d5b61}.visit-row>*{border-right:1px solid #4d5b61}.unit{padding:5px;text-align:center;font-weight:bold;font-size:13px}.photo{text-align:center;min-width:0}.photo b{display:block;border-bottom:1px solid #4d5b61;padding:3px;font-size:9px}.photo img{display:block;width:100%;height:35mm;object-fit:contain}.photo small{display:block;border-top:1px solid #4d5b61;padding:3px;line-height:1.15;font-size:9px;min-height:11mm}.page-witness{margin-top:auto;break-inside:avoid;page-break-inside:avoid}.witness{margin-top:2mm;font-size:10px}.signatures{display:flex;justify-content:space-around;gap:6px;text-align:center}.witness span{display:inline-block;margin-top:3mm;font-size:9px;white-space:nowrap;line-height:1.4}@media print{button{display:none}}</style></head><body>${pages.join('')}<script>onload=()=>setTimeout(()=>print(),500)<\/script></body></html>`);tab.document.close();setTimeout(()=>urls.forEach(URL.revokeObjectURL),300000)
-    }catch(error){tab.close();console.error(error);toast('NR print could not be prepared')}
+      if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
+      const pdf=await downloadEvidencePdf(rows);
+      downloadBlob(`ELU_NR_Evidence_Zone${zoneEl.value}_${isoTodaySG()}.pdf`,pdf);
+      toast('Zone NR PDF downloaded')
+    }catch(error){console.error(error);toast('NR PDF could not be prepared')}
+    finally{button.disabled=false}
   });
   document.getElementById('nrEvidenceExcel').addEventListener('click',async()=>{
     const rows=(await reportRows()).filter(({p})=>p.every(photo=>photo?.blob instanceof Blob));if(!rows.length){toast('No unit has all three saved visit photos in this zone / block');return}
@@ -247,7 +330,15 @@
         drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>${x}</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>${y}</xdr:rowOff></xdr:from><xdr:ext cx="${w}" cy="${h}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id}" name="Visit photo ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${id}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
       }
       n++;
-      sheetRows.push(`<row r="${n}" ht="32" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,v?.date&&v?.time?`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`:'Visited on\nDate / time on photo',8)}).join('')}</row>`);merges.push(`A${unitRow}:A${n}`);n++;
+      sheetRows.push(`<row r="${n}" ht="37" customHeight="1">${cell(`A${n}`,'',8)}${TYPES.map(([kind],j)=>{const v=r.visits?.[kind];return cell(`${'BCD'[j]}${n}`,v?.date&&v?.time?`Visited on\n${reportDate(v.date)}\n${reportTime(v.time)}`:'Visited on',v?.date&&v?.time?8:9)}).join('')}</row>`);
+      for(let j=0;j<TYPES.length;j++){
+        const v=r.visits?.[TYPES[j][0]];
+        if(v?.date&&v?.time)continue;
+        const blob=await stampCrop(p[j].blob),id=media.length+1;
+        media.push({path:`image${id}.jpg`,blob});relations.push(`<Relationship Id="rId${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}.jpg"/>`);
+        drawings.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${j+1}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${n-1}</xdr:row><xdr:rowOff>200000</xdr:rowOff></xdr:from><xdr:ext cx="1100000" cy="220000"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id}" name="Visit timestamp ${id}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${id}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`)
+      }
+      merges.push(`A${unitRow}:A${n}`);n++;
       }
       sheetRows.push(`<row r="${n}" ht="18" customHeight="1">${cell(`A${n}`,'Witness by Contractor (M/s Shin Khai Construction Pte Ltd)',6)}</row>`);merges.push(`A${n}:D${n}`);n++;
       sheetRows.push(`<row r="${n}" ht="24" customHeight="1">${cell(`A${n}`,'________________________',7)}${cell(`C${n}`,'________________________',7)}${cell(`D${n}`,'____________',7)}</row>`);merges.push(`A${n}:B${n}`);n++;
@@ -262,7 +353,7 @@
     zip.file('_rels/.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
     zip.file('xl/workbook.xml',`<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Zone ${zoneEl.value} NR Evidence" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'Zone ${zoneEl.value} NR Evidence'!$1:$1</definedName></definedNames></workbook>`);
     zip.file('xl/_rels/workbook.xml.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-    zip.file('xl/styles.xml','<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="18"/><color rgb="FFD64248"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="medium"/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+    zip.file('xl/styles.xml','<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="18"/><color rgb="FFD64248"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="medium"/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
     zip.file('xl/worksheets/sheet1.xml',`<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="18" customWidth="1"/><col min="2" max="4" width="27" customWidth="1"/></cols><sheetData>${sheetRows.join('')}</sheetData><mergeCells count="${merges.length}">${merges.map(ref=>`<mergeCell ref="${ref}"/>`).join('')}</mergeCells><printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.55" bottom="0.45" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>${pageBreaks.length?`<rowBreaks count="${pageBreaks.length}" manualBreakCount="${pageBreaks.length}">${pageBreaks.map(id=>`<brk id="${id}" min="0" max="16383" man="1"/>`).join('')}</rowBreaks>`:''}<drawing r:id="rId1"/></worksheet>`);
     zip.file('xl/worksheets/_rels/sheet1.xml.rels','<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>');
     zip.file('xl/drawings/drawing1.xml',`<?xml version="1.0"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${drawings.join('')}</xdr:wsDr>`);
