@@ -663,6 +663,7 @@ survey:["Survey Visit Register","Visit diary for resident calls: date, exact tim
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
 units:["Unit Register","Read-only master data populated automatically from your working registers."],
 nrevidence:["NR Visit Evidence","Zone-wise day, night and weekend visit records with photos."],
+riserprogress:["Riser Progress Photos","Floor and unit pair photo report by block."],
 evidencedownloads:["Evidence Downloads","Zone-wise Opt-Out forms and completed NR three-visit photos."],
 complaints:["Complaint Register","Separate complaint records with unit lookup."],
 dailyplanner:["Daily Planner","Team 1 and Team 2 appointments from Appointment Schedule, ready to print or share."],
@@ -699,6 +700,7 @@ function setView(view){
     if(!zone.value)zone.value=document.getElementById("boardZone").value||"1";
     window.renderNREvidence?.()
   }
+  else if(view==="riserprogress")window.renderRiserProgress?.();
   else if(view==="evidencedownloads")window.renderEvidenceDownloads?.();
   else if(view==="complaints")renderComplaintTable();
   else if(view==="teams"||view==="dailyplanner")renderPlanner();
@@ -2790,7 +2792,7 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=5;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=6;
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
@@ -2801,7 +2803,8 @@ function photoDb(){
       if(!db.objectStoreNames.contains("schedule"))db.createObjectStore("schedule",{keyPath:"id"});
       if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"});
       if(!db.objectStoreNames.contains("optOutForms"))db.createObjectStore("optOutForms",{keyPath:"unitKey"});
-      if(!db.objectStoreNames.contains("nrVisitPhotos"))db.createObjectStore("nrVisitPhotos",{keyPath:"id"})
+      if(!db.objectStoreNames.contains("nrVisitPhotos"))db.createObjectStore("nrVisitPhotos",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("riserPhotos"))db.createObjectStore("riserPhotos",{keyPath:"id"})
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -2825,12 +2828,12 @@ async function photoDbDelete(store,key){
 async function photoDbDeleteWhere(store,pred){
   const all=await photoDbAll(store);for(const x of all)if(pred(x))await photoDbDelete(store,x.id||x.key)
 }
-const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=4;
+const FULL_BACKUP_FORMAT="ELU_FULL_BACKUP",FULL_BACKUP_VERSION=5;
 let selectedFullBackup=null,safetyCopyDownloaded=false,backupBusy=false;
 async function fullBackupBlob(){
   await securePersistChain;
-  const [photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos"),photoDbAll("optOutForms"),photoDbAll("nrVisitPhotos")]);
-  const zip=new JSZip(),entries=[],complaintEntries=[],optOutEntries=[],nrEntries=[];
+  const [photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos,riserPhotos]=await Promise.all([photoDbAll("photos"),photoDbAll("schedule"),photoDbAll("meta"),photoDbAll("complaintPhotos"),photoDbAll("optOutForms"),photoDbAll("nrVisitPhotos"),photoDbAll("riserPhotos")]);
+  const zip=new JSZip(),entries=[],complaintEntries=[],optOutEntries=[],nrEntries=[],riserEntries=[];
   for(const [index,photo] of photos.entries()){
     const {blob,...details}=photo;
     if(!(blob instanceof Blob))throw new Error("A stored photo is missing its image data. Backup stopped.");
@@ -2852,8 +2855,13 @@ async function fullBackupBlob(){
     const path=`nr-visit-photos/${String(index).padStart(6,"0")}.bin`;
     zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});nrEntries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
   }
+  for(const [index,photo] of riserPhotos.entries()){
+    const {blob,...details}=photo;if(!(blob instanceof Blob))throw new Error("A riser photo is missing. Backup stopped.");
+    const path=`riser-photos/${String(index).padStart(6,"0")}.bin`;
+    zip.file(path,await blob.arrayBuffer(),{compression:"STORE"});riserEntries.push({...details,blobPath:path,blobType:blob.type||"image/jpeg",blobSize:blob.size})
+  }
   const snapshot=secureSnapshot();
-  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length,optOutForms:optOutForms.length,nrVisitPhotos:nrVisitPhotos.length}}));
+  zip.file("manifest.json",JSON.stringify({format:FULL_BACKUP_FORMAT,version:FULL_BACKUP_VERSION,createdAt:new Date().toISOString(),counts:{surveys:snapshot.surveys.length,appointments:snapshot.appointments.length,complaints:snapshot.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length,complaintPhotos:complaintPhotos.length,optOutForms:optOutForms.length,nrVisitPhotos:nrVisitPhotos.length,riserPhotos:riserPhotos.length}}));
   zip.file("records.json",JSON.stringify(snapshot));
   zip.file("photos.json",JSON.stringify(entries));
   zip.file("photo-schedule.json",JSON.stringify(schedule));
@@ -2861,6 +2869,7 @@ async function fullBackupBlob(){
   zip.file("complaint-photos.json",JSON.stringify(complaintEntries));
   zip.file("optout-forms.json",JSON.stringify(optOutEntries));
   zip.file("nr-visit-photos.json",JSON.stringify(nrEntries));
+  zip.file("riser-photos.json",JSON.stringify(riserEntries));
   return zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:4}})
 }
 async function downloadFullBackup(){
@@ -2880,24 +2889,26 @@ function closeBackupDialog(){document.getElementById("backupBackdrop").hidden=tr
 document.getElementById("restoreBackupBtn").addEventListener("click",()=>{document.getElementById("backupBackdrop").hidden=false;document.getElementById("backupPreview").textContent="No backup selected."});
 document.getElementById("backupClose").addEventListener("click",closeBackupDialog);
 document.getElementById("backupSafetyBtn").addEventListener("click",e=>runFullBackup(e.currentTarget,true));
-function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[],optOutForms=[],nrVisitPhotos=[]){
+function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos=[],optOutForms=[],nrVisitPhotos=[],riserPhotos=[]){
   if(!records||typeof records!=="object"||Array.isArray(records))throw new Error("Invalid records in backup.");
   for(const k of ["surveys","appointments","complaints","statusAudit","zone1CorrectionsApplied"])if(!Array.isArray(records[k]))throw new Error(`Missing ${k} records.`);
   if(!records.statusOverrides||typeof records.statusOverrides!=="object"||Array.isArray(records.statusOverrides))throw new Error("Invalid status decisions.");
   if(manifest.version>=4&&(!records.nrEvidence||typeof records.nrEvidence!=="object"||Array.isArray(records.nrEvidence)))throw new Error("Invalid NR visit records.");
-  if(![photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos].every(Array.isArray))throw new Error("Invalid file register.");
+  if(![photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos,riserPhotos].every(Array.isArray))throw new Error("Invalid file register.");
   const counts=manifest.counts||{};
   for(const [key,actual] of Object.entries({surveys:records.surveys.length,appointments:records.appointments.length,complaints:records.complaints.length,photos:photos.length,schedule:schedule.length,meta:meta.length}))if(counts[key]!==actual)throw new Error(`Backup count mismatch: ${key}.`);
   if(manifest.version>=2&&counts.complaintPhotos!==complaintPhotos.length)throw new Error("Backup count mismatch: complaint photos.");
   if(manifest.version>=3&&counts.optOutForms!==optOutForms.length)throw new Error("Backup count mismatch: Opt-Out forms.");
   if(manifest.version>=4&&counts.nrVisitPhotos!==nrVisitPhotos.length)throw new Error("Backup count mismatch: NR visit photos.");
-  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"],[optOutForms,"unitKey"],[nrVisitPhotos,"id"]]){
+  if(manifest.version>=5&&counts.riserPhotos!==riserPhotos.length)throw new Error("Backup count mismatch: riser photos.");
+  for(const [items,key] of [[photos,"id"],[schedule,"id"],[meta,"key"],[complaintPhotos,"id"],[optOutForms,"unitKey"],[nrVisitPhotos,"id"],[riserPhotos,"id"]]){
     const ids=new Set();for(const row of items){if(!row||typeof row!=="object"||row[key]==null||ids.has(row[key]))throw new Error(`Invalid or duplicate photo ${key}.`);ids.add(row[key])}
   }
   if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
   if(complaintPhotos.some(p=>typeof p.blobPath!=="string"||!/^complaint-images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!records.complaints.some(c=>c.id===p.caseId)))throw new Error("Invalid complaint photo in backup.");
   if(optOutForms.some(f=>typeof f.blobPath!=="string"||!/^optout-forms\/\d{6}\.bin$/.test(f.blobPath)||!Number.isSafeInteger(f.blobSize)||f.blobSize<0||!["application/pdf","image/jpeg","image/png","image/webp"].includes(f.blobType)))throw new Error("Invalid Opt-Out form in backup.");
   if(nrVisitPhotos.some(p=>typeof p.blobPath!=="string"||!/^nr-visit-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||!getUnit(p.unitKey)||!["day","night","weekend"].includes(p.kind)))throw new Error("Invalid NR visit photo in backup.");
+  if(riserPhotos.some(p=>typeof p.blobPath!=="string"||!/^riser-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||(p.groupKey?!(ZONE_BLOCKS[p.zone]||[]).includes(Number(p.block)):Number(p.block)!==0&&!(ZONE_BLOCKS[p.zone]||[]).includes(Number(p.block)))))throw new Error("Invalid riser photo in backup.");
   if(manifest.version>=4&&Object.keys(records.nrEvidence).some(key=>!getUnit(key)))throw new Error("Unknown unit in NR visit records.");
 }
 async function readFullBackup(file,withImages=false){
@@ -2906,16 +2917,17 @@ async function readFullBackup(file,withImages=false){
   const required=["manifest.json","records.json","photos.json","photo-schedule.json","photo-meta.json"];
   if(required.some(name=>!zip.file(name)))throw new Error("This is not an ELU full backup ZIP.");
   const [manifest,records,photos,schedule,meta]=await Promise.all(required.map(async name=>JSON.parse(await zip.file(name).async("string"))));
-  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2,3,4].includes(manifest.version))throw new Error("Unsupported backup version.");
+  if(manifest.format!==FULL_BACKUP_FORMAT||![1,2,3,4,5].includes(manifest.version))throw new Error("Unsupported backup version.");
   const complaintPhotos=manifest.version>=2?JSON.parse(await zip.file("complaint-photos.json")?.async("string")||"null"):[];
   const optOutForms=manifest.version>=3?JSON.parse(await zip.file("optout-forms.json")?.async("string")||"null"):[];
   const nrVisitPhotos=manifest.version>=4?JSON.parse(await zip.file("nr-visit-photos.json")?.async("string")||"null"):[];
-  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos);
-  if([...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos].some(p=>!zip.file(p.blobPath)))throw new Error("An attached file is missing from the backup.");
+  const riserPhotos=manifest.version>=5?JSON.parse(await zip.file("riser-photos.json")?.async("string")||"null"):[];
+  validateBackupRecords(records,manifest,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos,riserPhotos);
+  if([...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos,...riserPhotos].some(p=>!zip.file(p.blobPath)))throw new Error("An attached file is missing from the backup.");
   if(withImages){
-    for(const row of [...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
+    for(const row of [...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos,...riserPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
   }
-  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos}
+  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos,riserPhotos}
 }
 document.getElementById("backupFile").addEventListener("change",async e=>{
   selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
@@ -2927,8 +2939,8 @@ document.getElementById("backupFile").addEventListener("change",async e=>{
 async function replacePhotoStores(data){
   const db=await photoDb();
   return new Promise((resolve,reject)=>{
-    const tx=db.transaction(["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos"],"readwrite");
-    for(const name of ["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
+    const tx=db.transaction(["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos","riserPhotos"],"readwrite");
+    for(const name of ["photos","schedule","meta","complaintPhotos","optOutForms","nrVisitPhotos","riserPhotos"]){const store=tx.objectStore(name);store.clear();data[name].forEach(row=>store.put(row))}
     tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>{db.close();reject(tx.error||new Error("Photo restore transaction failed."))};tx.onerror=()=>{}
   })
 }
@@ -2943,7 +2955,7 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
     for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
     await securePersistChain;
     const encrypted=await encryptPayload(imported.records,secureSessionKey);
-    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos"),optOutForms:await photoDbAll("optOutForms"),nrVisitPhotos:await photoDbAll("nrVisitPhotos")};
+    original={stored:localStorage.getItem(SECURE_STATE_KEY),photos:await photoDbAll("photos"),schedule:await photoDbAll("schedule"),meta:await photoDbAll("meta"),complaintPhotos:await photoDbAll("complaintPhotos"),optOutForms:await photoDbAll("optOutForms"),nrVisitPhotos:await photoDbAll("nrVisitPhotos"),riserPhotos:await photoDbAll("riserPhotos")};
     button.textContent="Restoring…";
     await replacePhotoStores(imported);
     try{localStorage.setItem(SECURE_STATE_KEY,JSON.stringify(encrypted))}

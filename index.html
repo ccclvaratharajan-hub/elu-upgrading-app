@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.133">
+  <link rel="stylesheet" href="styles.css?v=8.44.135">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -77,6 +77,7 @@
         <button class="nav-item" data-view="dailyplanner"><svg><use href="#i-calendar"/></svg><span>Daily Planner</span></button>
         <button class="nav-item" data-view="units"><svg><use href="#i-register"/></svg><span>Unit Register</span></button>
         <button class="nav-item" data-view="nrevidence"><svg><use href="#i-photo"/></svg><span>NR Visit Evidence</span></button>
+        <button class="nav-item" data-view="riserprogress"><svg><use href="#i-photo"/></svg><span>Riser Progress Photos</span></button>
         <button class="nav-item" data-view="evidencedownloads"><svg><use href="#i-register"/></svg><span>Evidence Downloads</span></button>
         <button class="nav-item" data-view="complaints"><svg><use href="#i-complaint"/></svg><span>Complaint Register</span></button>
         <button class="nav-item" data-view="teams"><svg><use href="#i-team"/></svg><span>Appointment List</span></button>
@@ -710,6 +711,15 @@
           <p id="nrEvidenceSaved" class="nr-evidence-saved"></p>
         </article>
       </section>
+      <section class="view" id="riserprogress">
+        <div class="report-hero"><div><span class="section-label">RISER PROGRESS</span><h2>Riser Progress Photos</h2><p>Match each photo to its floor and unit pair or single unit, then download the block report.</p></div></div>
+        <article class="panel riser-panel">
+          <div class="panel-head register-head"><div><h3>Block photos</h3><p id="riserCount">Zone 3 reference is ready.</p></div><div class="register-tools"><label class="mini-filter">Zone<select id="riserZone"></select></label><label class="mini-filter">Block<select id="riserBlock"></select></label><label class="mini-filter">Floor<select id="riserFloor"></select></label><button type="button" class="primary-btn" id="riserPdf">Download PDF</button></div></div>
+          <div class="riser-import"><label class="nr-file-action">Select photo ZIP<input type="file" id="riserZip" accept=".zip,application/zip"></label><button type="button" class="ghost-btn" id="riserCommit" disabled>Save matched photos</button><span id="riserImportStatus" aria-live="polite">One ZIP can contain many blocks. Check photo positions: overview + link on the left, each unit photo on the right.</span></div>
+          <div id="riserPending" class="riser-pending"></div>
+          <div id="riserGroups" class="riser-groups"></div>
+        </article>
+      </section>
       <section class="view" id="evidencedownloads">
         <div class="report-hero"><div><span class="section-label">ZONE-WISE EVIDENCE</span><h2>Evidence Downloads</h2><p>Select a zone to collect its Opt-Out records or completed NR three-visit photos.</p></div></div>
         <article class="panel evidence-download-panel">
@@ -818,10 +828,12 @@
   <script src="data.js?v=7.56"></script>
   <script src="map-data.js?v=7.61"></script>
   <script src="jszip.min.js"></script>
+  <script src="pdf-lib.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.133"></script>
-  <script src="nr-evidence.js?v=8.44.133"></script>
-  <script src="evidence-downloads.js?v=8.44.133"></script>
+  <script src="app.js?v=8.44.135"></script>
+  <script src="nr-evidence.js?v=8.44.135"></script>
+  <script src="riser-progress.js?v=8.44.135"></script>
+  <script src="evidence-downloads.js?v=8.44.135"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
   <script src="daily-appointment-sheet.js?v=8.44.115"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>

@@ -1,3 +1,16 @@
+# V8.44.135 — Exact riser photo positions
+
+- The supplied PDF sample has meter box overview plus link photos together in the left AFTER cell, and a separate photo for each unit in the right AFTER cell. Each pair needs four assigned roles; a single unit needs three.
+- Bulk ZIP matches a floor/unit group when its number is clear. Photo positions are only suggested from explicit filename words; every image has a visible position selector and preview. PDF download checks exactly one photo for every required position and will not silently place images by filename order.
+- Saved and staged photos can be moved to another unit group, assigned a position, or deleted. Original photos are not altered.
+
+# V8.44.134 — Riser Progress Photos
+
+- Separate Riser Progress Photos sidebar. Zone 3 floor/unit pairings from the supplied 531–536 reference are loaded. R labels are reference only, and are not used to calculate pairings. Other zones await their floor/unit references; no pairings are guessed.
+- Upload an image ZIP for a block or zone. Match exact floor/unit text in filename first, then try OCR. Review every proposed match; ambiguous photos remain unassigned until manually selected. Add/delete individual photos. Original images stay in IndexedDB.
+- Download an A4 PDF by block or zone in the supplied sample layout: unit details and two AFTER photo columns. A pair remains one group; a single unit has its own photo row. Up to seven rows fit on a page, with each block starting a new page.
+- Full backup version 5 includes riser photos; restoring older backups keeps compatibility and clears this new store as an intentional full replacement.
+
 # V8.44.133 — NR report page grouping
 
 - All NR units use the same three visit photo and date/time fields. Report pages contain up to three complete units from one block; a remainder of one or two units stays on its own page without empty placeholders.
