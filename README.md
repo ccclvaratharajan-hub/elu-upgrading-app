@@ -1,3 +1,9 @@
+# V8.44.143 — Certificate PDF download repair
+
+The complete certificate templates are included. Select Form E or Completion Certificate, then zone and block. A PDF downloads automatically and remains visible in the page preview; Download PDF again and Open PDF remain available. Date and Application No. are optional and stored per form and block. Only current A/C Opt-In units are included, sorted by floor and unit.
+
+An embedded copy of the templates supports opening index.html directly on Windows and handles missing/offline PDF asset requests. Keep the complete extracted folder together. When updating an existing hosted app, update the files at its existing address to retain access to its browser data; no register data or storage keys are changed by this repair.
+
 # V8.44.138 — Riser ZIP automatic photo placement
 
 Upload the block photo ZIP in Riser Progress Photos. Unit plaques and filenames are read automatically to place overview/link photos on the left and unit photos on the right, using the supplied Zone 3 block/floor pairing reference. No save or position selection is required for recognized photos. Unreadable photos are retained in a separate collapsed section.
