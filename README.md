@@ -1,4 +1,5 @@
-# V8.44.136 — Riser ZIP auto placement for clear photo labels
+# V8.44.137 — Riser ZIP automatic photo placement
 
-The Zone 3 riser reference remains the source for floor and unit pairs. Uploading a ZIP now saves clear matches immediately. Numbered folder context and explicit `(Full)` / `(l)` names identify overview and link photos. Unclear WhatsApp names are checked against visible unit labels and left for review when not reliably recognized. Incomplete groups do not export a final PDF. Existing saved photos are preserved.
-Select a single block and use Clear selected block photos when replacing old test photos. Only riser photos for that block are removed.
+Upload the block photo ZIP in Riser Progress Photos. Unit plaques and filenames are read automatically to place overview/link photos on the left and unit photos on the right, using the supplied Zone 3 block/floor pairing reference. No save or position selection is required for recognized photos. Unreadable photos are retained in a separate collapsed section.
+
+Each report position has Add or Replace, and each placed photo has Delete. Missing images retain an empty position in the sample report layout. PDF download supports partially complete groups. Original register data and existing photo storage are preserved. ZIP duplicates are identified by file content. The automatic reader uses bundled local files.
