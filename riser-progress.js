@@ -26,9 +26,15 @@
   function normaliseLabels(text){
     return String(text||'').replace(/[–—−]/g,'-').replace(/([#＃]\s*)[Oo](?=\d)/g,'$10').replace(/\b[Oo](?=\d\s*-)/g,'0').replace(/(\d{1,2})\s*[_.]\s*(?=\d{3}\b)/g,'$1-');
   }
+  function filenameUnits(text){
+    const stem=String(text||'').split(/[\\/]/).pop().replace(/\.(?:jpe?g|png|webp)$/i,'').trim();
+    const m=stem.match(/^#?(\d{1,2})\s*-\s*(\d{3})((?:\s*[-,&+]\s*\d{3})*)\s*(?:-?\s*\((?:l|full)\))?$/i);
+    return m?{floor:Number(m[1]),units:[...new Set([Number(m[2]),...(m[3].match(/\d{3}/g)||[]).map(Number)])]}:null;
+  }
   function labelledUnits(text,g){
     if(!g)return [];
-    const result=new Set();
+    const parsed=filenameUnits(text);
+    const result=new Set(parsed&&parsed.floor===g.floor?parsed.units.filter(u=>g.units.includes(u)):[]);
     for(const m of normaliseLabels(text).matchAll(/#?\s*(\d{1,2})\s*-\s*(\d{3})\b/g))if(Number(m[1])===g.floor&&g.units.includes(Number(m[2])))result.add(Number(m[2]));
     return [...result];
   }
@@ -37,6 +43,8 @@
     // The unit label/reference wins over a camera location watermark. A camera
     // sometimes prints the neighbouring block (e.g. Blk 533 in the 532 set).
     const hint=Number(blockHint)||0;const block=hint||(explicit?Number(explicit[1]):0);
+    const parsed=filenameUnits(text);
+    if(parsed){const candidates=reference.filter(g=>(!block||g.block===block)&&g.floor===parsed.floor&&parsed.units.every(u=>g.units.includes(u)));return candidates.length===1?candidates[0]:null}
     const found=new Set();const pattern=/#?\s*(\d{1,2})\s*[-–]\s*(\d{2,3})\b/g;
     for(const m of label.matchAll(pattern))for(const g of reference)if((!block||g.block===block)&&g.floor===Number(m[1])&&g.units.includes(Number(m[2])))found.add(g.key);
     return found.size===1?reference.find(g=>g.key===[...found][0]):null
@@ -161,6 +169,7 @@
   }
   async function analysePhoto(blob,name,blockHint){
     let text='',g=matching(name,blockHint),role=roleHint(name,g),warning='';
+    if(filenameUnits(name)&&!g)return {g:null,role:'',text:'',warning:''};
     if(!g||!role){
       try{const plaques=await readUnitPlaques(blob);text=plaques.text;g=g||matching(text,blockHint);role=role||(g&&plaques.overview?'overview':roleHint(text,g));
         if(!g||!role){const blue=await readBlueLabels(blob);text+='\n'+blue;g=g||matching(text,blockHint);role=role||(g&&plaques.overview?'overview':roleHint(text,g))}
