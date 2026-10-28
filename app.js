@@ -674,6 +674,7 @@ reports:["Weekly Meeting Report","Progress Summary calculated directly from the 
 completion:["10 mm² Cable Upgrading Work (Unit Work)","Approximate block targets from live Block Board status."],
 forme:["Form E","Certification of Fitness of Residential Unit"],
 completioncertificate:["Completion Certificate","Completion Certificate for Modification of Electrical Installation"],
+singleline:["Unit Single Line Diagram","Block-wise diagrams with and without sub-main upgrading."],
 sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
 let photoEntryOpened=false;
@@ -689,6 +690,7 @@ function setView(view){
     const [editId,dateId]=entryDates[view],dateInput=document.getElementById(dateId);
     if(!document.getElementById(editId).value)dateInput.value=today;
   }
+  if(view==="singleline")window.renderSingleLineDiagram?.();
   if(view==="forme"||view==="completioncertificate")window.renderInspectionCertificate?.(view);
   if(view==="dailyplanner"&&!document.getElementById("teamDate").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;

@@ -1,3 +1,13 @@
+# V8.44.144 — Unit Single Line Diagram
+
+Added a dedicated Unit Single Line Diagram sidebar item after Completion Certificate. Select zone and block to view current register lists and automatically download a PDF, with a persistent PDF preview and re-download link.
+
+The first section uses Detail M and includes A (Opt-In). The following section uses Detail M1 and includes D (Opt-Out), NR, C (Confirmation), P (Pending Confirmation), and any unrecorded status with its label. This grouping applies only to this diagram and does not edit unit or appointment records. Unit Type is deliberately blank throughout, pending the user's verified room-type mapping. Unit lists sort by numeric floor and unit; long lists continue on additional pages.
+
+The supplied diagrams and source seals/signatures are retained; source block 566 lists and totals are removed and replaced with selected-block live records. Existing Completion Certificate and Form E scripts and templates are unchanged. Browser data keys are unchanged. When updating an existing app, keep its existing address/location.
+
+Validation: generated PDFs using synthetic A/D/NR/C/P records through normal asset loading, missing-asset fallback, and local-file loading paths. Checked status grouping, blank room types, ordering, totals, pagination, live status changes, and empty blocks; rendered the resulting PDF pages for visual review. Full browser interaction and the user's encrypted live records have not been tested in this environment.
+
 # V8.44.143 — Certificate PDF download repair
 
 The complete certificate templates are included. Select Form E or Completion Certificate, then zone and block. A PDF downloads automatically and remains visible in the page preview; Download PDF again and Open PDF remain available. Date and Application No. are optional and stored per form and block. Only current A/C Opt-In units are included, sorted by floor and unit.
