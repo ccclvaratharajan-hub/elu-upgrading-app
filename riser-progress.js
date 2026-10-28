@@ -25,7 +25,9 @@
   const extension=name=>String(name).split('.').pop().toLowerCase();
   const matching=(text,blockHint)=>{
     const label=String(text||'').replace(/\b[Oo](?=\d{1,2}\s*[-–])/g,'0');const explicit=label.match(/\b(?:blk|block)\s*[-_#:]?\s*(5\d{2})(?:[A-Z])?\b/i);
-    const hint=Number(blockHint)||0;if(hint&&explicit&&Number(explicit[1])!==hint)return null;const block=hint||(explicit?Number(explicit[1]):0);
+    // The unit label/reference wins over a camera location watermark. A camera
+    // sometimes prints the neighbouring block (e.g. Blk 533 in the 532 set).
+    const hint=Number(blockHint)||0;const block=hint||(explicit?Number(explicit[1]):0);
     const found=new Set();const pattern=/#?\s*(\d{1,2})\s*[-–]\s*(\d{2,3})\b/g;
     for(const m of label.matchAll(pattern))for(const g of reference)if((!block||g.block===block)&&g.floor===Number(m[1])&&g.units.includes(Number(m[2])))found.add(g.key);
     return found.size===1?reference.find(g=>g.key===[...found][0]):null
@@ -42,9 +44,9 @@
   }
   function roleHint(name,g){
     if(!g)return '';
-    const label=String(name).toLowerCase();
-    if(/\b(link|terminal|termination|connection)\b/.test(label))return 'link';
-    if(/\b(overview|both.meters|meter.box.overview|whole.box)\b/.test(label))return 'overview';
+    const label=String(name).toLowerCase().replace(/\.[^.]+$/,'');
+    if(/(?:\(l\)|\b(?:link|terminal|termination|connection)\b)/.test(label))return 'link';
+    if(/(?:\(full\)|\b(?:full|overview|both.meters|meter.box.overview|whole.box)\b)/.test(label))return 'overview';
     const named=g.units.filter(unit=>new RegExp(`\\b(?:unit|meter)[ #_-]*${unit}\\b`,'i').test(label));
     return named.length===1?`unit-${named[0]}`:''
   }
@@ -64,6 +66,16 @@
   zoneEl.addEventListener('change',()=>{fillBlocks();staged=[];document.getElementById('riserCommit').disabled=true;render().catch(console.error)});
   blockEl.addEventListener('change',()=>{fillFloors();render().catch(console.error)});
   floorEl.addEventListener('change',()=>render().catch(console.error));
+  document.getElementById('riserClearBlock').addEventListener('click',async()=>{
+    const block=Number(blockEl.value),zone=Number(zoneEl.value);
+    if(!block){statusEl.textContent='Select one block first, then clear its riser photos.';return}
+    const photos=(await photoDbAll('riserPhotos')).filter(p=>Number(p.zone)===zone&&Number(p.block)===block);
+    if(!photos.length){statusEl.textContent=`Blk ${block} has no saved riser photos.`;return}
+    if(!confirm(`Delete all ${photos.length} riser photos for Blk ${block}? This will not affect other blocks or registers.`))return;
+    for(const p of photos)await photoDbDelete('riserPhotos',p.id);
+    staged=[];statusEl.textContent=`Cleared ${photos.length} riser photos for Blk ${block}. Other blocks were kept.`;
+    await render();
+  });
   async function fingerprint(bytes){const hash=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('')}
   let ocrWorker=null;
   async function ocr(file){
@@ -78,18 +90,30 @@
       const size=entries.reduce((n,x)=>n+(x._data?.uncompressedSize||0),0);
       if(entries.length>600||size>600*1024*1024)throw new Error('Choose a ZIP with at most 600 photos and 600 MB of images.');
       if(!entries.length)throw new Error('No JPEG, PNG or WebP photos found in this ZIP.');
-      const savedIds=new Set((await photoDbAll('riserPhotos')).map(p=>p.id));let duplicates=0;
+      const savedById=new Map((await photoDbAll('riserPhotos')).map(p=>[p.id,p]));let duplicates=0,placed=0,needsReview=0;
       for(let i=0;i<entries.length;i++){
         const entry=entries[i];statusEl.textContent=`Checking photo ${i+1} of ${entries.length}: ${entry.name}`;
         const bytes=await entry.async('uint8array');const id=`riser-${await fingerprint(bytes)}`;
-        if(savedIds.has(id)||staged.some(p=>p.id===id)){duplicates++;continue}
-        const blob=new Blob([bytes],{type:fileTypes[extension(entry.name)]});let g=matching(entry.name,blockEl.value);
-        if(!g&&Number(zoneEl.value)===3)try{g=matching(await ocr(blob),blockEl.value)}catch(error){console.warn('Riser number reading unavailable',error)}
+        if(staged.some(p=>p.id===id)){duplicates++;continue}
+        const blob=new Blob([bytes],{type:fileTypes[extension(entry.name)]});
+        // A numbered ZIP folder is the block context even when All blocks is selected.
+        const folderBlock=entry.name.split('/').slice(0,-1).map(part=>/^5\d{2}$/.test(part)?Number(part):0).find(Boolean)||0;
+        const blockHint=folderBlock||(blockEl.value==='all'?0:Number(blockEl.value));
+        let g=matching(entry.name,blockHint),recognized='';
+        if(!g&&Number(zoneEl.value)===3)try{recognized=await ocr(blob);g=matching(recognized,blockHint)}catch(error){console.warn('Riser number reading unavailable',error)}
         if(g&&g.zone!==Number(zoneEl.value))g=null;
-        staged.push({id,zone:Number(zoneEl.value),block:g?.block||Number(blockEl.value)||0,floor:g?.floor||0,groupKey:g?.key||'',role:roleHint(entry.name,g),name:entry.name.split('/').pop(),blob,savedAt:new Date().toISOString()});
+        const old=savedById.get(id),name=entry.name.split('/').pop();
+        const group=g||reference.find(x=>x.key===old?.groupKey);
+        const inferredRole=roleHint(name,group);
+        const p=old?{...old,groupKey:old.groupKey||group?.key||'',block:old.block||group?.block||blockHint,floor:old.floor||group?.floor||0,role:old.role||inferredRole}:{id,zone:Number(zoneEl.value),block:group?.block||blockHint,floor:group?.floor||0,groupKey:group?.key||'',role:inferredRole,name,blob,savedAt:new Date().toISOString()};
+        if(old)duplicates++;
+        else if(p.groupKey&&p.role)placed++;
+        else needsReview++;
+        await photoDbPut('riserPhotos',p);
+        savedById.set(id,p);
       }
-      statusEl.textContent=`${staged.filter(p=>p.groupKey).length} matched · ${staged.filter(p=>!p.groupKey).length} to review · ${duplicates} already saved.`;
-      document.getElementById('riserCommit').disabled=!staged.length;await render()
+      statusEl.textContent=`${placed} clear photos placed automatically · ${needsReview} need checking · ${duplicates} already saved. Missing photos can be added later.`;
+      await render()
     }catch(error){console.error(error);statusEl.textContent=error.message||'ZIP could not be checked.'}
     finally{e.target.value=''}
   });
