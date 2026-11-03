@@ -26,7 +26,7 @@
     // The daily sheet is a record of booked appointments, not a template of free slots.
     const slots=[...new Set(appointments.map(a=>a.slot).filter(Boolean))].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
     const matching=(team,slot)=>appointments.filter(a=>a.slot===slot&&(single||teamOf(a)===team)).sort(byUnit);
-    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">'+esc(team)+'</button>':'')+'</div>').join("");
+    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">'+(team==="Team 1"?esc(team)+' →':'← '+esc(team))+'</button>':'')+'</div>').join("");
     const remarks=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-remark">'+esc(a.remarks||"")+'</div>').join("");
     const unassigned=single?[]:appointments.filter(a=>a.team!=="Team 1"&&a.team!=="Team 2");
     const heading='Zone '+zone+(contractor?' · '+contractor+(single?' · Blk 557–558':' · Blk 559–562'):'');
@@ -51,8 +51,19 @@
       const id=Number(move.dataset.dailyTeam),a=state.appointments.find(x=>Number(x.id)===id);
       if(!a||![559,560,561,562].includes(Number(a.block))||!liveScheduleRecord(a))return;
       const entries=currentEntries(a.date,"4").filter(x=>[559,560,561,562].includes(Number(x.block)));
-      a.team=zone4KskDisplayTeams(entries).get(a.id)==="Team 1"?"Team 2":"Team 1";
-      a.teamManual=true;
+      const displayTeams=zone4KskDisplayTeams(entries),currentTeam=displayTeams.get(a.id);
+      if(currentTeam!=="Team 1"&&currentTeam!=="Team 2")return;
+      // Freeze this day's existing visible layout before moving the selected row.
+      // Otherwise legacy overlap balancing can also move its neighbouring booking.
+      const currentTeamsById=new Map(entries.map(entry=>[Number(entry.id),displayTeams.get(entry.id)]));
+      state.appointments.forEach(record=>{
+        const displayedTeam=currentTeamsById.get(Number(record.id));
+        if(displayedTeam==="Team 1"||displayedTeam==="Team 2"){
+          record.team=displayedTeam;
+          record.teamManual=true;
+        }
+      });
+      a.team=currentTeam==="Team 1"?"Team 2":"Team 1";
       save("KSK appointment moved to "+a.team);
       return
     }

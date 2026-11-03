@@ -1,3 +1,11 @@
+# V8.44.146 — Keep existing teams when moving one appointment
+
+Daily Planner shows Team 1 → under the Team 1 heading and ← Team 2 under the Team 2 heading. Each button displays the current column team; its tooltip describes the destination. Clicking moves the selected appointment and updates its label to match the destination heading.
+
+Opening the planner leaves the existing schedule untouched. On an arrow move, the currently displayed KSK assignments for that date are saved as explicit team assignments before applying the selected move. This prevents legacy overlap balancing from also moving another appointment. Dates, slots, units, contacts, remarks and other days are preserved. Existing browser data is retained; there is no automatic migration on startup.
+
+Verified with synthetic overlapping bookings: only the selected appointment changes displayed team, moves in both directions, repeated moves, saved refresh, unchanged unrelated fields and other dates. Full browser and encrypted live-record tests have not been run in this environment.
+
 # V8.44.145 — Appointment team labels
 
 Daily Planner appointment buttons now show the current column team: Team 1 under Team 1, Team 2 under Team 2. Clicking the button still moves the appointment to the other team; its tooltip states the destination. Existing assignments and appointment data are unchanged.
