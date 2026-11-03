@@ -1542,7 +1542,19 @@ body.secure-locked .toast{visibility:hidden}
 @media(max-width:900px){.simple-planner-hero{align-items:stretch}.simple-planner-controls{justify-content:flex-start}}
 
 /* Daily appointment working sheet: one date, two team columns, quick edits. */
-.planner-daily-panel{margin-bottom:14px}
+.planner-daily-panel{margin-bottom:14px;position:relative;isolation:isolate;overflow:hidden!important;background:#f8fafc!important}
+.daily-sheet-background{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:-1;pointer-events:none;user-select:none}
+#plannerDailyPanel .planner-sheet-title{min-height:110px;padding:10px 12px;background:linear-gradient(90deg,rgba(255,255,255,.96),rgba(255,255,255,.85) 48%,transparent 80%);border-bottom:2px solid #173b62}
+#plannerDailyPanel .daily-zone{background:transparent}
+#plannerDailyPanel .daily-table td{background:rgba(255,255,255,.80)}
+#plannerDailyPanel .daily-table .daily-time{background:rgba(228,240,249,.88)}
+#plannerDailyPanel .daily-table .daily-date{background:rgba(255,243,170,.94)}
+#plannerDailyPanel .daily-unassigned,#plannerDailyPanel .daily-empty{background:rgba(255,255,255,.92)}
+body.theme-night #plannerDailyPanel .planner-sheet-title{background:linear-gradient(90deg,rgba(19,46,66,.98),rgba(19,46,66,.9) 48%,transparent 80%)}
+body.theme-night #plannerDailyPanel .daily-table td{background:rgba(19,46,66,.92)}
+body.theme-night #plannerDailyPanel .daily-table .daily-time{background:rgba(52,83,107,.94)}
+body.theme-night #plannerDailyPanel .daily-table .daily-date{background:#e5d383}
+body.theme-night #plannerDailyPanel .daily-unassigned,body.theme-night #plannerDailyPanel .daily-empty{background:rgba(19,46,66,.96);color:#f2f9ff}
 .planner-daily-panel .planner-sheet-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .daily-zone{margin-top:13px;border:1px solid rgba(67,113,145,.32);border-radius:12px;overflow:hidden;background:rgba(246,251,255,.93)}
 .daily-zone-head{display:flex;justify-content:space-between;gap:10px;padding:9px 13px;background:#173b62;color:#fff;font-size:13px}
@@ -3590,3 +3602,83 @@ body.theme-night .completion-countdown-card{background:rgba(16,35,57,.93);border
 .riser-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.riser-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.riser-slot{min-width:0;background:#fff;border:1px solid #bad6e5;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:5px}.riser-slot>strong{font-size:11px;color:#174667}.riser-slot img{width:100%;height:145px;object-fit:contain}.riser-slot small{font-size:10px;overflow-wrap:anywhere;color:#47657a}.riser-empty{height:145px;display:grid;place-items:center;color:#68869a;font-size:11px;background:#eef6fa}.riser-slot-add,.riser-slot button{border:1px solid #9bbdd0;border-radius:5px;background:#e7f3fa;padding:6px;text-align:center;color:#174667;font-size:11px;cursor:pointer}.riser-slot-add{position:relative;margin-top:auto}.riser-slot-add input{position:absolute;width:1px;height:1px;opacity:0}.riser-slot button{background:white}.riser-extras{margin-top:10px;font-size:11px}.riser-pending summary{cursor:pointer;font-size:12px}@media(max-width:650px){.riser-layout{grid-template-columns:1fr}.riser-slot img,.riser-empty{height:130px}}
 
 .inspection-certificate-panel{display:flex;flex-wrap:wrap;align-items:end;gap:16px}.inspection-certificate-panel h3,.inspection-certificate-panel p{flex-basis:100%;margin:0}.inspection-certificate-panel label{display:grid;gap:6px;font-size:13px}.inspection-certificate-panel input,.inspection-certificate-panel select{min-width:150px;padding:10px;border:1px solid #8db2ca;border-radius:7px;background:#f1f8fd;color:#123b59}.inspection-certificate-panel [hidden]{display:none!important}
+
+/* V149: existing ESS entrance scene and bright daily planner sheet. */
+#plannerDailyPanel{padding:20px 24px 30px;min-height:560px;background:transparent!important}
+#plannerDailyPanel .daily-sheet-background{object-fit:cover;object-position:center}
+#plannerDailyPanel .planner-sheet-title{min-height:76px;padding:12px 16px;margin-bottom:16px;border:1px solid rgba(255,255,255,.92);border-left:3px solid #d4b36b;border-radius:10px;background:linear-gradient(100deg,rgba(255,255,255,.98),rgba(255,255,255,.88))!important;box-shadow:0 4px 13px rgba(9,35,57,.15);color:#082b48}
+#plannerDailyPanel .planner-sheet-title h3{font-size:22px;color:#082b48}
+#plannerDailyPanel .planner-sheet-title .section-label{color:#173b62;letter-spacing:1.6px}
+#plannerDailyPanel .planner-sheet-title .ghost-btn{background:rgba(255,255,255,.94);color:#082b48;border-color:#173b62}
+#plannerDailyPanel .daily-zone{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.95);border-radius:11px;box-shadow:0 6px 15px rgba(7,29,49,.24)}
+#plannerDailyPanel .daily-zone-head{background:linear-gradient(115deg,#002744,#123f60);color:white;font-size:14px}
+#plannerDailyPanel .daily-zone-head span{color:white}
+#plannerDailyPanel .daily-table th{background:rgba(222,240,253,.92);color:#082b48;border-color:rgba(104,132,156,.28)}
+#plannerDailyPanel .daily-table td{background:rgba(255,255,255,.22);color:#082b48;border-color:rgba(104,132,156,.28)}
+#plannerDailyPanel .daily-table .daily-time{background:rgba(255,255,255,.25);color:#082b48;font-size:12px}
+#plannerDailyPanel .daily-table .daily-date{background:rgba(255,255,255,.55);color:#082b48;text-align:left}
+#plannerDailyPanel .daily-unit-open{color:#082b48;font-size:13px;font-weight:800}
+#plannerDailyPanel .daily-team-move{color:#082b48;background:rgba(255,255,255,.8);border-color:#496583}
+#plannerDailyPanel .daily-unit{border-bottom:0}
+#plannerDailyPanel .daily-date-card{display:flex;flex-direction:column;align-items:flex-start;padding:8px 5px}
+#plannerDailyPanel .daily-date-number{font-size:44px;line-height:.95;letter-spacing:-1px;font-weight:850}
+#plannerDailyPanel .daily-date-month{font-size:12px;font-weight:800;margin-top:5px;white-space:nowrap}
+#plannerDailyPanel .daily-date-weekday{font-size:11px;letter-spacing:1.5px;margin-top:2px;font-weight:600}
+#plannerDailyPanel .daily-date-label{font-size:10px;font-weight:800;margin-top:8px;border-top:1px solid #c9ac64;padding-top:6px;white-space:nowrap}
+body.theme-night #plannerDailyPanel .daily-table td{background:rgba(255,255,255,.22);color:#082b48}
+body.theme-night #plannerDailyPanel .daily-table .daily-time{background:rgba(255,255,255,.25);color:#082b48}
+body.theme-night #plannerDailyPanel .daily-table .daily-date{background:rgba(255,255,255,.55);color:#082b48}
+
+/* V150: approved pearl-white sheet and architectural greenery; Daily Planner only. */
+#plannerDailyPanel{background:#edf2f6!important;min-height:500px}
+#plannerDailyPanel .daily-sheet-background{object-fit:fill}
+#plannerDailyPanel .planner-sheet-title{min-height:76px;padding-left:120px;margin-bottom:14px;border:0;border-radius:0;background:transparent!important;box-shadow:none}
+#plannerDailyPanel .planner-sheet-title h3{font-size:24px;font-weight:850;color:#061f40;text-shadow:0 1px 0 white}
+#plannerDailyPanel .planner-sheet-title .section-label{font-size:10px;font-weight:850;color:#071f3f}
+#plannerDailyPanel .planner-sheet-title .ghost-btn{border:1px solid #092b4d;box-shadow:0 2px 6px #143e5b28;font-weight:800}
+#plannerDailyPanel .daily-zone{background:rgba(255,255,255,.88);margin-top:16px;border-radius:10px;box-shadow:0 7px 16px #09263f3b}
+#plannerDailyPanel .daily-zone-head{font-size:15px;background:linear-gradient(110deg,#002844,#073859 65%,#144460)}
+#plannerDailyPanel .daily-table th{font-size:13px;font-weight:800;background:linear-gradient(110deg,#e8f6ffed,#d8eefcee)}
+#plannerDailyPanel .daily-table .daily-time{font-size:13px;font-weight:850}
+#plannerDailyPanel .daily-unit-open{font-size:13px;font-weight:850}
+#plannerDailyPanel .daily-date-number{font-size:48px;color:#061d40}
+#plannerDailyPanel .daily-date-month{font-weight:850;color:#061d40}
+#plannerDailyPanel .daily-date-label{color:#061d40}
+#plannerDailyPanel .daily-team-move{border:1px solid #0a2c4b;border-radius:12px;background:rgba(255,255,255,.9);font-size:9px}
+@media(max-width:700px){#plannerDailyPanel .planner-sheet-title{padding-left:88px}#plannerDailyPanel .planner-sheet-title h3{font-size:18px}}
+
+/* V151: approved live planner, clear pearl-white paper and electrical watermarks. */
+#plannerDailyPanel{background:#fff!important;padding:22px 3.2% 32px}
+#plannerDailyPanel .daily-sheet-background{object-fit:fill}
+#plannerDailyPanel .planner-sheet-title{min-height:94px;padding-left:11.5%;position:relative}
+#plannerDailyPanel .planner-sheet-title>div{border-left:2px solid #d5af56;padding-left:15px}
+#plannerDailyPanel .planner-sheet-title h3{font-size:clamp(18px,1.7vw,28px);line-height:1.25}
+#plannerDailyPanel .planner-sheet-title .ghost-btn{background:rgba(255,255,255,.97)}
+#plannerDailyPanel .daily-zone{background:linear-gradient(110deg,#fff,#fbfdff);box-shadow:0 6px 14px #09263f30;border-color:#fff}
+#plannerDailyPanel .daily-scroll{position:relative;isolation:isolate}
+#plannerDailyPanel .daily-table{position:relative;z-index:1;color:#061c3b}
+#plannerDailyPanel .daily-table td{background:rgba(255,255,255,.08);padding:9px 10px}
+#plannerDailyPanel .daily-table th{background:linear-gradient(110deg,#e9f7ff,#dcedf9);color:#062443}
+#plannerDailyPanel .daily-table .daily-time{background:rgba(255,255,255,.94);color:#061c3b;font-size:14px}
+#plannerDailyPanel .daily-table .daily-date{background:rgba(255,255,255,.98);color:#061c3b}
+#plannerDailyPanel .daily-unit-open{color:#061c3b;font-size:14px}
+.daily-zone-watermark{position:absolute;right:1%;bottom:2px;width:15%;height:calc(100% - 40px);object-fit:contain;object-position:right center;z-index:0;pointer-events:none;user-select:none}
+.daily-zone[data-daily-contractor="IMS"] .daily-zone-watermark,.daily-zone[data-daily-contractor="ND Noor"] .daily-zone-watermark{width:39%}
+#plannerDailyPanel .daily-date-number{font-size:52px}
+#plannerDailyPanel .daily-date-card{padding:9px 5px}
+body.theme-night #plannerDailyPanel .daily-table td{background:rgba(255,255,255,.08);color:#061c3b}
+body.theme-night #plannerDailyPanel .daily-table .daily-time{background:rgba(255,255,255,.94);color:#061c3b}
+body.theme-night #plannerDailyPanel .daily-table .daily-date{background:rgba(255,255,255,.98);color:#061c3b}
+@media(max-width:700px){#plannerDailyPanel{padding:14px 14px 24px}#plannerDailyPanel .planner-sheet-title{padding-left:76px;min-height:90px}#plannerDailyPanel .planner-sheet-title>div{padding-left:9px}#plannerDailyPanel .planner-sheet-title h3{font-size:18px}#plannerDailyPanel .planner-sheet-title .ghost-btn{font-size:11px;margin-left:auto}.daily-zone-watermark{min-width:120px}}
+
+#plannerDailyPanel .daily-table:not(.single-team){min-width:1000px}
+#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(1){width:14%}
+#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(2),#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(5){width:10%}
+#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(3),#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(6){width:23%}
+#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(4),#plannerDailyPanel .daily-table:not(.single-team) th:nth-child(7){width:10%}
+#plannerDailyPanel .daily-table.single-team th:nth-child(1){width:16%}
+#plannerDailyPanel .daily-table.single-team th:nth-child(2){width:16%}
+#plannerDailyPanel .daily-table.single-team th:nth-child(3),#plannerDailyPanel .daily-table.single-team th:nth-child(4){width:34%}
+#plannerDailyPanel .daily-unit{display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:3px 0;min-height:27px}
+#plannerDailyPanel .daily-team-move{flex:0 0 auto;white-space:nowrap;line-height:1.2;margin-left:0;padding:3px 6px}
+#plannerDailyPanel .planner-sheet-title .ghost-btn{line-height:1.3;flex-shrink:0}

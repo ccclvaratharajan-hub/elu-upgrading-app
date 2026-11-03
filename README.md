@@ -1,3 +1,61 @@
+# V8.44.152 - 3D finish on the latest pearl-white Daily Planner
+
+Preserves the intervening V151 pearl-white planner update, including its current scenery, electrical watermarks, font sizes, table widths and team-button alignment. Adds only a scoped screen stylesheet for shallow raised-panel shadows, luminous white bevel edges, satin navy headings, raised date plaques and buttons. Text remains flat and readable. Live appointment data and all existing scripts, backgrounds, storage, forms and print/export behavior are unchanged.
+
+Validation: scoped CSS syntax and computed planner-shadow checks passed. Every pre-existing file outside index.html, sw.js and README.md is byte-identical to the latest V151 source; planner-3d.css is the only added file. Cached assets exist and ZIP integrity passed. A full browser screenshot comparison and encrypted live-record test have not been performed.
+
+Upload the complete extracted folder at the existing app address.
+
+# V8.44.151 - Pearl-white Daily Planner with electrical background
+
+Retains the approved two-table layout, large calendar tiles, navy headings and live appointment data. The background is a clean, text-free electrical scene with fresh greenery. DB and meter watermarks attach to each table so they stay in place when the number of appointments changes. All dates, units and remarks remain live HTML. Print/PDF uses the same imagery and waits for images before printing. Assets are cached for offline use.
+
+Only planner presentation and shell cache versions are updated. Booking storage, team movement, registers, forms, and other app views retain their previous behavior.
+
+Validation: actual daily-sheet module DOM checks passed for the 12-appointment reference and 52 appointments across all six zones, selected-only team movement, date and zone filters, and seven print selections. Generated screen and print HTML/CSS were rendered and visually inspected. A full Chromium session with encrypted resident records was unavailable.
+
+Upload the complete extracted folder at the existing app address.
+
+# V8.44.150 - Approved Daily Planner model; IMS / KSK / ND Noor
+
+Daily Planner follows the approved bright pearl-white working sheet, navy typography, large calendar date tiles, natural greenery, conduits, and faint DB / meter watermark. The ESS building is no longer used by Daily Planner or its print output. Its decorative frame is composed from text-free scenery regions of the approved reference; bookings, dates and headings remain live HTML, rather than baked reference appointments. Other app screens retain their existing backgrounds.
+
+The two existing Zone 4 sections remain IMS (blocks 557-558) and KSK (blocks 559-562). Zone 5 is labelled ND Noor (blocks 537-543) and has its own single-provider schedule section. KSK Team 1 / Team 2 movement and original booked dates, units, slots, contacts and remarks are retained. No contractor ownership is guessed for other zones: their existing bookings remain visible, with an Other zones page when printing contractors separately.
+
+Print / Save PDF remains A4 portrait. Choose All contractors for a combined page, Each contractor for individual IMS / KSK / ND Noor pages, or a specific provider. Existing Team 1 / Team 2 options remain available. Empty sections are omitted. Input data is unchanged by viewing or printing.
+
+Validation: JavaScript syntax, original selected-only team movement regression, all/subteam/provider print filters, zone filtering, empty-team/IMS/unassigned cases, calendar date values and first-visible-row date handling passed. Captured actual module HTML/CSS rendered 52 synthetic appointments once on one A4 portrait page. A provider-only fixture rendered IMS 4, KSK 8 and ND Noor 8 once each across three A4 portrait pages; all pages were visually inspected. Full browser print-dialog and encrypted live-record tests have not been performed.
+
+Upload the complete extracted folder at the app's existing hosted address.
+
+# V8.44.149 — Existing ESS entrance background for Daily Planner and PDF
+
+Daily Planner and Print / Save PDF now reuse the app's existing elu-ess-close-light-v84458.png entrance scene: the same illuminated ESS switch room, greenery and wet-ground image. No new generated worksite scene is used. Bright translucent white sheets, navy headings, clear bold units and calendar-date tiles follow the selected reference model. The date tiles are generated from the selected schedule date in Singapore time.
+
+All appointments still use the existing booking selection, ordering and visible team assignments. The team-arrow movement handler is unchanged. Print options include all appointments on one A4 portrait page, Team 1, Team 2, IMS, and each team on separate pages. A team whose first booked slot is later retains its date tile in the correct first visible row. Date and zone filtering apply to the print output. The existing ESS image is included in the offline shell cache; the earlier unused generated planner-background asset is omitted from this update.
+
+Validation: module syntax, all five print options, zone/empty-team/IMS/unassigned cases, date tile values, and date-rowspan handling passed in the actual module's DOM harness. Printing leaves all input appointment records unchanged. Team-movement regression checks passed in both directions with repeated moves and refresh persistence. Captured the actual print HTML/CSS and rendered a 52-booking synthetic example to one A4 portrait PDF and three individual team pages; all 52 units appeared exactly once. Every PDF page was visually inspected. Full browser print-dialog and encrypted live-record testing have not been performed.
+
+Upload the complete extracted folder at the app's existing hosted address. Existing register records, forms and photo storage are unchanged.
+
+# V8.44.148 — Daily Planner worksite photo background and team printing
+
+Daily Planner uses the supplied worksite photos blended into a navy/gold paper background: rear-view KSK technician, drilling work, DB circuit breakers and meter riser. Existing appointment tables, team headings, booking data and team movement are retained. The image is bundled and cached for offline use. Light translucent table cells preserve readable text; night-theme cells keep their darker contrast.
+
+Print / PDF offers all appointments on one A4 portrait page, Team 1 only, Team 2 only, IMS only, or each team on separate pages. Individual team sheets show only that team's current visible assignments. Empty team pages are omitted in the separate-pages option; unassigned appointments get their own page. The selected date and zone filter apply to every option. Choose Save as PDF in the browser print dialog to download a PDF. The background is a real image element, and printing waits for it and fonts to load. Each page fits its own content; printing does not change appointments.
+
+Validation: executed the actual module in a DOM harness for all five print options, zone filtering, empty teams, IMS-only data, and an unassigned page. All 52 synthetic bookings appear once across the separate team pages; printing leaves the input records unchanged. The original booking rendering/movement code preceding the print handler is byte-identical to V147, and selected-only movement regression checks pass. Rendered the actual captured print HTML/CSS to one A4 portrait page and three separate team pages and visually checked every page. Full browser print-dialog and encrypted live-record tests have not been performed.
+
+Keep the complete extracted folder, including assets/daily-planner-background.png, together. To update the hosted app, upload these files at the app's existing address.
+
+# V8.44.147 — Daily Planner A4 portrait
+
+Daily Planner Print Day now prints the selected date and zone filter on one A4 portrait page. The date appears once in the page heading; Team 1 and Team 2 remain side by side, with wider unit and remarks columns. Print-only move controls are removed. Base font is 10 pt, with bold unit numbers, 9.5 pt table headers and 9 pt times/remarks. Compact spacing and page fitting handle longer lists without omitting rows.
+
+Print layout changes only: on-screen schedules, team movement behavior, unit records, certificate forms and data storage are preserved. Font loading and two animation frames complete before sizing and opening the print dialog; sizing runs again before printing.
+
+Validation: rendered the actual Daily Planner module with 52 synthetic appointments across all six zones, including IMS and KSK. Rendered the print HTML/CSS into one A4 portrait PDF and visually checked it; all 52 units and all seven contractor/zone sections are present, at approximately 10 pt base font. Team movement regression checks passed. Full browser print-dialog testing with encrypted live records has not been performed.
+
 # V8.44.146 — Keep existing teams when moving one appointment
 
 Daily Planner shows Team 1 → under the Team 1 heading and ← Team 2 under the Team 2 heading. Each button displays the current column team; its tooltip describes the destination. Clicking moves the selected appointment and updates its label to match the destination heading.

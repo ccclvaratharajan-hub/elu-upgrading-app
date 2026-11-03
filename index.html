@@ -8,7 +8,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
   <title>ELU Upgrading — Command Centre</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css?v=8.44.143">
+  <link rel="stylesheet" href="styles.css?v=8.44.151">
+  <link rel="stylesheet" href="planner-3d.css?v=8.44.152">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
 </head>
 <body class="secure-locked">
@@ -431,11 +432,13 @@
             <button class="ghost-btn" id="plannerToday" type="button">Today</button>
             <button class="ghost-btn" id="plannerNextDay" type="button">Next Day →</button>
             <button class="primary-btn" id="plannerExportDayBtn" type="button">Download Day Excel</button>
-            <button class="ghost-btn" id="plannerPrintDayBtn" type="button">Print Day</button>
+            <label>Print / PDF<select id="plannerPrintScope"><option value="all">All contractors - one page</option><option value="contractors">Each contractor - separate pages</option><option value="KSK">KSK only</option><option value="ND Noor">ND Noor only</option><option value="Team 1">Team 1 only</option><option value="Team 2">Team 2 only</option><option value="IMS">IMS only</option><option value="separate">Each team - separate pages</option></select></label>
+            <button class="ghost-btn" id="plannerPrintDayBtn" type="button">Print / Save PDF</button>
           </div>
         </div>
 
         <article class="panel planner-daily-panel" id="plannerDailyPanel">
+          <img class="daily-sheet-background" src="assets/daily-planner-scenery.svg" alt="" aria-hidden="true">
           <div class="planner-sheet-title">
             <div><span class="section-label">DAILY WORKING SHEET</span><h3 id="plannerDailyTitle">Daily appointments</h3></div>
             <button class="ghost-btn" type="button" data-go="appointments">Open Appointment Schedule</button>
@@ -843,7 +846,7 @@
   <script src="riser-progress.js?v=8.44.143"></script>
   <script src="evidence-downloads.js?v=8.44.143"></script>
   <script src="monthly-appointment-excel.js?v=8.44.115"></script>
-  <script src="daily-appointment-sheet.js?v=8.44.146"></script>
+  <script src="daily-appointment-sheet.js?v=8.44.151"></script>
   <script src="unit-register-export.js?v=8.44.118"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
