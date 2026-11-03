@@ -1,3 +1,6 @@
+V153 — Planner background loading fix
+Approved pearl-white electrical background and watermarks are now embedded in the live page/module. This prevents missing assets-folder uploads from leaving blank paper or broken images. Bold navy lettering, large calendar dates and sheet-relative type sizes now follow the approved model. Dates and lettering sit directly on the sheet, without separate raised calendar tiles. Shallow outer sheet depth, appointments and forms are preserved.
+
 # V8.44.152 - 3D finish on the latest pearl-white Daily Planner
 
 Preserves the intervening V151 pearl-white planner update, including its current scenery, electrical watermarks, font sizes, table widths and team-button alignment. Adds only a scoped screen stylesheet for shallow raised-panel shadows, luminous white bevel edges, satin navy headings, raised date plaques and buttons. Text remains flat and readable. Live appointment data and all existing scripts, backgrounds, storage, forms and print/export behavior are unchanged.
