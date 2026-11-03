@@ -1,3 +1,7 @@
+# V8.44.145 — Appointment team labels
+
+Daily Planner appointment buttons now show the current column team: Team 1 under Team 1, Team 2 under Team 2. Clicking the button still moves the appointment to the other team; its tooltip states the destination. Existing assignments and appointment data are unchanged.
+
 # V8.44.144 — Unit Single Line Diagram
 
 Added a dedicated Unit Single Line Diagram sidebar item after Completion Certificate. Select zone and block to view current register lists and automatically download a PDF, with a persistent PDF preview and re-download link.

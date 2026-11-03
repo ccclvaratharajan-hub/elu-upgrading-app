@@ -26,7 +26,7 @@
     // The daily sheet is a record of booked appointments, not a template of free slots.
     const slots=[...new Set(appointments.map(a=>a.slot).filter(Boolean))].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
     const matching=(team,slot)=>appointments.filter(a=>a.slot===slot&&(single||teamOf(a)===team)).sort(byUnit);
-    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">→ '+(team==="Team 1"?"Team 2":"Team 1")+'</button>':'')+'</div>').join("");
+    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">'+esc(team)+'</button>':'')+'</div>').join("");
     const remarks=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-remark">'+esc(a.remarks||"")+'</div>').join("");
     const unassigned=single?[]:appointments.filter(a=>a.team!=="Team 1"&&a.team!=="Team 2");
     const heading='Zone '+zone+(contractor?' · '+contractor+(single?' · Blk 557–558':' · Blk 559–562'):'');
