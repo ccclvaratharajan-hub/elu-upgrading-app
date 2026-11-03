@@ -1,3 +1,6 @@
+V154 — Smaller Daily Planner type
+Set medium screen lettering with upper limits: body text up to 18px, section headings up to 22px and main heading up to 26px. This prevents very large type on wide screens. All spacing, colours, backgrounds, dates and appointment data remain as in V153.
+
 V153 — Planner background loading fix
 Approved pearl-white electrical background and watermarks are now embedded in the live page/module. This prevents missing assets-folder uploads from leaving blank paper or broken images. Bold navy lettering, large calendar dates and sheet-relative type sizes now follow the approved model. Dates and lettering sit directly on the sheet, without separate raised calendar tiles. Shallow outer sheet depth, appointments and forms are preserved.
 
