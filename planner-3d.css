@@ -82,3 +82,22 @@
   background:rgba(255,255,255,.88);
   box-shadow:none;
 }
+
+/* V155: compact screen spacing for a full three-contractor capture at 75% zoom. */
+@media screen{
+  #plannerDailyPanel{padding:12px 2.5% 18px;min-height:0}
+  #plannerDailyPanel .planner-sheet-title{min-height:54px;padding-top:4px;padding-bottom:4px;gap:8px;margin-bottom:8px}
+  #plannerDailyPanel .planner-sheet-title h3{margin:3px 0}
+  #plannerDailyPanel .daily-zone{margin-top:10px}
+  #plannerDailyPanel #plannerDailyGrid>.daily-zone:first-child{margin-top:0}
+  #plannerDailyPanel .daily-zone-head{padding:6px 11px}
+  #plannerDailyPanel .daily-table th{padding:5px 9px}
+  #plannerDailyPanel .daily-table td{padding:4px 9px}
+  #plannerDailyPanel .daily-unit{min-height:22px;padding:0;gap:5px}
+  #plannerDailyPanel .daily-remark{min-height:20px;padding:1px 0}
+  #plannerDailyPanel .daily-date-card{padding:5px 4px}
+  #plannerDailyPanel .daily-date-month{margin-top:3px}
+  #plannerDailyPanel .daily-date-weekday{margin-top:1px}
+  #plannerDailyPanel .daily-date-label{margin-top:5px;padding-top:4px}
+  #plannerDailyPanel .daily-zone[data-daily-contractor="ND Noor"] .daily-zone-watermark{width:32%;opacity:.22}
+}

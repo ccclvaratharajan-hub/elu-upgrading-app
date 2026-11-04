@@ -1,3 +1,6 @@
+V155 — Compact Unit Work Appointments
+Reduced screen row/header padding and gaps for a full three-contractor screenshot at 75% browser zoom. Medium typography and the existing background/design remain. The last ND Noor section uses the original closed DB photograph. Appointment data, booking controls and forms are preserved.
+
 V154 — Smaller Daily Planner type
 Set medium screen lettering with upper limits: body text up to 18px, section headings up to 22px and main heading up to 26px. This prevents very large type on wide screens. All spacing, colours, backgrounds, dates and appointment data remain as in V153.
 
