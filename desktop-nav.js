@@ -17,3 +17,23 @@
   });
   search.addEventListener('input',filter);
 })();
+
+/* Read the existing report values; never change project data. */
+(()=>{
+  const bar=document.getElementById('dashboardCompletionBar');
+  const total=document.getElementById('kpiTotalDU');
+  const done=document.getElementById('kpiCompleted');
+  const dial=document.querySelector('.completion-dial');
+  const update=()=>{
+    const n=Number(total.textContent.replace(/[^0-9]/g,''))||0;
+    const d=Number(done.textContent.replace(/[^0-9]/g,''))||0;
+    dial.style.setProperty('--completion',Math.max(0,Math.min(100,bar.value))+'%');
+    document.getElementById('homeProgressDone').textContent=done.textContent;
+    document.getElementById('homeProgressTotal').textContent=total.textContent;
+    document.getElementById('homeProgressRemaining').textContent=Math.max(0,n-d).toLocaleString('en-SG');
+  };
+  const observer=new MutationObserver(update);
+  observer.observe(bar,{attributes:true,attributeFilter:['value']});
+  [total,done].forEach(el=>observer.observe(el,{childList:true,subtree:true,characterData:true}));
+  update();
+})();
