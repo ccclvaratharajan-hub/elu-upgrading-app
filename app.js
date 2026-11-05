@@ -657,7 +657,7 @@ function autoCompleteAppointments(showToast=false){
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
 function viewTitle(view){return {
-dashboard:["ELU Dashboard","A clear starting point for field work."],
+dashboard:["ELU","Electrical Load Upgrading · Pasir Ris"],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
 survey:["Survey Visit Register","Visit diary for resident calls: date, exact time and contact reference."],
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
@@ -725,7 +725,14 @@ function setView(view){
   else if(view==="reports")renderReport();
   window.scrollTo({top:0,behavior:"instant"});
 }
-document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)setView(b.dataset.view)});
+document.getElementById("nav").addEventListener("click",e=>{
+  const button=e.target.closest(".nav-item");
+  if(!button)return;
+  const menu=document.getElementById("appStartMenu");
+  if(menu.matches(":popover-open"))menu.hidePopover();
+  setView(button.dataset.view);
+  document.getElementById("appStartButton").focus({preventScroll:true});
+});
 document.getElementById("focusViewBtn").addEventListener("click",()=>{
   const active=document.body.classList.toggle("focus-view"),button=document.getElementById("focusViewBtn");
   button.setAttribute("aria-pressed",String(active));button.textContent=active?"Exit Focus":"Focus View";
@@ -1120,13 +1127,17 @@ window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapRe
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
-  const noResponse=nr+p,donePct=total?Math.round(done/total*100):0;
+  const noResponse=nr+p,donePct=total?Math.round(done/total*1000)/10:0;
   document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;
 
   document.getElementById("kpiTotalDU").textContent=total.toLocaleString();
   document.getElementById("kpiOptIn").textContent=agree.toLocaleString();
   document.getElementById("kpiAppointments").textContent=c.toLocaleString();
   document.getElementById("kpiCompleted").textContent=done.toLocaleString();document.getElementById("kpiCompletedPct").textContent=`${donePct}% project`;
+  const completionBar=document.getElementById("dashboardCompletionBar");
+  completionBar.value=donePct;
+  completionBar.textContent=`${donePct}%`;
+  document.getElementById("dashboardCompletionValue").textContent=`${donePct}%`;
   document.getElementById("kpiOptOut").textContent=d.toLocaleString();
   document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiPending").textContent=p.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
