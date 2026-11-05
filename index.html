@@ -11,8 +11,8 @@
   <link rel="stylesheet" href="styles.css?v=8.44.153">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.155">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
-  <link rel="stylesheet" href="desktop-home.css?v=8.44.163" media="screen">
-  <style media="print">#appStartButton,#appStartMenu{display:none!important}</style>
+  <link rel="stylesheet" href="desktop-home.css?v=8.44.164" media="screen">
+  <style media="print">#appStartButton,#appStartMenu,#headerToolsMenu{display:none!important}</style>
 </head>
 <body class="secure-locked">
   <svg class="svg-sprite" aria-hidden="true">
@@ -233,7 +233,8 @@
             <button type="button" class="lighting-mode-btn" data-lighting-mode="light" aria-pressed="true">☀ Light</button>
             <button type="button" class="lighting-mode-btn" data-lighting-mode="dark" aria-pressed="false">☾ Dark</button>
           </div>
-          <button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn" id="fullBackupBtn">Full Backup</button><button class="ghost-btn" id="restoreBackupBtn">Restore</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button>
+          <button class="ghost-btn" type="button" id="headerToolsButton" popovertarget="headerToolsMenu" title="Backup, restore and lock">Tools ▾</button>
+          <div id="headerToolsMenu" class="header-tools-menu" popover aria-label="Backup and security tools"><button class="ghost-btn" id="exportBackupBtn">Backup Data</button><button class="ghost-btn" id="fullBackupBtn">Full Backup</button><button class="ghost-btn" id="restoreBackupBtn">Restore</button><button class="ghost-btn secure-logout-btn" id="securityLogoutBtn">Lock</button></div>
         </div>
       </header>
 
