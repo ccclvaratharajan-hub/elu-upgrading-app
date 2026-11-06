@@ -87,9 +87,8 @@
   body:has(#dashboard.view.active) #pageSubtitle {display:block;margin:3px 0 0;font-size:11px;line-height:1.2}
   body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;flex:1;flex-wrap:wrap;gap:7px;width:auto;margin:0}
   body:has(#dashboard.view.active) .top-actions>button,
-  body:has(#dashboard.view.active) .top-actions>.today-chip,
-  body:has(#dashboard.view.active) .top-actions>.user-name-chip {min-height:30px;padding:6px 9px;border:1px solid #bbd5e8;border-radius:9px;background:linear-gradient(180deg,#ffffff,#eaf5fd);color:#174b73;font-size:10px;font-weight:700;opacity:1;text-shadow:none;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d;white-space:nowrap}
-  body:has(#dashboard.view.active) .top-actions>.user-name-chip {order:-1;background:#d9edfb;color:#123e65;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+  body:has(#dashboard.view.active) .top-actions>.today-chip {min-height:30px;padding:6px 9px;border:1px solid #bbd5e8;border-radius:9px;background:linear-gradient(180deg,#ffffff,#eaf5fd);color:#174b73;font-size:10px;font-weight:700;opacity:1;text-shadow:none;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d;white-space:nowrap}
+  body:has(#dashboard.view.active) #userNameChip {display:none}
   body:has(#dashboard.view.active) .top-actions button svg {width:16px;height:16px;stroke:none}
   body:has(#dashboard.view.active) .top-actions #scenePeekBtn svg {stroke:currentColor;fill:none}
   body:has(#dashboard.view.active) .lighting-mode-control {border:1px solid #b8d7ec;box-shadow:none;background:#e1f0fb;padding:2px;border-radius:10px}
@@ -100,7 +99,7 @@
   body .header-tools-menu .ghost-btn {background:#fff!important;color:#174b73!important;border-color:#c1d9ea!important;width:100%;min-height:33px;margin:0;padding:7px 10px;border:1px solid #c1d9ea;border-radius:8px;background:#fff;color:#174b73;font-size:11px;font-weight:700;text-align:left;opacity:1}
   body .header-tools-menu .ghost-btn:hover {background:#dceefe}
   body .header-tools-menu #securityLogoutBtn {color:#9a3c42}
-  #dashboard.view.active {display:flex!important;flex-direction:column;gap:14px;min-height:calc(100dvh - 100px);padding:16px 0 0;position:relative}
+  #dashboard.view.active {display:flex!important;flex-direction:column;gap:14px;min-height:calc(100dvh - 100px);padding:10px 0 0;position:relative}
   .dashboard-home-row {display:grid;flex:1;grid-template-columns:minmax(220px,1fr) minmax(380px,500px);grid-template-rows:auto minmax(38px,1fr) auto;align-items:start;column-gap:28px;row-gap:18px;width:100%;min-height:calc(100dvh - 148px)}
   .dashboard-home-actions {display:contents}
   #dashboard .dashboard-overview-compact,
@@ -171,13 +170,12 @@
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(5) {--status:#ffd382}
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(6) {--status:#cbacff}
   #dashboard .royal-icon-dock strong,body.theme-night #dashboard .royal-icon-dock strong {font-size:8px;letter-spacing:-.035em}
-  /* Keep the command bar translucent and give the title and name their own contrast. */
+  /* Keep the command bar translucent and give the title its own contrast. */
   body:has(#dashboard.view.active) .topbar {
     --header-ink:#102d52;
     --header-secondary:#365b7d;
     --header-edge:#ffffffbf;
     --heading-surface:linear-gradient(115deg,#f7fcfff7,#dceeffeb);
-    --name-surface:linear-gradient(135deg,#fcfefff5,#d6eaffeb);
     background:linear-gradient(110deg,#ffffff22,#eaf7ff0d)!important;
     border-color:#ffffff5c!important;
     box-shadow:inset 0 1px #ffffff3b!important;
@@ -189,7 +187,6 @@
     --header-secondary:#b8d8f5;
     --header-edge:#8bbbe385;
     --heading-surface:linear-gradient(115deg,#102c4bf7,#1a4368ed);
-    --name-surface:linear-gradient(135deg,#1f4f78f5,#102c4beb);
   }
   body:has(#dashboard.view.active) .topbar>div:first-child {
     padding:5px 12px;
@@ -198,6 +195,18 @@
     border-radius:10px;
     background:var(--heading-surface);
   }
+  body:has(#dashboard.view.active) .dashboard-company-logo {
+    display:block;
+    width:min(100%,360px);
+    margin:0 0 12px;
+    padding:6px 9px;
+    border:1px solid #dae6f1;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 2px 6px #102d5218;
+  }
+  .dashboard-company-lockup {position:relative;aspect-ratio:8/1;overflow:hidden}
+  .dashboard-company-lockup img {position:absolute;top:50%;left:0;width:100%;height:auto;transform:translateY(-50%)}
   body:has(#dashboard.view.active) .topbar h1 {
     color:var(--header-ink)!important;
     letter-spacing:-.025em;
@@ -205,27 +214,29 @@
   }
   body:has(#dashboard.view.active) #pageSubtitle {color:var(--header-secondary)!important;font-weight:700;text-shadow:none}
   body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip) {background:linear-gradient(180deg,#ffffff45,#ffffff14)!important;border-color:#ffffff66!important;box-shadow:inset 0 1px #ffffff3d!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9!important;backdrop-filter:blur(3px)}
-  body:has(#dashboard.view.active) .topbar #userNameChip {
+  #dashboard .dashboard-profile {
     display:flex;
     align-items:center;
+    justify-self:start;
     gap:7px;
-    width:auto;
-    max-width:min(260px,100%);
+    max-width:100%;
     padding:6px 11px;
-    border:1px solid var(--header-edge);
+    border:1px solid #ffffffbf;
     border-radius:999px;
-    background:var(--name-surface);
-    color:var(--header-ink);
+    background:linear-gradient(135deg,#fcfefff5,#d6eaffeb);
+    color:#102d52;
     box-shadow:inset 0 1px #ffffff66,0 2px 8px #102d5222;
     font-size:12px;
     font-weight:800;
     line-height:1.25;
-    text-align:start;
-    text-shadow:none;
-    white-space:normal;
     overflow-wrap:anywhere;
   }
-  body:has(#dashboard.view.active) .topbar #userNameChip::before {
+  body.theme-night #dashboard .dashboard-profile {
+    border-color:#8bbbe385;
+    background:linear-gradient(135deg,#1f4f78f5,#102c4beb);
+    color:#f3f9ff;
+  }
+  #dashboard .dashboard-profile::before {
     content:"";
     flex:0 0 8px;
     height:8px;
@@ -321,37 +332,88 @@
   #dashboard .home-priority-grid button:nth-child(2) strong {color:#ffd98c}
   #dashboard .home-priority-grid button:nth-child(3) strong {color:#ffb2b8}
   #dashboard .home-priority-grid button small {font-size:7px;color:#b6d0e5;line-height:1.3}
+  body:has(#dashboard.view.active) .main {display:flex;flex-direction:column;min-height:100dvh}
+  body:has(#dashboard.view.active) .topbar {flex-shrink:0}
+  body #dashboard.view.active,body.theme-night #dashboard.view.active {flex:1;min-height:0}
+  #dashboard .dashboard-home-row {min-height:0}
+
   @media (min-width:881px) {
-    html:has(#dashboard.view.active) {scroll-padding-bottom:94px}
-    body:has(#dashboard.view.active) .main {
-      display:flex;
-      flex-direction:column;
-      min-height:100dvh;
-      padding-bottom:94px;
-    }
-    /* The home view fits the viewport. Opening a detail panel restores page scrolling. */
-    body:has(#dashboard.view.active):not(:has(#dashboard.view.active.dashboard-map-open,#dashboard.view.active > :is(.dashboard-detail-tray,.dashboard-zone-overview,.dashboard-today,.dashboard-more):not([hidden]))) .main {
-      height:100dvh;
-    }
-    body:has(#dashboard.view.active) .topbar {flex-shrink:0}
-    #dashboard.view.active {flex:1;min-height:0}
-    #dashboard .dashboard-home-row {min-height:0;grid-template-rows:minmax(0,1fr)}
-    #dashboard .dashboard-overview-compact {max-height:100%;overflow-y:auto}
-    #dashboard .dashboard-shortcuts.royal-icon-dock {
+    html:has(#dashboard.view.active) {scroll-padding-bottom:84px}
+    body:has(#dashboard.view.active) .main {padding-bottom:84px!important}
+    #dashboard .dashboard-home-row {grid-template-rows:auto}
+    #dashboard .dashboard-home-actions {
       position:fixed;
       z-index:49;
-      left:50%;
-      bottom:16px;
-      transform:translateX(-50%);
-      width:max-content;
+      inset:auto 100px 16px;
+      display:grid;
+      grid-template-columns:minmax(max-content,1fr) max-content minmax(0,1fr);
+      align-items:end;
+      gap:12px;
+      pointer-events:none;
+    }
+    #dashboard .dashboard-shortcuts.royal-icon-dock {
+      grid-area:1/2;
+      max-width:none;
       min-height:0;
-      padding:0 4px;
+      padding:0;
+      flex-wrap:nowrap;
+      gap:clamp(10px,1.25vw,18px);
+      pointer-events:auto;
     }
   }
+  @media (max-height:760px), (max-width:880px) {
+    body:has(#dashboard.view.active) .main {padding-top:8px}
+    body:has(#dashboard.view.active) .main .topbar {margin-bottom:0;padding-block:5px;gap:8px}
+    body:has(#dashboard.view.active) .dashboard-company-logo {width:min(100%,260px);margin-bottom:8px;padding:3px 7px}
+    body:has(#dashboard.view.active) .topbar h1 {font-size:clamp(18px,2vw,23px)}
+    #dashboard.view.active {padding-top:4px}
+    #dashboard .dashboard-overview-compact {line-height:1.25}
+    #dashboard .overview-topline {padding-bottom:6px}
+    #dashboard .progress-summary {padding-top:7px}
+    #dashboard .completion-dial {width:70px;height:70px}
+    #dashboard .dashboard-completion {gap:3px}
+    #dashboard .dashboard-overview-compact .dashboard-glance>div {padding-block:4px}
+    #dashboard .dashboard-overview-compact .dashboard-glance span {display:block}
+    #dashboard .dashboard-overview-compact .dashboard-glance strong {font-size:19px}
+    #dashboard .home-remaining-work {margin-top:8px;padding-block:6px}
+    #dashboard .home-remaining-total span {display:block}
+    #dashboard .home-remaining-breakdown {margin-top:5px}
+    #dashboard .home-remaining-breakdown>div {padding-block:4px}
+    #dashboard .home-priorities {margin-top:8px;padding-top:6px}
+    #dashboard .home-priority-grid button {min-height:54px;padding-block:5px}
+  }
+  @media (max-height:620px), (max-width:500px) {
+    body:has(#dashboard.view.active) .main .topbar {padding-block:4px}
+    body:has(#dashboard.view.active) .topbar>div:first-child {padding-block:3px}
+    body:has(#dashboard.view.active) .dashboard-company-logo {width:min(100%,220px)}
+    #dashboard .dashboard-overview-compact,
+    body:not(.theme-night) #dashboard .dashboard-overview-compact,
+    body.theme-night #dashboard .dashboard-overview-compact {padding:9px}
+    #dashboard .overview-topline {padding-bottom:4px}
+    #dashboard .progress-summary {padding-top:5px}
+    #dashboard .completion-dial {width:62px;height:62px}
+    #dashboard .dashboard-overview-compact .dashboard-glance strong {font-size:18px;margin-block:1px}
+    #dashboard .home-remaining-work {margin-top:6px;padding-block:5px}
+    #dashboard .home-remaining-breakdown>div {padding-block:3px}
+    #dashboard .home-remaining-breakdown dd {margin-top:1px;font-size:16px}
+    #dashboard .home-priorities {margin-top:6px;padding-top:5px}
+    #dashboard .home-priority-head {margin-bottom:5px}
+    #dashboard .home-priority-grid button strong {font-size:19px}
+  }
   @media(max-width:880px) {
-    .dashboard-home-row {grid-template-columns:1fr;grid-template-rows:auto minmax(28px,1fr) auto;min-height:calc(100dvh - 180px)}
+    .dashboard-home-row {grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;row-gap:8px}
     #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {grid-column:1;grid-row:1;width:min(500px,100%)}
-    #dashboard .dashboard-shortcuts.royal-icon-dock {max-width:calc(100% - 90px);gap:12px}
+    #dashboard .dashboard-home-actions {
+      grid-column:1;
+      grid-row:2;
+      align-self:end;
+      display:grid;
+      justify-items:center;
+      gap:8px;
+      padding:0 0 6px 80px;
+    }
+    #dashboard .dashboard-shortcuts.royal-icon-dock {grid-area:1/1;max-width:100%;gap:12px;min-height:0;padding:0}
+    #dashboard .dashboard-profile {grid-area:2/1}
   }
   @media(max-width:500px) {
     body:has(#dashboard.view.active) .main {padding:10px}
@@ -359,9 +421,10 @@
     body:has(#dashboard.view.active) .top-actions {flex-basis:100%;justify-content:flex-start}
     #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {padding:10px}
     #dashboard .progress-summary {grid-template-columns:88px minmax(0,1fr);gap:8px}
-    #dashboard .progress-summary .dashboard-glance {grid-template-columns:repeat(2,minmax(0,1fr))}
+    #dashboard .royal-icon-dock button,
+    body:not(.theme-night) #dashboard .royal-icon-dock button,
+    body.theme-night #dashboard .royal-icon-dock button {width:58px;height:58px;min-height:58px}
     #dashboard .overview-topline {flex-wrap:wrap}
     #dashboard .overview-scope {margin-left:auto}
-    #dashboard .dashboard-shortcuts.royal-icon-dock {max-width:100%;padding-left:65px}
   }
 }

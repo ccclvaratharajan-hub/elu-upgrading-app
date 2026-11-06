@@ -398,6 +398,7 @@ async function unlockSecureApp(password){
   removeLegacyPlaintext();
 
   document.getElementById("userNameChip").textContent=SECURE_PROFILE_NAME;
+  document.getElementById("dashboardUserName").textContent=SECURE_PROFILE_NAME;
   document.getElementById("securityGate").classList.add("hidden");
   document.body.classList.remove("secure-locked");
   document.getElementById("securityUsername").value="";document.getElementById("securityPassword").value="";
