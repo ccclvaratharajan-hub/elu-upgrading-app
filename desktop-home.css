@@ -1,4 +1,4 @@
-/* V164. Screen navigation and home dashboard presentation. */
+/* V165. Screen navigation and home dashboard presentation. */
 @media screen {
   body .app-shell {display:block}
   body .main,body.focus-view .main {margin-left:0!important;width:100%;padding-bottom:70px}
@@ -179,6 +179,43 @@
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(5) {--status:#ffd382}
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(6) {--status:#cbacff}
   #dashboard .royal-icon-dock strong,body.theme-night #dashboard .royal-icon-dock strong {font-size:8px;letter-spacing:-.035em}
+  /* Transparent command row, including the name and control surfaces. */
+  body:has(#dashboard.view.active) .topbar {background:linear-gradient(110deg,#ffffff22,#eaf7ff0d)!important;border-color:#ffffff5c!important;box-shadow:inset 0 1px #ffffff3b!important;backdrop-filter:blur(5px)!important;-webkit-backdrop-filter:blur(5px)!important}
+  body:has(#dashboard.view.active) .topbar>div:first-child {border-left-color:#79b5e7}
+  body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip) {background:linear-gradient(180deg,#ffffff45,#ffffff14)!important;border-color:#ffffff66!important;box-shadow:inset 0 1px #ffffff3d!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9!important;backdrop-filter:blur(3px)}
+  body:has(#dashboard.view.active) .topbar .top-actions>.user-name-chip {background:transparent!important;border-color:transparent!important;box-shadow:none!important;font-size:11px;font-weight:750}
+  body:has(#dashboard.view.active) .topbar .eyebrow,body:has(#dashboard.view.active) .topbar h1 {color:#103e64!important;text-shadow:0 1px 2px #ffffffd9}
+  body:has(#dashboard.view.active) .lighting-mode-control {background:#ffffff1c!important;border-color:#ffffff5c!important;backdrop-filter:blur(3px)}
+  body:has(#dashboard.view.active) .lighting-mode-control button {background:transparent!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9}
+  body:has(#dashboard.view.active) .lighting-mode-control button[aria-pressed="true"] {background:#ffffff40!important;box-shadow:inset 0 1px #ffffff50!important}
+  #dashboard .dashboard-visual-intro {padding:8px 12px 9px;gap:0;border-left-width:2px;border-radius:0 11px 11px 0;background:linear-gradient(110deg,#f8fcff9e,#eef8ff47);box-shadow:inset 0 1px #ffffff80;backdrop-filter:blur(4px)}
+  #dashboard .dashboard-visual-intro strong {font-size:20px!important;line-height:1.18;letter-spacing:-.015em}
+  #dashboard .dashboard-visual-intro span {font-size:8px}
+  #dashboard .dashboard-visual-intro small {font-size:9px;margin-top:3px}
+  body.theme-night:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip),body.theme-night:has(#dashboard.view.active) .topbar .eyebrow,body.theme-night:has(#dashboard.view.active) .topbar h1,body.theme-night:has(#dashboard.view.active) .lighting-mode-control button {color:#e1f3ff!important;text-shadow:0 1px 2px #082b49!important}
+  #dashboard .dashboard-visual-intro,body.theme-night #dashboard .dashboard-visual-intro {background:transparent!important;border:0!important;border-radius:0;box-shadow:none!important;backdrop-filter:none!important;padding:5px 0}
+  #dashboard .dashboard-visual-intro strong {text-shadow:0 1px 2px #ffffffeb,0 0 4px #ffffff7a}
+  .dashboard-home-row {grid-template-columns:minmax(220px,1fr) minmax(400px,560px)}
+  #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {max-width:560px}
+  #dashboard .progress-summary {grid-template-columns:110px minmax(0,1fr);gap:13px}
+  #dashboard .completion-dial {width:90px;height:90px}
+  #dashboard .completion-dial strong {font-size:23px!important}
+  #dashboard .dashboard-completion label {font-size:7.5px}
+  #dashboard .dashboard-overview-compact .dashboard-glance span {font-size:9px}
+  #dashboard .dashboard-overview-compact .dashboard-glance strong {font-size:21px}
+  #dashboard .dashboard-overview-compact .dashboard-glance small {font-size:8px}
+  #dashboard .home-priorities {margin-top:12px;padding-top:10px;border-top:1px solid #d8eeff28}
+  #dashboard .home-priority-head {display:flex;justify-content:space-between;align-items:center;margin:0 0 7px;color:#d6eafa;font-size:10px;font-weight:750}
+  #dashboard .home-priority-head small {font-size:8px;font-weight:550;color:#b9d1e7}
+  #dashboard .home-priority-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  #dashboard .home-priority-grid button {display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-width:0;min-height:71px;margin:0;padding:8px 9px;border:1px solid #cee9ff38;border-radius:9px;background:linear-gradient(145deg,#ffffff14,#ffffff05);color:#eef8ff;text-align:left;cursor:pointer;box-shadow:inset 0 1px #ffffff1a}
+  #dashboard .home-priority-grid button:hover {background:#ffffff22;border-color:#b7ddff91}
+  #dashboard .home-priority-grid button:focus-visible {outline:2px solid #c8e8ff;outline-offset:2px}
+  #dashboard .home-priority-grid button span {font-size:9px;font-weight:650;line-height:1.2}
+  #dashboard .home-priority-grid button strong {font-size:21px;color:#d5edff;line-height:1.2}
+  #dashboard .home-priority-grid button:nth-child(2) strong {color:#ffd98c}
+  #dashboard .home-priority-grid button:nth-child(3) strong {color:#ffb2b8}
+  #dashboard .home-priority-grid button small {font-size:7px;color:#b6d0e5;line-height:1.3}
   @media(max-width:880px) {
     .dashboard-home-row {grid-template-columns:1fr;grid-template-rows:auto auto minmax(28px,1fr) auto;min-height:calc(100dvh - 180px)}
     #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {grid-column:1;grid-row:2;width:min(500px,100%)}

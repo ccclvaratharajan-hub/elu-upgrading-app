@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css?v=8.44.153">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.155">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
-  <link rel="stylesheet" href="desktop-home.css?v=8.44.164" media="screen">
+  <link rel="stylesheet" href="desktop-home.css?v=8.44.165" media="screen">
   <style media="print">#appStartButton,#appStartMenu,#headerToolsMenu{display:none!important}</style>
 </head>
 <body class="secure-locked">
@@ -277,6 +277,14 @@
             <div><span>No Response NR+P</span><strong id="kpiNR">0</strong><small>includes <b id="kpiPending">0</b> pending</small></div>
             <div><span>Confirmation C</span><strong id="kpiAppointments">0</strong><small>included in A+C</small></div>
           </div>
+          </div>
+          <div class="home-priorities" aria-label="Daily priorities">
+            <div class="home-priority-head"><span>Daily focus</span><small id="homePriorityDate"></small></div>
+            <div class="home-priority-grid">
+              <button type="button" data-go="dailyplanner" title="Open Daily Planner"><span>Today's bookings</span><strong id="homeTodayBookings">0</strong><small>View daily planner ↗</small></button>
+              <button type="button" data-go="units" title="Open Unit Register"><span>Pending confirmation</span><strong id="homePendingUnits">0</strong><small>Units with status P ↗</small></button>
+              <button type="button" data-go="complaints" title="Open Complaint Register"><span>Open complaints</span><strong id="homeOpenComplaints">0</strong><small>View complaint register ↗</small></button>
+            </div>
           </div>
         </section>
         </div>
@@ -971,7 +979,7 @@
   <script src="jszip.min.js"></script>
   <script src="pdf-lib.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.156"></script>
+  <script src="app.js?v=8.44.165"></script>
   <script src="desktop-nav.js?v=8.44.162"></script>
   <script src="nr-evidence.js?v=8.44.143"></script>
   <script src="riser-progress.js?v=8.44.143"></script>

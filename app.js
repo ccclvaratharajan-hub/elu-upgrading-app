@@ -1124,6 +1124,14 @@ async function ensureSatellite3DMap(){
 }
 let zoneMapResizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(zoneMapResizeTimer);zoneMapResizeTimer=setTimeout(()=>renderZoneMap(unitsArray()),140)});
+function dashboardPriorityTotals(){
+  const date=isoTodaySG();
+  return {
+    date,
+    bookings:state.appointments.filter(a=>a.date===date&&!isInactiveSchedule(a)&&preferredMasterAppointment(a.unitKey)===a).length,
+    complaints:state.complaints.filter(c=>complaintState(c)!=="Closed").length
+  };
+}
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
   const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
@@ -1140,6 +1148,11 @@ function renderDashboard(){
   document.getElementById("dashboardCompletionValue").textContent=`${donePct}%`;
   document.getElementById("kpiOptOut").textContent=d.toLocaleString();
   document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiPending").textContent=p.toLocaleString();
+  const priorities=dashboardPriorityTotals();
+  document.getElementById("homePriorityDate").textContent=safeDate(priorities.date);
+  document.getElementById("homeTodayBookings").textContent=priorities.bookings.toLocaleString();
+  document.getElementById("homePendingUnits").textContent=p.toLocaleString();
+  document.getElementById("homeOpenComplaints").textContent=priorities.complaints.toLocaleString();
   document.getElementById("zoneProgress").innerHTML=Object.keys(ZONE_BLOCKS).map(z=>{
     const group=rows.filter(r=>r.zone===Number(z)),summary=reportTotals(group),confirmed=group.reduce((n,r)=>n+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0),pct=summary.total?Math.round(summary.done/summary.total*100):0;
     return `<button type="button" class="zone-pulse-card" data-overview-zone="${z}" aria-label="Open Zone ${z} block board"><span class="zone-pulse-top"><span class="zone-pulse-icon"><svg aria-hidden="true"><use href="#i-building"/></svg></span><strong>Zone ${z}</strong><em>${group.length} blocks</em></span><span class="zone-pulse-total">${summary.total.toLocaleString()} <small>units</small></span><span class="zone-pulse-progress"><i style="width:${pct}%"></i></span><span class="zone-pulse-metrics"><span><b>${summary.done}</b> Done</span><span><b>${summary.agree}</b> A+C</span><span><b>${summary.d}</b> D</span><span><b>${summary.nr+summary.p}</b> NR+P</span><span><b>${confirmed}</b> C</span></span></button>`
