@@ -1,4 +1,4 @@
-/* V165. Screen navigation and home dashboard presentation. */
+/* Screen navigation and home dashboard presentation. */
 @media screen {
   body .app-shell {display:block}
   body .main,body.focus-view .main {margin-left:0!important;width:100%;padding-bottom:70px}
@@ -81,10 +81,10 @@
   /* A readable command bar with secondary tools in a native popover. */
   body:has(#dashboard.view.active) .main {padding:14px 20px 10px}
   body:has(#dashboard.view.active) .topbar {align-items:center;gap:16px;flex-wrap:wrap;margin:0;padding:7px 10px;border:1px solid #ffffffc9;border-radius:16px;background:linear-gradient(120deg,#f4fbffeb,#e4f3ffcf);box-shadow:inset 0 1px #fff,0 3px 12px #10375a1a;backdrop-filter:blur(8px)}
-  body:has(#dashboard.view.active) .topbar>div:first-child {display:block;flex:0 0 auto;min-width:135px;color:#18426a;border-left:3px solid #397fbb;padding-left:10px}
-  body:has(#dashboard.view.active) .topbar .eyebrow {font-size:8px;letter-spacing:.09em;color:#326286}
-  body:has(#dashboard.view.active) .topbar h1 {font-size:17px;margin:2px 0 0;color:#103d69}
-  body:has(#dashboard.view.active) #pageSubtitle {display:none}
+  body:has(#dashboard.view.active) .topbar>div:first-child {display:block;flex:0 1 auto;min-width:0;color:#18426a;border-left:3px solid #397fbb;padding-left:10px}
+  body:has(#dashboard.view.active) .topbar .eyebrow {display:none}
+  body:has(#dashboard.view.active) .topbar h1 {font-size:clamp(20px,2vw,32px);font-weight:850;line-height:1.12;margin:0}
+  body:has(#dashboard.view.active) #pageSubtitle {display:block;margin:3px 0 0;font-size:11px;line-height:1.2}
   body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;flex:1;flex-wrap:wrap;gap:7px;width:auto;margin:0}
   body:has(#dashboard.view.active) .top-actions>button,
   body:has(#dashboard.view.active) .top-actions>.today-chip,
@@ -103,10 +103,6 @@
   #dashboard.view.active {display:flex!important;flex-direction:column;gap:14px;min-height:calc(100dvh - 100px);padding:16px 0 0;position:relative}
   .dashboard-home-row {display:grid;flex:1;grid-template-columns:minmax(220px,1fr) minmax(380px,500px);grid-template-rows:auto minmax(38px,1fr) auto;align-items:start;column-gap:28px;row-gap:18px;width:100%;min-height:calc(100dvh - 148px)}
   .dashboard-home-actions {display:contents}
-  #dashboard .dashboard-visual-intro {grid-column:1;grid-row:1;display:flex;flex-direction:column;align-items:flex-start;justify-self:start;gap:1px;max-width:100%;width:fit-content;margin:0;padding:13px 17px 14px;border:1px solid #ffffffe0;border-left:3px solid #3386ce;border-radius:0 16px 16px 0;background:linear-gradient(110deg,#f8fcfff2,#eef8ffba);box-shadow:0 4px 15px #143b5a16;backdrop-filter:blur(7px);color:#17456c;text-shadow:none}
-  #dashboard .dashboard-visual-intro span {font-size:9px;letter-spacing:.16em;color:#507694;font-weight:700}
-  #dashboard .dashboard-visual-intro strong {font-size:clamp(20px,2.2vw,30px);font-weight:850;line-height:1.14;letter-spacing:-.025em;color:#0758a5;background:none;-webkit-text-fill-color:currentColor;filter:none;text-shadow:0 1px #fff}
-  #dashboard .dashboard-visual-intro small {font-size:10px;margin-top:4px;color:#3b6381}
   #dashboard .dashboard-overview-compact,
   body:not(.theme-night) #dashboard .dashboard-overview-compact,
   body.theme-night #dashboard .dashboard-overview-compact {grid-column:2;grid-row:1;justify-self:end;align-self:start;width:100%;max-width:500px;margin:0;padding:13px;border:1px solid #aed9ffb3;border-radius:18px;background:linear-gradient(130deg,#194c7df2,#0b2c52ee);color:#fff;box-shadow:inset 0 1px #ffffff77,0 7px 20px #0a2b4a32;backdrop-filter:blur(10px)}
@@ -166,9 +162,6 @@
   #dashboard .royal-icon-dock #dashboardTodayCount {position:absolute;top:3px;right:3px;min-width:11px;font-size:6px;padding:1px 2px}
   body.theme-night:has(#dashboard.view.active) .topbar {background:linear-gradient(120deg,#163b5ee8,#0e2c49de);border-color:#99c9ed66}
   body.theme-night:has(#dashboard.view.active) .topbar>div:first-child,body.theme-night:has(#dashboard.view.active) .topbar h1,body.theme-night:has(#dashboard.view.active) .topbar .eyebrow {color:#e1f3ff}
-  body.theme-night #dashboard .dashboard-visual-intro {background:linear-gradient(110deg,#143c60ec,#0e2946c9);border-color:#b4ddff80}
-  body.theme-night #dashboard .dashboard-visual-intro strong {color:#bfe7ff;text-shadow:none}
-  body.theme-night #dashboard .dashboard-visual-intro span,body.theme-night #dashboard .dashboard-visual-intro small {color:#c5e3f5}
   body:has(#dashboard.view.active) .topbar {background:linear-gradient(120deg,#f4fbfff0,#e4f3ffde)!important;border:1px solid #ffffffe0!important;box-shadow:inset 0 1px #fff,0 3px 12px #10375a1a!important;backdrop-filter:blur(8px)!important}
   body:has(#dashboard.view.active) .topbar h1,body:has(#dashboard.view.active) .topbar .eyebrow {color:#17466e!important}
   body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip) {background:linear-gradient(180deg,#fff,#eaf5fd)!important;color:#174b73!important;border-color:#bbd5e8!important;text-shadow:none!important;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d!important}
@@ -184,17 +177,11 @@
   body:has(#dashboard.view.active) .topbar>div:first-child {border-left-color:#79b5e7}
   body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip) {background:linear-gradient(180deg,#ffffff45,#ffffff14)!important;border-color:#ffffff66!important;box-shadow:inset 0 1px #ffffff3d!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9!important;backdrop-filter:blur(3px)}
   body:has(#dashboard.view.active) .topbar .top-actions>.user-name-chip {background:transparent!important;border-color:transparent!important;box-shadow:none!important;font-size:11px;font-weight:750}
-  body:has(#dashboard.view.active) .topbar .eyebrow,body:has(#dashboard.view.active) .topbar h1 {color:#103e64!important;text-shadow:0 1px 2px #ffffffd9}
+  body:has(#dashboard.view.active) .topbar h1,body:has(#dashboard.view.active) #pageSubtitle {color:#0c5091!important;text-shadow:0 1px 2px #ffffffd9}
   body:has(#dashboard.view.active) .lighting-mode-control {background:#ffffff1c!important;border-color:#ffffff5c!important;backdrop-filter:blur(3px)}
   body:has(#dashboard.view.active) .lighting-mode-control button {background:transparent!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9}
   body:has(#dashboard.view.active) .lighting-mode-control button[aria-pressed="true"] {background:#ffffff40!important;box-shadow:inset 0 1px #ffffff50!important}
-  #dashboard .dashboard-visual-intro {padding:8px 12px 9px;gap:0;border-left-width:2px;border-radius:0 11px 11px 0;background:linear-gradient(110deg,#f8fcff9e,#eef8ff47);box-shadow:inset 0 1px #ffffff80;backdrop-filter:blur(4px)}
-  #dashboard .dashboard-visual-intro strong {font-size:20px!important;line-height:1.18;letter-spacing:-.015em}
-  #dashboard .dashboard-visual-intro span {font-size:8px}
-  #dashboard .dashboard-visual-intro small {font-size:9px;margin-top:3px}
-  body.theme-night:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip),body.theme-night:has(#dashboard.view.active) .topbar .eyebrow,body.theme-night:has(#dashboard.view.active) .topbar h1,body.theme-night:has(#dashboard.view.active) .lighting-mode-control button {color:#e1f3ff!important;text-shadow:0 1px 2px #082b49!important}
-  #dashboard .dashboard-visual-intro,body.theme-night #dashboard .dashboard-visual-intro {background:transparent!important;border:0!important;border-radius:0;box-shadow:none!important;backdrop-filter:none!important;padding:5px 0}
-  #dashboard .dashboard-visual-intro strong {text-shadow:0 1px 2px #ffffffeb,0 0 4px #ffffff7a}
+  body.theme-night:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip,.user-name-chip),body.theme-night:has(#dashboard.view.active) #pageSubtitle,body.theme-night:has(#dashboard.view.active) .topbar h1,body.theme-night:has(#dashboard.view.active) .lighting-mode-control button {color:#e1f3ff!important;text-shadow:0 1px 2px #082b49!important}
   .dashboard-home-row {grid-template-columns:minmax(220px,1fr) minmax(400px,560px)}
   #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {max-width:560px}
   #dashboard .progress-summary {grid-template-columns:110px minmax(0,1fr);gap:13px}
@@ -204,6 +191,69 @@
   #dashboard .dashboard-overview-compact .dashboard-glance span {font-size:9px}
   #dashboard .dashboard-overview-compact .dashboard-glance strong {font-size:21px}
   #dashboard .dashboard-overview-compact .dashboard-glance small {font-size:8px}
+  #dashboard .home-remaining-work {
+    margin-top: 12px;
+    padding: 10px 11px;
+    border: 1px solid #7ab5df75;
+    border-radius: 12px;
+    background: linear-gradient(125deg, #32608f4d, #1134588c);
+  }
+  #dashboard .home-remaining-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  #dashboard .home-remaining-head h2 {
+    margin: 0;
+    color: #f3f9ff;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  #dashboard .home-remaining-head p {
+    margin: 3px 0 0;
+    color: #c4def3;
+    font-size: 9px;
+  }
+  #dashboard .home-remaining-total {
+    flex-shrink: 0;
+    text-align: right;
+  }
+  #dashboard .home-remaining-total strong {
+    display: block;
+    color: #ffdd91;
+    font-size: 25px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  #dashboard .home-remaining-total span {
+    color: #dbeefa;
+    font-size: 9px;
+  }
+  #dashboard .home-remaining-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0 0;
+  }
+  #dashboard .home-remaining-breakdown > div {
+    padding: 6px 7px;
+    border: 1px solid #cbe8ff38;
+    border-radius: 8px;
+    background: #e8f6ff0d;
+  }
+  #dashboard .home-remaining-breakdown dt {
+    color: #e3f1fb;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+  #dashboard .home-remaining-breakdown dd {
+    margin: 3px 0 0;
+    color: #ffdd91;
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.15;
+  }
   #dashboard .home-priorities {margin-top:12px;padding-top:10px;border-top:1px solid #d8eeff28}
   #dashboard .home-priority-head {display:flex;justify-content:space-between;align-items:center;margin:0 0 7px;color:#d6eafa;font-size:10px;font-weight:750}
   #dashboard .home-priority-head small {font-size:8px;font-weight:550;color:#b9d1e7}
@@ -217,20 +267,19 @@
   #dashboard .home-priority-grid button:nth-child(3) strong {color:#ffb2b8}
   #dashboard .home-priority-grid button small {font-size:7px;color:#b6d0e5;line-height:1.3}
   @media(max-width:880px) {
-    .dashboard-home-row {grid-template-columns:1fr;grid-template-rows:auto auto minmax(28px,1fr) auto;min-height:calc(100dvh - 180px)}
-    #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {grid-column:1;grid-row:2;width:min(500px,100%)}
-    #dashboard .dashboard-shortcuts.royal-icon-dock {grid-row:4;max-width:calc(100% - 90px);gap:12px}
+    .dashboard-home-row {grid-template-columns:1fr;grid-template-rows:auto minmax(28px,1fr) auto;min-height:calc(100dvh - 180px)}
+    #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {grid-column:1;grid-row:1;width:min(500px,100%)}
+    #dashboard .dashboard-shortcuts.royal-icon-dock {max-width:calc(100% - 90px);gap:12px}
   }
   @media(max-width:500px) {
     body:has(#dashboard.view.active) .main {padding:10px}
-    body:has(#dashboard.view.active) .topbar>div:first-child {display:none}
-    body:has(#dashboard.view.active) .top-actions {justify-content:flex-start}
+    body:has(#dashboard.view.active) .topbar {gap:8px}
+    body:has(#dashboard.view.active) .top-actions {flex-basis:100%;justify-content:flex-start}
     #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {padding:10px}
     #dashboard .progress-summary {grid-template-columns:88px minmax(0,1fr);gap:8px}
     #dashboard .progress-summary .dashboard-glance {grid-template-columns:repeat(2,minmax(0,1fr))}
     #dashboard .overview-topline {flex-wrap:wrap}
     #dashboard .overview-scope {margin-left:auto}
     #dashboard .dashboard-shortcuts.royal-icon-dock {max-width:100%;padding-left:65px}
-    #dashboard .dashboard-visual-intro strong {font-size:21px}
   }
 }

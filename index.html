@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css?v=8.44.153">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.155">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
-  <link rel="stylesheet" href="desktop-home.css?v=8.44.165" media="screen">
+  <link rel="stylesheet" href="desktop-home.css?v=8.44.169" media="screen">
   <style media="print">#appStartButton,#appStartMenu,#headerToolsMenu{display:none!important}</style>
 </head>
 <body class="secure-locked">
@@ -218,8 +218,8 @@
       <header class="topbar">
         <div>
           <div class="eyebrow">ELU UPGRADING · PASIR RIS</div>
-          <h1 id="pageTitle">ELU</h1>
-          <p id="pageSubtitle">A clear starting point for field work.</p>
+          <h1 id="pageTitle">Electrical Load Upgrading</h1>
+          <p id="pageSubtitle">Pasir Ris</p>
         </div>
 
         <div class="top-actions">
@@ -241,7 +241,6 @@
       <section class="view active" id="dashboard">
         <div class="dashboard-home-row">
           <div class="dashboard-home-actions">
-        <div class="dashboard-visual-intro"><span>ELU</span><strong>Electrical Load Upgrading</strong><small>Pasir Ris</small></div>
         <div class="dashboard-shortcuts royal-icon-dock" aria-label="Quick access">
           <button type="button" id="dashboardQuickJump" title="Find a unit"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#desktop-folder"/></svg></span><strong>Find Unit</strong></button>
           <button type="button" id="dashboardMapShortcut" aria-expanded="false" aria-controls="zoneMapPanel" title="Open zone map"><span class="shortcut-icon"><svg aria-hidden="true"><use href="#desktop-map"/></svg></span><strong>Zone Map</strong></button>
@@ -278,6 +277,23 @@
             <div><span>Confirmation C</span><strong id="kpiAppointments">0</strong><small>included in A+C</small></div>
           </div>
           </div>
+          <section class="home-remaining-work" aria-labelledby="homeRemainingHeading">
+            <div class="home-remaining-head">
+              <div>
+                <h2 id="homeRemainingHeading">Material Planning</h2>
+                <p>All Zones · NR + P + C</p>
+              </div>
+              <div class="home-remaining-total">
+                <strong id="homeRemainingWorkTotal">0</strong>
+                <span>Work Not Completed</span>
+              </div>
+            </div>
+            <dl class="home-remaining-breakdown">
+              <div><dt>No Response (NR)</dt><dd id="homeRemainingNR">0</dd></div>
+              <div><dt>Pending Confirmation (P)</dt><dd id="homeRemainingP">0</dd></div>
+              <div><dt>Confirmed (C)</dt><dd id="homeRemainingC">0</dd></div>
+            </dl>
+          </section>
           <div class="home-priorities" aria-label="Daily priorities">
             <div class="home-priority-head"><span>Daily focus</span><small id="homePriorityDate"></small></div>
             <div class="home-priority-grid">
@@ -769,7 +785,7 @@
 
       <section class="view" id="reports">
         <div class="report-hero">
-          <div><span class="section-label">WEEKLY PROGRESS MEETING</span><h2>Progress Summary</h2><p>Calculated from the read-only Unit Register. A + C = Opt-In Agree; completed work is counted separately.</p></div>
+          <div><span class="section-label">WEEKLY PROGRESS MEETING</span><h2>Progress Summary</h2><p>A = Work Completed, even without a recorded date. C = Confirmed. A + C = Opt-In Agree.</p></div>
           <div class="report-actions report-download-actions">
             <div class="report-primary-downloads">
               <button class="primary-btn" id="exportManagerPdfBtn">Progress PDF</button>
@@ -979,8 +995,8 @@
   <script src="jszip.min.js"></script>
   <script src="pdf-lib.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.165"></script>
-  <script src="desktop-nav.js?v=8.44.162"></script>
+  <script src="app.js?v=8.44.170"></script>
+  <script src="desktop-nav.js?v=8.44.168"></script>
   <script src="nr-evidence.js?v=8.44.143"></script>
   <script src="riser-progress.js?v=8.44.143"></script>
   <script src="evidence-downloads.js?v=8.44.143"></script>
@@ -989,7 +1005,7 @@
   <script src="unit-register-export.js?v=8.44.118"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
-<script src="zone6-import.js?v=8.29"></script>
+<script src="zone6-import.js?v=8.44.170"></script>
 <script src="complaint-excel-report.js?v=8.44.27"></script>
 <script src="certificate-forms.js?v=8.44.143"></script>
 <script src="single-line-diagram.js?v=8.44.144"></script>

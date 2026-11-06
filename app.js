@@ -134,11 +134,12 @@ function statusPill(v){v=normalizeStatus(v);const c=v==="A"?"a":v==="C"?"c":v===
 
 function baseUnit(block,floor,unit){
   const d=PROJECT_LAYOUT[String(block)]||PROJECT_LAYOUT[block];const seed=(d?.seed||{})[`${floor}-${unit}`]||{};
+  const response=normalizeStatus(seed.response);
   return {
     key:unitKey(block,floor,unit),zone:Number(d?.zone||0),block:Number(block),floor:Number(floor),unit:Number(unit),
-    response:normalizeStatus(seed.response),ownerName:seed.ownerName||"",contact:seed.contact||"",remarks:"",
+    response,ownerName:seed.ownerName||"",contact:seed.contact||"",remarks:"",
     followUpDate:"",lastFollowUp:"",appointmentDate:"",appointmentSlot:"",team:"",
-    workStatus:seed.completed?"Completed":"Pending",
+    workStatus:response==="A"?"Completed":"Pending",
     legacySchedule:seed.legacySchedule||"",legacyRemark:seed.legacyRemark||""
   };
 }
@@ -506,9 +507,9 @@ function preferredMasterAppointment(key){
 function currentUnitAppointmentState(key){
   const manual=manualStatusOverride(key);
   if(manual){
-    // This requested A means Opt-In; it does not assert that work was completed.
-    const completed=manual.status==="A"&&manual.reason!==ZONE1_OPT_IN_REASON&&manual.reason!=="Zone 6 survey Opt-In (status only)";
-    return {appointment:null,status:manual.status,workStatus:completed?"Completed":manual.status==="A"?"Opt-In":"Pending",active:false,completed,manualOverride:manual}
+    // Green A counts as completed even when the work date is unknown.
+    const completed=manual.status==="A";
+    return {appointment:null,status:manual.status,workStatus:completed?"Completed":"Pending",active:false,completed,manualOverride:manual}
   }
 
   const a=preferredMasterAppointment(key);
@@ -657,7 +658,7 @@ function autoCompleteAppointments(showToast=false){
   if(changed){rebuildAllMasters();persist();renderAll();if(showToast)toast(`${changed} appointment${changed===1?"":"s"} changed C → A`)}
 }
 function viewTitle(view){return {
-dashboard:["ELU","Electrical Load Upgrading · Pasir Ris"],
+dashboard:["Electrical Load Upgrading","Pasir Ris"],
 blockboard:["Block & Floor Board","Exact floor-wise units from your PR3 Excel files."],
 survey:["Survey Visit Register","Visit diary for resident calls: date, exact time and contact reference."],
 appointments:["Appointment Schedule","Main operational source for resident, date, slot, team and work confirmation."],
@@ -1132,9 +1133,25 @@ function dashboardPriorityTotals(){
     complaints:state.complaints.filter(c=>complaintState(c)!=="Closed").length
   };
 }
+function dashboardWorkloadTotals(rows){
+  const remaining = {NR: 0, P: 0, C: 0};
+  let confirmed = 0;
+  for (const {block} of rows) {
+    const units = getBlockUnits(block);
+    if (!blockHasFieldActivity(block, units)) continue;
+    for (const unit of units) {
+      if (unit.response === "C") confirmed++;
+      if (unit.workStatus !== "Completed" && Object.hasOwn(remaining, unit.response)) {
+        remaining[unit.response]++;
+      }
+    }
+  }
+  return {confirmed, remaining};
+}
+
 function renderDashboard(){
   const u=unitsArray(),rows=buildReportRows("all","all"),rt=reportTotals(rows),total=rt.total,agree=rt.agree,p=rt.p,d=rt.d,nr=rt.nr,done=rt.done;
-  const c=rows.reduce((sum,r)=>sum+(blockHasFieldActivity(r.block,getBlockUnits(r.block))?getBlockUnits(r.block).filter(x=>x.response==="C").length:0),0);
+  const {confirmed: c, remaining} = dashboardWorkloadTotals(rows);
   const noResponse=nr+p,donePct=total?Math.round(done/total*1000)/10:0;
   document.getElementById("heroTagZones").textContent=`${Object.keys(ZONE_BLOCKS).length} Zones`;document.getElementById("heroTagBlocks").textContent=`${rows.length} Blocks`;
 
@@ -1148,6 +1165,11 @@ function renderDashboard(){
   document.getElementById("dashboardCompletionValue").textContent=`${donePct}%`;
   document.getElementById("kpiOptOut").textContent=d.toLocaleString();
   document.getElementById("kpiNR").textContent=noResponse.toLocaleString();document.getElementById("kpiPending").textContent=p.toLocaleString();
+  document.getElementById("homeRemainingNR").textContent = remaining.NR.toLocaleString();
+  document.getElementById("homeRemainingP").textContent = remaining.P.toLocaleString();
+  document.getElementById("homeRemainingC").textContent = remaining.C.toLocaleString();
+  document.getElementById("homeRemainingWorkTotal").textContent =
+    (remaining.NR + remaining.P + remaining.C).toLocaleString();
   const priorities=dashboardPriorityTotals();
   document.getElementById("homePriorityDate").textContent=safeDate(priorities.date);
   document.getElementById("homeTodayBookings").textContent=priorities.bookings.toLocaleString();

@@ -62,10 +62,10 @@
         const mark=chartStatus.get(`${floor}-${unit}`)||'';
         if(!mark)continue; // Unstarted units remain exactly as they were.
         if(!['A','C','D','NR','CNR','VNR'].includes(mark))throw Error(`Unknown Block Chart status ${mark}: Blk ${block} #${floor}-${unit}`);
-        const work=String(r.J||'').trim(),rawDate=String(r.I||'').trim(),date=legacyDateISO(rawDate);
+        const rawDate=String(r.I||'').trim(),date=legacyDateISO(rawDate);
         // The chart owns the response. Rajan explicitly corrected 554 #10-117 to Opt-In.
         const status=block===554&&floor===10&&unit===117?'A':mark==='CNR'||mark==='VNR'?'NR':mark;
-        const completed=status==='A'&&Boolean(date);
+        const completed=status==='A';
         if(status==='C'&&!date)throw Error(`Confirmed appointment date missing: Blk ${block} #${floor}-${unit}`);
         const name=String(r.H||'').trim(),contact=String(r.G||'').trim();
         const normalizedSchedule=rawDate.replace(/(\d{1,2}(?::\d{2})?(?:am|pm))(\d{1,2}(?::\d{2})?(?:am|pm))/i,'$1–$2');
@@ -108,11 +108,11 @@
       for(const [key,e] of Object.entries(imported)){
         const u=state.units[key],status=e.status;
         if(!u)throw Error(`App unit missing: ${key}`);
-        if(status==='C'||e.completed){
+        if(status==='C'||(e.completed&&e.appointmentDate)){
           state.appointments.push({id:now+offset++,unitKey:key,zone:6,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),ownerName:e.ownerName,contact:e.contact,date:e.appointmentDate,slot:e.appointmentSlot||'',team:'',remarks:'',source:'Zone6 Survey Import',scheduleState:'Active',workStatus:e.completed?'Completed':'Pending',requiresExplicitCompletion:status==='C'});
           delete state.statusOverrides[key];
         }else{
-          state.statusOverrides[key]={status,source:'Zone6 Survey Import',reason:status==='A'?'Zone 6 survey Opt-In (status only)':'Zone 6 survey Excel',updatedAt:new Date().toISOString()};
+          state.statusOverrides[key]={status,source:'Zone6 Survey Import',reason:'Zone 6 survey Excel',updatedAt:new Date().toISOString()};
         }
         state.statusAudit.push({id:`zone6-import-${now}-${key}`,unitKey:key,from:u.response,to:status,action:'zone6-survey-import',source:'Zone6 Survey Import',at:new Date().toISOString()});
       }
