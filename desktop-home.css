@@ -1,6 +1,11 @@
 /* Screen navigation and home dashboard presentation. */
 @media screen {
-  body .app-shell {display:block}
+  .dashboard-company-logo {display:none}
+  body .app-shell {
+    --app-start-size:68px;
+    --app-start-bottom:16px;
+    display:block;
+  }
   body .main,body.focus-view .main {margin-left:0!important;width:100%;padding-bottom:70px}
 
   body .sidebar#appStartMenu {
@@ -48,8 +53,8 @@
   @media (prefers-reduced-motion:reduce) {body .sidebar#appStartMenu {transition:none}}
 
   .app-start-button {
-    position:fixed;bottom:16px;left:18px;z-index:50;isolation:isolate;
-    display:grid;place-items:center;min-width:0;width:68px;height:68px;padding:0;
+    position:fixed;bottom:var(--app-start-bottom);left:18px;z-index:50;isolation:isolate;
+    display:grid;place-items:center;min-width:0;width:var(--app-start-size);height:var(--app-start-size);padding:0;
     color:#fff;border:3px solid #a7b6c6;border-radius:50%;
     background:radial-gradient(ellipse at 49% 77%,#20b5ff 0%,#0871d1 38%,#043c8c 64%,#021b49 84%);
     box-shadow:0 0 0 1px #142c47,inset 0 0 0 2px #061f4e,
@@ -78,14 +83,13 @@
   #appStartMenu .menu-search svg {stroke:#25485f}
   #appStartMenu .nav-item.active,#appStartMenu .nav-item:hover {color:#15394f}
   #appStartMenu .nav-item.active span,#appStartMenu .nav-item:hover span {text-shadow:0 1px #ffffff60}
-  /* A readable command bar with secondary tools in a native popover. */
+  /* Dashboard branding and commands share a grid with no visible frame. */
   body:has(#dashboard.view.active) .main {padding:14px 20px 10px}
-  body:has(#dashboard.view.active) .topbar {align-items:center;gap:16px;flex-wrap:wrap;margin:0;padding:7px 10px;border:1px solid #ffffffc9;border-radius:16px;background:linear-gradient(120deg,#f4fbffeb,#e4f3ffcf);box-shadow:inset 0 1px #fff,0 3px 12px #10375a1a;backdrop-filter:blur(8px)}
-  body:has(#dashboard.view.active) .topbar>div:first-child {display:block;flex:0 1 auto;min-width:0;color:#18426a;border-left:3px solid #397fbb;padding-left:10px}
+  body:has(#dashboard.view.active) .topbar>div:first-child {display:block;justify-self:start;min-width:0;max-width:100%;color:#18426a}
   body:has(#dashboard.view.active) .topbar .eyebrow {display:none}
   body:has(#dashboard.view.active) .topbar h1 {font-size:clamp(20px,2vw,32px);font-weight:850;line-height:1.12;margin:0}
   body:has(#dashboard.view.active) #pageSubtitle {display:block;margin:3px 0 0;font-size:11px;line-height:1.2}
-  body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;flex:1;flex-wrap:wrap;gap:7px;width:auto;margin:0}
+  body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;justify-self:end;flex-wrap:wrap;gap:7px;width:auto;max-width:100%;margin:0}
   body:has(#dashboard.view.active) .top-actions>button,
   body:has(#dashboard.view.active) .top-actions>.today-chip {min-height:30px;padding:6px 9px;border:1px solid #bbd5e8;border-radius:9px;background:linear-gradient(180deg,#ffffff,#eaf5fd);color:#174b73;font-size:10px;font-weight:700;opacity:1;text-shadow:none;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d;white-space:nowrap}
   body:has(#dashboard.view.active) #userNameChip {display:none}
@@ -159,9 +163,7 @@
   #dashboard .royal-icon-dock strong,
   body.theme-night #dashboard .royal-icon-dock strong {display:block;width:100%;padding:1px 0 0;margin:0;border:0;border-radius:0;background:none;box-shadow:none;color:#fff;font-size:8.5px;font-weight:800;line-height:1.15;letter-spacing:-.025em;white-space:nowrap;text-shadow:0 1px 2px #071e40}
   #dashboard .royal-icon-dock #dashboardTodayCount {position:absolute;top:3px;right:3px;min-width:11px;font-size:6px;padding:1px 2px}
-  body.theme-night:has(#dashboard.view.active) .topbar {background:linear-gradient(120deg,#163b5ee8,#0e2c49de);border-color:#99c9ed66}
   body.theme-night:has(#dashboard.view.active) .topbar>div:first-child,body.theme-night:has(#dashboard.view.active) .topbar h1,body.theme-night:has(#dashboard.view.active) .topbar .eyebrow {color:#e1f3ff}
-  body:has(#dashboard.view.active) .topbar {background:linear-gradient(120deg,#f4fbfff0,#e4f3ffde)!important;border:1px solid #ffffffe0!important;box-shadow:inset 0 1px #fff,0 3px 12px #10375a1a!important;backdrop-filter:blur(8px)!important}
   body:has(#dashboard.view.active) .topbar h1,body:has(#dashboard.view.active) .topbar .eyebrow {color:#17466e!important}
   body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip) {background:linear-gradient(180deg,#fff,#eaf5fd)!important;color:#174b73!important;border-color:#bbd5e8!important;text-shadow:none!important;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d!important}
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(2) {--status:#98baff}
@@ -170,17 +172,22 @@
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(5) {--status:#ffd382}
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(6) {--status:#cbacff}
   #dashboard .royal-icon-dock strong,body.theme-night #dashboard .royal-icon-dock strong {font-size:8px;letter-spacing:-.035em}
-  /* Keep the command bar translucent and give the title its own contrast. */
   body:has(#dashboard.view.active) .topbar {
     --header-ink:#102d52;
     --header-secondary:#365b7d;
     --header-edge:#ffffffbf;
     --heading-surface:linear-gradient(115deg,#f7fcfff7,#dceeffeb);
-    background:linear-gradient(110deg,#ffffff22,#eaf7ff0d)!important;
-    border-color:#ffffff5c!important;
-    box-shadow:inset 0 1px #ffffff3b!important;
-    backdrop-filter:blur(5px)!important;
-    -webkit-backdrop-filter:blur(5px)!important;
+    display:grid;
+    grid-template-columns:minmax(0,max-content) minmax(0,1fr);
+    align-items:start;
+    gap:16px;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:none!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
   }
   body.theme-night:has(#dashboard.view.active) .topbar {
     --header-ink:#f3f9ff;
@@ -205,8 +212,7 @@
     background:#fff;
     box-shadow:0 2px 6px #102d5218;
   }
-  .dashboard-company-lockup {position:relative;aspect-ratio:8/1;overflow:hidden}
-  .dashboard-company-lockup img {position:absolute;top:50%;left:0;width:100%;height:auto;transform:translateY(-50%)}
+  .dashboard-company-lockup {display:block;width:100%;height:auto}
   body:has(#dashboard.view.active) .topbar h1 {
     color:var(--header-ink)!important;
     letter-spacing:-.025em;
@@ -221,20 +227,17 @@
     gap:7px;
     max-width:100%;
     padding:6px 11px;
-    border:1px solid #ffffffbf;
+    border:1px solid #f4fbff80;
     border-radius:999px;
-    background:linear-gradient(135deg,#fcfefff5,#d6eaffeb);
-    color:#102d52;
-    box-shadow:inset 0 1px #ffffff66,0 2px 8px #102d5222;
+    background:#0d315b29;
+    backdrop-filter:blur(5px);
+    -webkit-backdrop-filter:blur(5px);
+    color:#fff;
+    text-shadow:0 1px 3px #0b2745,0 1px 6px #0b2745;
     font-size:12px;
     font-weight:800;
     line-height:1.25;
     overflow-wrap:anywhere;
-  }
-  body.theme-night #dashboard .dashboard-profile {
-    border-color:#8bbbe385;
-    background:linear-gradient(135deg,#1f4f78f5,#102c4beb);
-    color:#f3f9ff;
   }
   #dashboard .dashboard-profile::before {
     content:"";
@@ -344,10 +347,11 @@
     #dashboard .dashboard-home-actions {
       position:fixed;
       z-index:49;
-      inset:auto 100px 16px;
+      inset:auto 100px var(--app-start-bottom);
       display:grid;
       grid-template-columns:minmax(max-content,1fr) max-content minmax(0,1fr);
-      align-items:end;
+      min-height:var(--app-start-size);
+      align-items:center;
       gap:12px;
       pointer-events:none;
     }
@@ -363,7 +367,7 @@
   }
   @media (max-height:760px), (max-width:880px) {
     body:has(#dashboard.view.active) .main {padding-top:8px}
-    body:has(#dashboard.view.active) .main .topbar {margin-bottom:0;padding-block:5px;gap:8px}
+    body:has(#dashboard.view.active) .topbar {gap:8px}
     body:has(#dashboard.view.active) .dashboard-company-logo {width:min(100%,260px);margin-bottom:8px;padding:3px 7px}
     body:has(#dashboard.view.active) .topbar h1 {font-size:clamp(18px,2vw,23px)}
     #dashboard.view.active {padding-top:4px}
@@ -383,7 +387,6 @@
     #dashboard .home-priority-grid button {min-height:54px;padding-block:5px}
   }
   @media (max-height:620px), (max-width:500px) {
-    body:has(#dashboard.view.active) .main .topbar {padding-block:4px}
     body:has(#dashboard.view.active) .topbar>div:first-child {padding-block:3px}
     body:has(#dashboard.view.active) .dashboard-company-logo {width:min(100%,220px)}
     #dashboard .dashboard-overview-compact,
@@ -409,16 +412,23 @@
       align-self:end;
       display:grid;
       justify-items:center;
-      gap:8px;
-      padding:0 0 6px 80px;
+      padding:0 0 58px 80px;
     }
     #dashboard .dashboard-shortcuts.royal-icon-dock {grid-area:1/1;max-width:100%;gap:12px;min-height:0;padding:0}
-    #dashboard .dashboard-profile {grid-area:2/1}
+    #dashboard .dashboard-profile {
+      position:fixed;
+      z-index:49;
+      left:100px;
+      bottom:calc(var(--app-start-bottom) + var(--app-start-size) / 2);
+      max-width:calc(100% - 110px);
+      transform:translateY(50%);
+    }
+  }
+  @media(max-width:680px) {
+    body:has(#dashboard.view.active) .topbar {grid-template-columns:minmax(0,1fr)}
   }
   @media(max-width:500px) {
     body:has(#dashboard.view.active) .main {padding:10px}
-    body:has(#dashboard.view.active) .topbar {gap:8px}
-    body:has(#dashboard.view.active) .top-actions {flex-basis:100%;justify-content:flex-start}
     #dashboard .dashboard-overview-compact,body:not(.theme-night) #dashboard .dashboard-overview-compact,body.theme-night #dashboard .dashboard-overview-compact {padding:10px}
     #dashboard .progress-summary {grid-template-columns:88px minmax(0,1fr);gap:8px}
     #dashboard .royal-icon-dock button,
