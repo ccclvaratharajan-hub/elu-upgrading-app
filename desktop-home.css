@@ -89,7 +89,7 @@
   body:has(#dashboard.view.active) .topbar .eyebrow {display:none}
   body:has(#dashboard.view.active) .topbar h1 {font-size:clamp(20px,2vw,32px);font-weight:850;line-height:1.12;margin:0}
   body:has(#dashboard.view.active) #pageSubtitle {display:block;margin:3px 0 0;font-size:11px;line-height:1.2}
-  body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;justify-self:end;flex-wrap:wrap;gap:7px;width:auto;max-width:100%;margin:0}
+  body:has(#dashboard.view.active) .top-actions {display:flex;align-items:center;justify-content:flex-end;justify-self:end;flex-wrap:wrap;gap:7px;width:max-content;max-width:100%;min-width:0;margin:0}
   body:has(#dashboard.view.active) .top-actions>button,
   body:has(#dashboard.view.active) .top-actions>.today-chip {min-height:30px;padding:6px 9px;border:1px solid #bbd5e8;border-radius:9px;background:linear-gradient(180deg,#ffffff,#eaf5fd);color:#174b73;font-size:10px;font-weight:700;opacity:1;text-shadow:none;box-shadow:inset 0 1px #fff,0 1px 2px #1a486a0d;white-space:nowrap}
   body:has(#dashboard.view.active) #userNameChip {display:none}
@@ -173,12 +173,8 @@
   #dashboard .dashboard-overview-compact .dashboard-glance>div:nth-child(6) {--status:#cbacff}
   #dashboard .royal-icon-dock strong,body.theme-night #dashboard .royal-icon-dock strong {font-size:8px;letter-spacing:-.035em}
   body:has(#dashboard.view.active) .topbar {
-    --header-ink:#102d52;
-    --header-secondary:#365b7d;
-    --header-edge:#ffffffbf;
-    --heading-surface:linear-gradient(115deg,#f7fcfff7,#dceeffeb);
     display:grid;
-    grid-template-columns:minmax(0,max-content) minmax(0,1fr);
+    grid-template-columns:minmax(0,clamp(240px,32vw,480px)) minmax(0,1fr);
     align-items:start;
     gap:16px;
     margin:0!important;
@@ -189,36 +185,29 @@
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
   }
-  body.theme-night:has(#dashboard.view.active) .topbar {
-    --header-ink:#f3f9ff;
-    --header-secondary:#b8d8f5;
-    --header-edge:#8bbbe385;
-    --heading-surface:linear-gradient(115deg,#102c4bf7,#1a4368ed);
-  }
   body:has(#dashboard.view.active) .topbar>div:first-child {
-    padding:5px 12px;
-    border:1px solid var(--header-edge);
-    border-left:3px solid #589fe2;
-    border-radius:10px;
-    background:var(--heading-surface);
+    padding:5px 0;
+    border:0;
+    background:transparent;
   }
+  body:has(#dashboard.view.active) .topbar>div:first-child::before {display:none}
   body:has(#dashboard.view.active) .dashboard-company-logo {
     display:block;
     width:min(100%,360px);
     margin:0 0 12px;
     padding:6px 9px;
-    border:1px solid #dae6f1;
+    border:1px solid #ffffff80;
     border-radius:8px;
-    background:#fff;
+    background:#ffffffe0;
     box-shadow:0 2px 6px #102d5218;
   }
   .dashboard-company-lockup {display:block;width:100%;height:auto}
   body:has(#dashboard.view.active) .topbar h1 {
-    color:var(--header-ink)!important;
+    color:#fff!important;
     letter-spacing:-.025em;
-    text-shadow:none;
+    text-shadow:0 1px 3px #0b2745,0 2px 8px #0b2745;
   }
-  body:has(#dashboard.view.active) #pageSubtitle {color:var(--header-secondary)!important;font-weight:700;text-shadow:none}
+  body:has(#dashboard.view.active) #pageSubtitle {color:#f3f9ff!important;font-weight:700;text-shadow:0 1px 4px #0b2745}
   body:has(#dashboard.view.active) .topbar .top-actions>:is(button,.today-chip) {background:linear-gradient(180deg,#ffffff45,#ffffff14)!important;border-color:#ffffff66!important;box-shadow:inset 0 1px #ffffff3d!important;color:#103e64!important;text-shadow:0 1px 2px #ffffffd9!important;backdrop-filter:blur(3px)}
   #dashboard .dashboard-profile {
     display:flex;
