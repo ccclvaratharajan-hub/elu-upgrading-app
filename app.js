@@ -834,25 +834,30 @@ document.getElementById("quickJumpZone").addEventListener("change",syncQuickJump
 document.getElementById("quickJumpBlock").addEventListener("change",syncQuickJumpUnits);
 document.getElementById("quickJumpBlockBtn").addEventListener("click",()=>jumpToQuickBlock(false));
 document.getElementById("quickJumpUnitBtn").addEventListener("click",()=>jumpToQuickBlock(true));
-document.getElementById("mapJumpBtn").addEventListener("click",()=>{
+function toggleDashboardMap(){
   if(document.body.classList.contains("secure-locked"))return;
-  setView("dashboard");
-  openDashboardMap();
-});
-function openDashboardMap(){
-  const section=document.getElementById("dashboard"),button=document.getElementById("dashboardMapShortcut");
-  section.classList.add("dashboard-map-open");
-  button.setAttribute("aria-expanded","true");
-  requestAnimationFrame(()=>{
-    renderZoneMap(unitsArray());
-    document.getElementById("zoneMapPanel").scrollIntoView({behavior:"smooth",block:"start"});
-  });
+  const section=document.getElementById("dashboard");
+  const onDashboard=section.classList.contains("active");
+  if(!onDashboard)setView("dashboard");
+  const panel=document.getElementById("zoneMapPanel");
+  const open=!onDashboard||panel.hidden;
+  panel.hidden=!open;
+  section.classList.toggle("dashboard-map-open",open);
+  for(const id of ["mapJumpBtn","dashboardMapShortcut"]){
+    const button=document.getElementById(id);
+    button.setAttribute("aria-expanded",String(open));
+    button.title=open?"Close project map":"Open project map";
+  }
+  if(open){
+    requestAnimationFrame(()=>{
+      if(!panel.hidden&&section.classList.contains("active"))renderZoneMap(unitsArray());
+    });
+  }else{
+    window.scrollTo({top:0,left:0,behavior:"instant"});
+  }
 }
-document.getElementById("dashboardMapShortcut").addEventListener("click",()=>{
-  const section=document.getElementById("dashboard"),open=section.classList.contains("dashboard-map-open");
-  if(open){section.classList.remove("dashboard-map-open");document.getElementById("dashboardMapShortcut").setAttribute("aria-expanded","false");return}
-  openDashboardMap();
-});
+document.getElementById("mapJumpBtn").addEventListener("click",toggleDashboardMap);
+document.getElementById("dashboardMapShortcut").addEventListener("click",toggleDashboardMap);
 document.getElementById("dashboardZoneShortcut").addEventListener("click",()=>{
   const panel=document.getElementById("dashboardZonePanel"),button=document.getElementById("dashboardZoneShortcut");
   panel.hidden=!panel.hidden;
