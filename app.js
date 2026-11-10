@@ -1672,11 +1672,32 @@ function cancelAppointment(id){
   save("Appointment cancelled · this unit/date removed from active schedule · status recalculated")
 }
 function deleteAppointment(id){
-  if(!confirm("Delete this appointment record permanently?"))return;
-  state.appointmentTombstones=Array.isArray(state.appointmentTombstones)?state.appointmentTombstones:[];
   const sid=String(id);
+  const appointment=state.appointments.find(a=>String(a.id)===sid);
+  if(!appointment)return;
+  if(!confirm("Delete this appointment record permanently?"))return;
+  const key=appointment.unitKey;
+  const unit=getUnit(key);
+  const wasPending=unit&&["C","P"].includes(currentUnitAppointmentState(key).status)&&
+    appointment.date&&appointment.workStatus!=="Completed"&&!appointmentHasEnded(appointment)&&
+    liveScheduleRecord(appointment);
+  const hasPhone=wasPending&&(
+    [unit.contact,appointment.contact,baseUnit(unit.block,unit.floor,unit.unit).contact].some(value=>/\d/.test(String(value||"")))||
+    [state.surveys,state.appointments,state.complaints].some(records=>
+      records.some(record=>record.unitKey===key&&/\d/.test(String(record.contact||""))))
+  );
+  state.appointmentTombstones=Array.isArray(state.appointmentTombstones)?state.appointmentTombstones:[];
   if(!state.appointmentTombstones.map(String).includes(sid))state.appointmentTombstones.push(sid);
   state.appointments=state.appointments.filter(x=>String(x.id)!==sid);
+  if(wasPending&&!hasPhone){
+    const remaining=currentUnitAppointmentState(key);
+    const hasBooking=state.appointments.some(a=>a.unitKey===key&&a.date&&liveScheduleRecord(a));
+    if(!hasBooking&&!remaining.completed&&remaining.status!=="D"){
+      setManualStatusDecision(key,"NR","Pending appointment deleted with no phone number");
+      save("Appointment deleted · unit changed to NR");
+      return
+    }
+  }
   save("Appointment permanently deleted · it will not return after reload")
 }
 
