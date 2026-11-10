@@ -1671,6 +1671,15 @@ function cancelAppointment(id){
   if(Number(document.getElementById("plannerEditId").value)===id)resetPlannerForm();
   save("Appointment cancelled · this unit/date removed from active schedule · status recalculated")
 }
+function unitHasSavedPhone(unit){
+  const hasDigits=value=>/\d/.test(String(value||""));
+  return hasDigits(unit.contact)||hasDigits(baseUnit(unit.block,unit.floor,unit.unit).contact)||
+    [state.surveys,state.appointments,state.complaints].some(records=>
+      records.some(record=>record.unitKey===unit.key&&hasDigits(record.contact)))
+}
+function unitHasLiveBooking(key){
+  return state.appointments.some(a=>a.unitKey===key&&a.date&&liveScheduleRecord(a))
+}
 function deleteAppointment(id){
   const sid=String(id);
   const appointment=state.appointments.find(a=>String(a.id)===sid);
@@ -1681,24 +1690,30 @@ function deleteAppointment(id){
   const wasPending=unit&&["C","P"].includes(currentUnitAppointmentState(key).status)&&
     appointment.date&&appointment.workStatus!=="Completed"&&!appointmentHasEnded(appointment)&&
     liveScheduleRecord(appointment);
-  const hasPhone=wasPending&&(
-    [unit.contact,appointment.contact,baseUnit(unit.block,unit.floor,unit.unit).contact].some(value=>/\d/.test(String(value||"")))||
-    [state.surveys,state.appointments,state.complaints].some(records=>
-      records.some(record=>record.unitKey===key&&/\d/.test(String(record.contact||""))))
-  );
+  const hasPhone=wasPending&&unitHasSavedPhone(unit);
   state.appointmentTombstones=Array.isArray(state.appointmentTombstones)?state.appointmentTombstones:[];
   if(!state.appointmentTombstones.map(String).includes(sid))state.appointmentTombstones.push(sid);
   state.appointments=state.appointments.filter(x=>String(x.id)!==sid);
   if(wasPending&&!hasPhone){
     const remaining=currentUnitAppointmentState(key);
-    const hasBooking=state.appointments.some(a=>a.unitKey===key&&a.date&&liveScheduleRecord(a));
-    if(!hasBooking&&!remaining.completed&&remaining.status!=="D"){
+    if(!unitHasLiveBooking(key)&&!remaining.completed&&remaining.status!=="D"){
       setManualStatusDecision(key,"NR","Pending appointment deleted with no phone number");
       save("Appointment deleted · unit changed to NR");
       return
     }
   }
   save("Appointment permanently deleted · it will not return after reload")
+}
+
+function canDeletePendingStatus(key,status){
+  return status==="P"&&!unitHasLiveBooking(key)
+}
+function deletePendingStatus(key){
+  const unit=getUnit(key);
+  if(!unit||!canDeletePendingStatus(key,currentUnitAppointmentState(key).status))return;
+  if(!confirm(`Delete Pending Confirmation for Blk ${unit.block} · ${unitDisplay(unit.floor,unit.unit)}? The unit will change to NR (No Response).`))return;
+  setManualStatusDecision(key,"NR","Pending confirmation deleted from Appointment Register");
+  save("Pending confirmation deleted · unit changed to NR")
 }
 
 document.getElementById("appointmentZoneFilter").addEventListener("change",()=>{const z=document.getElementById("appointmentZoneFilter").value;document.getElementById("appointmentBlockFilter").innerHTML=filterBlockOptions(z,true);renderAppointmentTable()});
@@ -1752,7 +1767,7 @@ function renderAppointmentTable(){
     const d=appointmentDisplayForUnit(u),a=d.appointment;
     const owner=a?.ownerName||u.ownerName||"—";
     const contact=a?.contact||u.contact||"—";
-    const actions=d.active
+    let actions=d.active
       ? `<button class="table-action" data-appt-edit="${a.id}">Edit</button><button class="table-action" data-appt-reschedule="${a.id}">Reschedule</button><button class="table-action cancel" data-appt-cancel="${a.id}">Cancel</button><button class="table-action delete" data-appt-delete="${a.id}">Delete</button>`
       : d.completed
         ? (a
@@ -1761,6 +1776,9 @@ function renderAppointmentTable(){
         : d.status==="D"
           ? `<span class="register-optout-note">Opt-Out · Latest Edit</span><button class="table-action" data-appt-book="${u.key}">Appointment</button>`
           : `<button class="table-action" data-appt-book="${u.key}">Appointment</button>`;
+    if(canDeletePendingStatus(u.key,d.status)){
+      actions+=`<button class="table-action delete" data-appt-delete-pending="${esc(u.key)}">Delete</button>`
+    }
 
     return `<tr>
       <td>Blk ${u.block}</td>
@@ -1791,7 +1809,20 @@ function renderAppointmentTable(){
     ? `<div class="zone-record-stack">${[1,2,3,4,5,6].map(z=>[z,units.filter(u=>u.zone===z)]).filter(([,x])=>x.length).map(([z,x])=>`<section class="zone-record-group">${zoneGroupHeader(z,x.length,"units")}${table(x)}</section>`).join("")}</div>`
     : table(units)
 }
-document.getElementById("appointmentTable").addEventListener("click",e=>{let b=e.target.closest("[data-appt-book]");if(b)return startAppointmentForUnit(b.dataset.apptBook);b=e.target.closest("[data-appt-reschedule]");if(b)return editAppointment(Number(b.dataset.apptReschedule),true);b=e.target.closest("[data-appt-cancel]");if(b)return cancelAppointment(Number(b.dataset.apptCancel));b=e.target.closest("[data-appt-edit]");if(b)return editAppointment(Number(b.dataset.apptEdit));b=e.target.closest("[data-appt-delete]");if(b)deleteAppointment(Number(b.dataset.apptDelete))});
+document.getElementById("appointmentTable").addEventListener("click",e=>{
+  let b=e.target.closest("[data-appt-delete-pending]");
+  if(b)return deletePendingStatus(b.dataset.apptDeletePending);
+  b=e.target.closest("[data-appt-book]");
+  if(b)return startAppointmentForUnit(b.dataset.apptBook);
+  b=e.target.closest("[data-appt-reschedule]");
+  if(b)return editAppointment(Number(b.dataset.apptReschedule),true);
+  b=e.target.closest("[data-appt-cancel]");
+  if(b)return cancelAppointment(Number(b.dataset.apptCancel));
+  b=e.target.closest("[data-appt-edit]");
+  if(b)return editAppointment(Number(b.dataset.apptEdit));
+  b=e.target.closest("[data-appt-delete]");
+  if(b)deleteAppointment(Number(b.dataset.apptDelete))
+});
 
 document.getElementById("unitSearch").addEventListener("input",renderUnitTable);
 document.getElementById("unitZoneFilter").addEventListener("change",()=>{const z=document.getElementById("unitZoneFilter").value;document.getElementById("unitBlockFilter").innerHTML=filterBlockOptions(z,true);renderUnitTable()});
