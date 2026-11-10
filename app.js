@@ -79,8 +79,33 @@ function slotToCustomTimes(slot){return {start:minutesTo24(slotStartMinutes(slot
 
 
 function importedAppointmentId(block,floor,unit){return 600000000+Number(block)*100000+Number(floor)*1000+Number(unit)}
-// Correct the two address omissions in the Zone 4 block charts after decrypting
-// the seed. Keep the encrypted source file unchanged.
+// Apply Zone 4 address corrections after decrypting the seed.
+const BLK560_OLD_UNIT_KEY="560-1-243";
+const BLK560_UNIT_KEY="560-1-251";
+function correctedUnitKey(key){
+  return key===BLK560_OLD_UNIT_KEY?BLK560_UNIT_KEY:key
+}
+function correctBlk560Record(record){
+  if(record?.unitKey!==BLK560_OLD_UNIT_KEY&&!(
+    !record?.unitKey&&Number(record?.block)===560&&Number(record?.floor)===1&&Number(record?.unit)===243
+  ))return record;
+  const corrected={...record,unitKey:BLK560_UNIT_KEY};
+  if(Object.hasOwn(record,"unit"))corrected.unit=251;
+  if(Object.hasOwn(record,"unitDisplay"))corrected.unitDisplay=unitDisplay(1,251);
+  return corrected
+}
+function correctBlk560SavedRecords(saved){
+  if(!saved)return;
+  for(const field of ["appointments","surveys","complaints","statusAudit"]){
+    if(Array.isArray(saved[field]))saved[field]=saved[field].map(correctBlk560Record)
+  }
+  for(const field of ["statusOverrides","nrEvidence"]){
+    const records=saved[field];
+    if(!records||!Object.hasOwn(records,BLK560_OLD_UNIT_KEY))continue;
+    records[BLK560_UNIT_KEY]??=records[BLK560_OLD_UNIT_KEY];
+    delete records[BLK560_OLD_UNIT_KEY]
+  }
+}
 function isExcludedZone4Unit(block,floor,unit){
   return (Number(block)===558&&Number(floor)===1)||
     (Number(block)===559&&Number(floor)===1&&Number(unit)===223)
@@ -90,10 +115,19 @@ function applyZone4BlockChartCorrections(){
   if(b558?.floors)delete b558.floors['1'];
   const b559=PROJECT_LAYOUT[559]||PROJECT_LAYOUT['559'];
   if(Array.isArray(b559?.floors?.['1']))b559.floors['1']=b559.floors['1'].filter(unit=>Number(unit)!==223);
+  const b560=PROJECT_LAYOUT[560];
+  const firstFloor=b560?.floors?.['1'];
+  if(b560?.floors){
+    b560.floors['1']=[...(firstFloor||[]).filter(unit=>![243,251].includes(Number(unit))),251].sort((a,b)=>a-b);
+  }
+  if(b560?.seed&&Object.hasOwn(b560.seed,"1-243")){
+    b560.seed["1-251"]??=b560.seed["1-243"];
+    delete b560.seed["1-243"]
+  }
   SOURCE_APPOINTMENTS=SOURCE_APPOINTMENTS.filter(a=>{
     const [block,floor,unit]=String(a.unitKey||'').split('-').map(Number);
     return !isExcludedZone4Unit(a.block??block,a.floor??floor,a.unit??unit)
-  })
+  }).map(correctBlk560Record)
 }
 function archiveExcludedZone4Records(){
   // Preserve any locally entered history for a removed address without letting
@@ -160,6 +194,7 @@ function isUserAppointment(a){
   return ["Planner","Manual","Planner History","Zone6 Survey Import"].includes(String(a?.source||""))||Number(a?.id)>1000000000000
 }
 function mergeSavedIntoFresh(saved){
+  correctBlk560SavedRecords(saved);
   if(saved?.zone6ImportData)applyZone6ImportSeed(saved.zone6ImportData);
   const fresh=makeInitialState();
   if(!saved)return fresh;
@@ -2849,11 +2884,55 @@ document.getElementById("masterScheduleTable").addEventListener("click",e=>{
 });
 
 /* Photo IndexedDB */
-const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=6;
+const PHOTO_DB_NAME="ELU_Photo_Inbox_V1",PHOTO_DB_VERSION=7;
+const BLK560_EVIDENCE_KEYS={photos:"id",schedule:"id",meta:"key",optOutForms:"unitKey",nrVisitPhotos:"id"};
+function correctBlk560Evidence(store,record){
+  if(record.unitKey!==BLK560_OLD_UNIT_KEY)return record;
+  const corrected=correctBlk560Record(record);
+  const key=BLK560_EVIDENCE_KEYS[store];
+  if(store==="schedule"||store==="meta"||store==="nrVisitPhotos"){
+    corrected[key]=record[key].replace(BLK560_OLD_UNIT_KEY,BLK560_UNIT_KEY)
+  }
+  return corrected
+}
+function correctBlk560BackupEvidence(store,records){
+  const key=BLK560_EVIDENCE_KEYS[store];
+  const existing=new Set(records.map(record=>record[key]));
+  return records.map(record=>{
+    const corrected=correctBlk560Evidence(store,record);
+    return corrected[key]!==record[key]&&existing.has(corrected[key])?record:corrected
+  })
+}
+function migrateBlk560Evidence(transaction){
+  for(const [name,key] of Object.entries(BLK560_EVIDENCE_KEYS)){
+    const store=transaction.objectStore(name);
+    store.openCursor().onsuccess=event=>{
+      const cursor=event.target.result;
+      if(!cursor)return;
+      const record=cursor.value;
+      const corrected=correctBlk560Evidence(name,record);
+      if(corrected===record){
+        cursor.continue();
+      }else if(record[key]===corrected[key]){
+        cursor.update(corrected);
+        cursor.continue();
+      }else{
+        store.getKey(corrected[key]).onsuccess=lookup=>{
+          // Keep both originals on disk if a corrected record already exists.
+          if(lookup.target.result===undefined){
+            store.put(corrected);
+            cursor.delete();
+          }
+          cursor.continue();
+        }
+      }
+    }
+  }
+}
 function photoDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);
-    req.onupgradeneeded=()=>{
+    req.onupgradeneeded=event=>{
       const db=req.result;
       if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"});
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
@@ -2861,7 +2940,8 @@ function photoDb(){
       if(!db.objectStoreNames.contains("complaintPhotos"))db.createObjectStore("complaintPhotos",{keyPath:"id"});
       if(!db.objectStoreNames.contains("optOutForms"))db.createObjectStore("optOutForms",{keyPath:"unitKey"});
       if(!db.objectStoreNames.contains("nrVisitPhotos"))db.createObjectStore("nrVisitPhotos",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("riserPhotos"))db.createObjectStore("riserPhotos",{keyPath:"id"})
+      if(!db.objectStoreNames.contains("riserPhotos"))db.createObjectStore("riserPhotos",{keyPath:"id"});
+      if(event.oldVersion>0&&event.oldVersion<7)migrateBlk560Evidence(req.transaction)
     };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
   })
@@ -2964,9 +3044,9 @@ function validateBackupRecords(records,manifest,photos,schedule,meta,complaintPh
   if(photos.some(p=>typeof p.blobPath!=="string"||!/^images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0))throw new Error("Invalid photo images in backup.");
   if(complaintPhotos.some(p=>typeof p.blobPath!=="string"||!/^complaint-images\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!records.complaints.some(c=>c.id===p.caseId)))throw new Error("Invalid complaint photo in backup.");
   if(optOutForms.some(f=>typeof f.blobPath!=="string"||!/^optout-forms\/\d{6}\.bin$/.test(f.blobPath)||!Number.isSafeInteger(f.blobSize)||f.blobSize<0||!["application/pdf","image/jpeg","image/png","image/webp"].includes(f.blobType)))throw new Error("Invalid Opt-Out form in backup.");
-  if(nrVisitPhotos.some(p=>typeof p.blobPath!=="string"||!/^nr-visit-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||!getUnit(p.unitKey)||!["day","night","weekend"].includes(p.kind)))throw new Error("Invalid NR visit photo in backup.");
+  if(nrVisitPhotos.some(p=>typeof p.blobPath!=="string"||!/^nr-visit-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||!getUnit(correctedUnitKey(p.unitKey))||!["day","night","weekend"].includes(p.kind)))throw new Error("Invalid NR visit photo in backup.");
   if(riserPhotos.some(p=>typeof p.blobPath!=="string"||!/^riser-photos\/\d{6}\.bin$/.test(p.blobPath)||!Number.isSafeInteger(p.blobSize)||p.blobSize<0||!["image/jpeg","image/png","image/webp"].includes(p.blobType)||(p.groupKey?!(ZONE_BLOCKS[p.zone]||[]).includes(Number(p.block)):Number(p.block)!==0&&!(ZONE_BLOCKS[p.zone]||[]).includes(Number(p.block)))))throw new Error("Invalid riser photo in backup.");
-  if(manifest.version>=4&&Object.keys(records.nrEvidence).some(key=>!getUnit(key)))throw new Error("Unknown unit in NR visit records.");
+  if(manifest.version>=4&&Object.keys(records.nrEvidence).some(key=>!getUnit(correctedUnitKey(key))))throw new Error("Unknown unit in NR visit records.");
 }
 async function readFullBackup(file,withImages=false){
   if(typeof JSZip==="function"&&file.size>2*1024*1024*1024)throw new Error("Backup is too large for this browser.");
@@ -2984,7 +3064,13 @@ async function readFullBackup(file,withImages=false){
   if(withImages){
     for(const row of [...photos,...complaintPhotos,...optOutForms,...nrVisitPhotos,...riserPhotos]){const bytes=await zip.file(row.blobPath).async("uint8array");if(bytes.length!==row.blobSize)throw new Error(`Attached file size mismatch: ${row.blobPath}`);row.blob=new Blob([bytes],{type:row.blobType||"image/jpeg"});delete row.blobPath;delete row.blobType;delete row.blobSize}
   }
-  return {manifest,records,photos,schedule,meta,complaintPhotos,optOutForms,nrVisitPhotos,riserPhotos}
+  correctBlk560SavedRecords(records);
+  return {manifest,records,complaintPhotos,riserPhotos,
+    photos:correctBlk560BackupEvidence("photos",photos),
+    schedule:correctBlk560BackupEvidence("schedule",schedule),
+    meta:correctBlk560BackupEvidence("meta",meta),
+    optOutForms:correctBlk560BackupEvidence("optOutForms",optOutForms),
+    nrVisitPhotos:correctBlk560BackupEvidence("nrVisitPhotos",nrVisitPhotos)}
 }
 document.getElementById("backupFile").addEventListener("change",async e=>{
   selectedFullBackup=null;safetyCopyDownloaded=false;document.getElementById("backupCommitBtn").disabled=true;
@@ -3008,7 +3094,7 @@ document.getElementById("backupCommitBtn").addEventListener("click",async e=>{
   try{
     const imported=await readFullBackup(selectedFullBackup,true);
     // Validate against the loaded project register before changing browser storage.
-    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule,...imported.optOutForms,...imported.nrVisitPhotos])if(row.unitKey&&!getUnit(row.unitKey))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
+    for(const row of [...imported.records.surveys,...imported.records.appointments,...imported.records.complaints,...imported.photos,...imported.schedule,...imported.optOutForms,...imported.nrVisitPhotos])if(row.unitKey&&!getUnit(correctedUnitKey(row.unitKey)))throw new Error(`Unknown project unit in backup: ${row.unitKey}`);
     for(const key of Object.keys(imported.records.statusOverrides))if(!getUnit(key))throw new Error(`Unknown status unit in backup: ${key}`);
     await securePersistChain;
     const encrypted=await encryptPayload(imported.records,secureSessionKey);
