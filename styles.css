@@ -691,19 +691,23 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
 #blockboard .unit-card.status-c .u-no{color:#b24372 !important}
 #blockboard .unit-card.status-c .u-status{color:#cb5d8e !important}
 
-/* D = Opt-Out — strong yellow */
+/* D = Opt-Out */
 #blockboard .unit-card.status-out{
   background:
-    radial-gradient(circle at 18% 16%, rgba(255,255,255,.78), rgba(255,255,255,0) 22%),
-    linear-gradient(145deg, rgba(255,249,216,.98), rgba(247,232,156,.95)) !important;
-  border-color:#d7b22e !important;
+    radial-gradient(circle at 18% 16%, rgba(255,255,255,.35), rgba(255,255,255,0) 22%),
+    linear-gradient(145deg, #ffba00, #c47b00) !important;
+  border-color:#ac7308 !important;
   box-shadow:
-    inset 4px 0 0 #d0aa1d,
-    0 10px 18px rgba(208,170,29,.13),
-    inset 0 1px 0 rgba(255,255,255,.92) !important;
+    inset 4px 0 0 #a56b06,
+    0 10px 18px rgba(146,105,25,.16),
+    inset 0 1px 0 rgba(255,255,255,.58) !important;
 }
-#blockboard .unit-card.status-out .u-no{color:#886608 !important}
-#blockboard .unit-card.status-out .u-status{color:#9c7509 !important}
+#blockboard .unit-card.status-out:not(.optout-unsigned)::after{opacity:.22}
+#blockboard .unit-card.status-out:not(.optout-unsigned) .u-no,
+#blockboard .unit-card.status-out:not(.optout-unsigned) .u-status{
+  color:#fff !important;
+  text-shadow:0 0 2px #603700,0 1px 1px #603700;
+}
 
 /* NR = No Response — clearly stronger red, not like pink */
 #blockboard .unit-card.status-nr{
@@ -2491,7 +2495,6 @@ body:not(.theme-night) #blockboard .block-summary-grid .summary-tile :is(span,sm
 body:not(.theme-night) #blockboard .legend{background:#e7f6ff;border-color:#a6d0e8;color:#245779;box-shadow:0 7px 16px rgba(31,101,148,.1);backdrop-filter:none}
 body:not(.theme-night) #blockboard .floor-row{background:rgba(221,242,253,.96)!important;border:1px solid #b3d9ed!important;box-shadow:0 8px 19px rgba(33,105,150,.12)!important}
 body:not(.theme-night) #blockboard .unit-grid{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important;gap:8px!important}
-body:not(.theme-night) #blockboard .unit-card.status-out{background:linear-gradient(145deg,#fff4d2,#f4deb0)!important;border-color:#d8b35b!important;box-shadow:inset 4px 0 #bd8b25,0 8px 16px rgba(146,105,25,.11)!important}
 #visualThemeToggle{display:none!important}
 
 /* V7.93 · Clear lit-photo backdrop, neutral glass sheets; classic board unchanged. */
