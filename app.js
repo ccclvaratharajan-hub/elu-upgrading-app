@@ -2700,7 +2700,7 @@ function exportBlockBoardPrint(){
 <meta charset="utf-8">
 <title>${title}</title>
 <base href="${baseHref}">
-<link rel="stylesheet" href="styles.css?v=7.81">
+<link rel="stylesheet" href="styles.css?v=8.44.184">
 <style>
   @page{size:A4 landscape;margin:5mm}
   html,body{margin:0;padding:0;background:#fff}
@@ -2746,7 +2746,9 @@ function exportBlockBoardPrint(){
   #blockboard .unit-card.status-c .u-no,#blockboard .unit-card.status-c .u-status{color:#8f0d56!important}
   #blockboard .unit-card.status-p .u-no,#blockboard .unit-card.status-p .u-status{color:#23589c!important}
   #blockboard .unit-card.status-out .u-no,#blockboard .unit-card.status-out .u-status{color:#735a05!important}
+  #blockboard .unit-card.status-out:not(.optout-unsigned) :is(.u-no,.u-status){color:#735a05!important;text-shadow:none}
   #blockboard .unit-card.status-nr .u-no,#blockboard .unit-card.status-nr .u-status{color:#8f1724!important}
+  #blockboard .unit-card:is(.status-a,.status-nr) :is(.u-no,.u-status){text-shadow:none}
   #blockboard .legend .dot.optin{background:#239d68!important}
   #blockboard .legend .dot.confirm{background:#d91b83!important}
   #blockboard .legend .dot.pending-confirm{background:#3f7fd1!important}

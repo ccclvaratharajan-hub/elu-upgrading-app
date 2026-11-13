@@ -577,15 +577,6 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
     inset 0 1px 0 rgba(255,255,255,.95),
     inset 0 -10px 24px rgba(222,233,244,.22) !important;
 }
-#blockboard .floor-row::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 85% 18%, rgba(255,255,255,.45), rgba(255,255,255,0) 22%),
-    linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 34%);
-}
 
 /* nicer floor label */
 #blockboard .floor-label{
@@ -663,19 +654,23 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
     inset 0 1px 0 rgba(255,255,255,.90) !important;
 }
 
-/* A = Green */
+/* A = Opt-In: leaf texture beneath the glass finish. */
 #blockboard .unit-card.status-a{
   background:
-    radial-gradient(circle at 18% 16%, rgba(255,255,255,.72), rgba(255,255,255,0) 22%),
-    linear-gradient(145deg, rgba(228,250,239,.94), rgba(206,243,225,.92)) !important;
-  border-color:#6fd4a6 !important;
+    linear-gradient(90deg, rgba(17,65,0,.50), rgba(17,65,0,.32) 42%, transparent 78%),
+    #448e13 url("assets/opt-in-leaf.webp") center / cover no-repeat !important;
+  border-color:#89cf43 !important;
   box-shadow:
-    inset 4px 0 0 #2eb678,
-    0 10px 18px rgba(46,182,120,.12),
-    inset 0 1px 0 rgba(255,255,255,.90) !important;
+    inset 4px 0 0 rgba(33,111,8,.55),
+    0 10px 18px rgba(34,102,22,.18),
+    inset 0 1px 0 rgba(239,255,210,.88),
+    inset 0 -1px 0 rgba(191,248,116,.68) !important;
 }
-#blockboard .unit-card.status-a .u-no{color:#127453 !important}
-#blockboard .unit-card.status-a .u-status{color:#238563 !important}
+#blockboard .unit-card.status-a .u-no,
+#blockboard .unit-card.status-a .u-status{
+  color:#fff !important;
+  text-shadow:0 1px 2px #224900;
+}
 
 /* C = Confirmation — more glossy pink / magenta */
 #blockboard .unit-card.status-c{
@@ -700,9 +695,9 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
   box-shadow:
     inset 4px 0 0 #a56b06,
     0 10px 18px rgba(146,105,25,.16),
-    inset 0 1px 0 rgba(255,255,255,.58) !important;
+    inset 0 1px 0 rgba(255,255,255,.88),
+    inset 0 -1px 0 rgba(255,218,112,.68) !important;
 }
-#blockboard .unit-card.status-out:not(.optout-unsigned)::after{opacity:.22}
 #blockboard .unit-card.status-out:not(.optout-unsigned) .u-no,
 #blockboard .unit-card.status-out:not(.optout-unsigned) .u-status{
   color:#fff !important;
@@ -824,10 +819,11 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
 
 /* A = completed appointment */
 #blockboard .unit-card.status-a .u-date.done-date{
-  background:rgba(255,255,255,.56);
-  border:1px solid rgba(46,182,120,.24);
-  color:#177454;
+  background:#245809;
+  border:1px solid rgba(212,250,174,.38);
+  color:#fff;
 }
+#blockboard .unit-card.status-a .u-date.done-date span{opacity:1}
 
 /* C = upcoming / confirmed appointment */
 #blockboard .unit-card.status-c .u-date.appt-date{
@@ -1025,15 +1021,18 @@ body{background:radial-gradient(circle at 82% -5%,#a9c9e6 0,transparent 29%),rad
     linear-gradient(145deg, #bd1928 0%, #a81120 100%) !important;
   border-color:#94121e !important;
   box-shadow:
-    inset 5px 0 0 #8f0e1b,
+    inset 4px 0 0 #8f0e1b,
     0 10px 18px rgba(201,31,49,.16),
-    inset 0 1px 0 rgba(255,255,255,.46) !important;
+    inset 0 1px 0 rgba(255,255,255,.88),
+    inset 0 -1px 0 rgba(255,174,181,.68) !important;
 }
 #blockboard .unit-card.status-nr:before{
   background:#8f0e1b !important;
   box-shadow:0 0 0 4px rgba(201,31,49,.12) !important;
 }
-#blockboard .unit-card.status-nr::after{opacity:.18}
+#blockboard .unit-card:is(.status-a,.status-out:not(.optout-unsigned),.status-nr)::after{
+  background:linear-gradient(180deg, rgba(255,255,255,.23), transparent 32%);
+}
 #blockboard .unit-card.status-nr .u-no,
 #blockboard .unit-card.status-nr .u-status{
   color:#fff !important;
