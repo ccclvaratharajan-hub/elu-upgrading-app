@@ -55,7 +55,7 @@
     if(Number.isNaN(d.getTime()))return esc(plannerDateLabel(date));
     const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',year:'numeric',weekday:'short'}).formatToParts(d);
     const part=type=>parts.find(p=>p.type===type)?.value||'';
-    return '<div class="daily-date-card"><span class="daily-date-number">'+esc(part('day'))+'</span><span class="daily-date-month">'+esc(part('month').toUpperCase()+' '+part('year'))+'</span><span class="daily-date-weekday">'+esc(part('weekday').toUpperCase())+'</span><span class="daily-date-label">'+esc(plannerDateLabel(date))+'</span></div>';
+    return '<div class="daily-date-card"><span class="daily-date-number">'+esc(part('day'))+'</span><span class="daily-date-month">'+esc(part('month').toUpperCase()+' '+part('year'))+'</span><span class="daily-date-weekday">'+esc(part('weekday').toUpperCase())+'</span></div>';
   }
   function zoneTable(zone,date,appointments,contractor=""){
     const single=contractor==="IMS"||contractor==="ND Noor";
@@ -151,9 +151,12 @@
     *{box-sizing:border-box}
     html,body{margin:0;color:#101820;font:10pt/1.25 Arial,Helvetica,sans-serif}
     body{print-color-adjust:exact;-webkit-print-color-adjust:exact}
-    .print-page{width:276mm;height:189mm;position:relative;break-inside:avoid;break-after:page}
+    .print-page{--sheet-inset:0mm;width:276mm;height:189mm;position:relative;overflow:hidden;break-inside:avoid;break-after:page}
     .print-page:last-child{break-after:auto}
-    .print-content{position:absolute;inset:0 auto auto 0;width:100%;transform-origin:top left}
+    .print-content{position:absolute;inset:var(--sheet-inset) var(--sheet-inset) auto;display:flex;flex-direction:column;transform-origin:top left}
+    .print-content>*{flex:none}
+    .print-page:not(.print-contractor) .print-content{min-height:calc(100% - 2 * var(--sheet-inset))}
+    .print-page:not(.print-contractor) .daily-work-remarks{margin-top:auto}
     .print-heading{display:flex;align-items:center;justify-content:space-between;gap:12mm;margin:0 0 4mm;padding:1.5mm 0 3mm;border-bottom:1px solid #667583}
     .print-heading h1{font-size:19pt;line-height:1.15;margin:0}
     .print-heading p{font-size:10pt;font-weight:bold;text-align:right;margin:0}
@@ -176,22 +179,21 @@
     td.daily-time{background:#eef2f6;white-space:nowrap;font-weight:bold}
     td.daily-date{background:#fff04d;text-align:center}
     .daily-date-card{display:grid;gap:1mm;font-weight:bold}
-    .daily-date-month,.daily-date-weekday,.daily-date-number{display:none}
+    .daily-date-number{font-size:13pt;line-height:1}
+    .daily-date-month,.daily-date-weekday{font-size:8pt;line-height:1.1}
     .daily-unit{font-weight:bold}
     .daily-unit+.daily-unit,.daily-remark+.daily-remark{margin-top:1mm}
     .daily-remark{white-space:pre-wrap}
     .daily-remark-unit{display:block;font-weight:bold;font-size:8pt}
     .daily-unassigned,.daily-empty{padding:2mm;border:1px solid #ccd8e2;background:#f7fafc}
     .print-contractor td{padding-block:3mm}
-    .daily-work-remarks{position:absolute;right:0;bottom:0;left:0;padding:2.5mm 3mm;border:1px solid #667583;background:#f2f7fc}
+    .daily-work-remarks{min-width:0;padding:2.5mm 3mm;border:1px solid #667583;background:#f2f7fc;overflow-wrap:anywhere}
     .daily-work-remarks h3{font-size:10pt;margin:0 0 1mm}
     .daily-work-remarks ul{columns:2;column-gap:9mm;padding-left:4mm;margin:0}
     .daily-work-remarks li{break-inside:avoid;margin:0 0 .65mm}
     @media screen{
       body{background:#e5edf3;padding:12px}
-      .print-page{background:#fff;margin:0 auto 12px;box-shadow:0 2px 12px #1b354529;zoom:var(--preview-zoom,1)}
-      .print-content{padding:5mm}
-      .daily-work-remarks{right:5mm;bottom:5mm;left:5mm}
+      .print-page{--sheet-inset:5mm;background:#fff;margin:0 auto 12px;box-shadow:0 2px 12px #1b354529;zoom:var(--preview-zoom,1)}
     }
   `;
 
@@ -206,9 +208,9 @@
   function fitPrintPages(){
     frame.contentDocument.querySelectorAll(".print-page").forEach(page=>{
       const content=page.querySelector(".print-content");
-      const remarks=page.querySelector(".daily-work-remarks");
       content.style.transform="";
-      const scale=Math.min(1,(remarks.offsetTop-12)/content.scrollHeight);
+      const availableHeight=page.clientHeight-2*content.offsetTop;
+      const scale=Math.min(1,availableHeight/content.scrollHeight);
       content.style.transform="scale("+scale+")";
     });
   }
@@ -242,7 +244,7 @@
         ||'<p class="daily-empty">No appointments for this selection on this date.</p>';
       return '<main class="print-page'+(pick!=="all"?' print-contractor':'')+'"><div class="print-content">'
         +'<header class="print-heading"><h1>'+sheetTitle+'</h1><p>'+esc(plannerDateLabel(date))
-        +'<br>'+esc(scope)+'</p></header>'+content+'</div>'+workRemarks()+'</main>';
+        +'<br>'+esc(scope)+'</p></header>'+content+workRemarks()+'</div></main>';
     }).join("");
     printButton.disabled=true;
     preview.showModal();
