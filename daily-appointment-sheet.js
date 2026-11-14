@@ -9,7 +9,8 @@
   const dailyView=document.getElementById("dailyplanner");
   for(const element of [document.querySelector("#teams .simple-planner-hero"),document.getElementById("plannerDailyPanel"),document.querySelector("#teams .planner-bulk-export")])dailyView.appendChild(element);
   const title=document.getElementById("plannerDailyTitle");
-  const contractorOrder=["KSK","ND Noor","IMS"];
+  const contractorZones={KSK:4,"ND Noor":5,IMS:4};
+  const contractorOrder=Object.keys(contractorZones);
   const sheetTitle="Unit Work – 10 sqmm Cable Upgrading";
   const teamLeads={
     KSK:["Manivel","Govindaraj"],
@@ -147,7 +148,7 @@
   const printButton=document.getElementById("plannerPrintConfirm");
 
   const printStyles=`
-    @page{size:A4 landscape;margin:10mm}
+    @page{size:A4 landscape;margin:0}
     *{box-sizing:border-box}
     html,body{margin:0;color:#101820;font:10pt/1.25 Arial,Helvetica,sans-serif}
     body{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -191,6 +192,9 @@
     .daily-work-remarks h3{font-size:10pt;margin:0 0 1mm}
     .daily-work-remarks ul{columns:2;column-gap:9mm;padding-left:4mm;margin:0}
     .daily-work-remarks li{break-inside:avoid;margin:0 0 .65mm}
+    @media print{
+      .print-page{--sheet-inset:10mm;width:296mm;height:209mm;margin:0 auto}
+    }
     @media screen{
       body{background:#e5edf3;padding:12px}
       .print-page{--sheet-inset:5mm;background:#fff;margin:0 auto 12px;box-shadow:0 2px 12px #1b354529;zoom:var(--preview-zoom,1)}
@@ -231,7 +235,7 @@
   });
 
   document.getElementById("plannerPrintDayBtn").addEventListener("click",()=>{
-    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all";
+    const zone=zoneInput.value||"all";
     const pick=document.getElementById("plannerPrintScope").value;
     const sections=printSections();
     const forContractor=name=>sections.filter(section=>(section.dataset.dailyContractor||"Other zones")===name);
@@ -239,12 +243,16 @@
       :[pick==="all"?sections:forContractor(pick)];
     if(!selections.length)selections.push([]);
     const pages=selections.map(group=>{
-      const scope=zone==="all"?"All Zones":"Zone "+zone;
+      const zones=[...new Set(group.map(section=>Number(section.dataset.dailyZone)))].sort((a,b)=>a-b);
+      const contractorZone=contractorZones[pick];
+      if(!zones.length&&contractorZone)zones.push(contractorZone);
+      const zoneLabel=zones.length===1?"Zone "+zones[0]:zones.length?"Zones "+zones.join(", "):"";
+      const scope=pick==="all"?(zone==="all"?"All Zones":"Zone "+zone):zoneLabel;
       const content=group.map(section=>section.outerHTML).join("")
         ||'<p class="daily-empty">No appointments for this selection on this date.</p>';
       return '<main class="print-page'+(pick!=="all"?' print-contractor':'')+'"><div class="print-content">'
-        +'<header class="print-heading"><h1>'+sheetTitle+'</h1><p>'+esc(plannerDateLabel(date))
-        +'<br>'+esc(scope)+'</p></header>'+content+workRemarks()+'</div></main>';
+        +'<header class="print-heading"><h1>'+sheetTitle+'</h1>'
+        +(scope?'<p>'+esc(scope)+'</p>':"")+'</header>'+content+workRemarks()+'</div></main>';
     }).join("");
     printButton.disabled=true;
     preview.showModal();
