@@ -86,12 +86,18 @@
     );
     const assigned=teams.map(team=>ordered.filter(a=>single||a.team===team));
     const unassigned=single?[]:ordered.filter(a=>!teams.includes(a.team));
+    const teamButton=(a,team,label)=>'<button type="button" class="daily-team-move" data-daily-team="'+esc(a.id)
+      +'" data-daily-team-to="'+team+'" aria-label="Assign '+esc(unitLabel(a))+' to '+team+'">'+label+'</button>';
     const unitCell=(a,team)=>{
       if(print)return '<strong>'+esc(unitLabel(a))+'</strong>';
       const unit='<button type="button" class="daily-unit-open" data-daily-open="'+esc(a.id)+'" title="Open in Appointment Schedule">'+esc(unitLabel(a))+'</button>';
-      const otherTeam=team==="Team 1"?"Team 2":"Team 1";
-      const move=contractor==="KSK"&&team?'<button type="button" class="daily-team-move" data-daily-team="'+esc(a.id)+'" title="Move to '+otherTeam+'">'+(team==="Team 1"?"Team 1 →":"← Team 2")+'</button>':"";
-      return '<div class="daily-unit">'+unit+move+'</div>';
+      let controls="";
+      if(contractor==="KSK"){
+        if(team==="Team 1")controls=teamButton(a,"Team 2","Team 1 →");
+        else if(team==="Team 2")controls=teamButton(a,"Team 1","← Team 2");
+        else controls=teamButton(a,"Team 1","Assign Team 1")+teamButton(a,"Team 2","Assign Team 2");
+      }
+      return '<div class="daily-unit">'+unit+controls+'</div>';
     };
     const appointmentCells=(a,team)=>{
       if(!a)return print?'<td></td><td></td>':'<td></td><td></td><td></td>';
@@ -157,12 +163,13 @@
     const move=event.target.closest("[data-daily-team]");
     if(move){
       const a=state.appointments.find(record=>String(record.id)===move.dataset.dailyTeam);
-      if(!a||!liveScheduleRecord(a)||!["Team 1","Team 2"].includes(a.team))return;
+      const targetTeam=move.dataset.dailyTeamTo;
+      if(!a||!liveScheduleRecord(a)||!["Team 1","Team 2"].includes(targetTeam)||a.team===targetTeam)return;
       const zone=Number(a.zone||zoneOfBlock(a.block));
       if(contractorFor({...a,zone})!=="KSK")return;
-      a.team=a.team==="Team 1"?"Team 2":"Team 1";
+      a.team=targetTeam;
       a.teamManual=true;
-      save("KSK appointment moved to "+a.team);
+      save("KSK appointment assigned to "+a.team);
       return
     }
     const button=event.target.closest("[data-daily-open]");
