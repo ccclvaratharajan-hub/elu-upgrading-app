@@ -180,7 +180,7 @@ function baseUnit(block,floor,unit){
 function makeInitialState(){
   const units={};
   Object.entries(PROJECT_LAYOUT).forEach(([block,d])=>Object.entries(d.floors).forEach(([floor,arr])=>arr.forEach(unit=>{const u=baseUnit(block,floor,unit);units[u.key]=u})));
-  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],nrEvidence:{},statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,statusDecisionSchema:2,createdAt:new Date().toISOString()};
+  return {units,surveys:[],appointments:seedAppointments(),appointmentTombstones:[],complaints:[],nrEvidence:{},statusOverrides:{},statusAudit:[],zone1CorrectionsApplied:[],zone6ImportData:null,workbookUnitData:{},statusDecisionSchema:2,createdAt:new Date().toISOString()};
 }
 function applyZone6ImportSeed(records){
   for(const [key,entry] of Object.entries(records||{})){
@@ -199,6 +199,7 @@ function mergeSavedIntoFresh(saved){
   const fresh=makeInitialState();
   if(!saved)return fresh;
   fresh.zone6ImportData=saved.zone6ImportData||null;
+  fresh.workbookUnitData=saved.workbookUnitData&&typeof saved.workbookUnitData==="object"&&!Array.isArray(saved.workbookUnitData)?saved.workbookUnitData:{};
   fresh.layoutCorrectionArchive=saved.layoutCorrectionArchive||null;
 
   fresh.surveys=(saved.surveys||[]).map(s=>({
@@ -262,6 +263,7 @@ function mergeSavedIntoFresh(saved){
             : (seed.scheduleState||"Active"),
         cancelledAt:clean.cancelledAt||seed.cancelledAt,
         userScheduleOverride:Boolean(clean.userScheduleOverride||explicitScheduleOverride),
+        requiresExplicitCompletion:Boolean(clean.requiresExplicitCompletion||seed.requiresExplicitCompletion),
         workStatus:isUserAppointment(clean)?(clean.workStatus||seed.workStatus||"Pending"):(clean.workStatus||seed.workStatus||"Pending")
       };
     }else if(isUserAppointment(clean)||clean.userScheduleOverride||clean.cancelledAt){
@@ -279,7 +281,7 @@ function mergeSavedIntoFresh(saved){
       if(!status)return;
       fresh.statusOverrides[key]={
         status,
-        source:o?.source==="Zone6 Survey Import"?"Zone6 Survey Import":"Manual",
+        source:["Zone6 Survey Import","PR3 Workbook Import"].includes(o?.source)?o.source:"Manual",
         reason:o?.reason||"Manual latest status",
         updatedAt:o?.updatedAt||new Date().toISOString(),
         decisionId:o?.decisionId||null,
@@ -349,7 +351,7 @@ async function encryptPayload(value,key){
   return {v:1,iv:b64FromBytes(iv),cipher:b64FromBytes(cipher)}
 }
 function secureSnapshot(){
-  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,nrEvidence:state.nrEvidence||{},statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,layoutCorrectionArchive:state.layoutCorrectionArchive||null,statusDecisionSchema:2,createdAt:state.createdAt}
+  return {surveys:state.surveys,appointments:state.appointments,appointmentTombstones:state.appointmentTombstones||[],complaints:state.complaints,nrEvidence:state.nrEvidence||{},statusOverrides:state.statusOverrides||{},statusAudit:state.statusAudit||[],zone1CorrectionsApplied:state.zone1CorrectionsApplied||[],zone6ImportData:state.zone6ImportData||null,workbookUnitData:state.workbookUnitData||{},layoutCorrectionArchive:state.layoutCorrectionArchive||null,statusDecisionSchema:2,createdAt:state.createdAt}
 }
 async function securePersistNow(){
   if(!secureSessionKey||!appStarted)return;
@@ -650,6 +652,14 @@ function rebuildUnitMaster(key){
   const surveys=state.surveys.filter(s=>s.unitKey===key),latestSurvey=latestById(surveys);
   if(latestSurvey&&latestSurvey.contact&&!base.contact)base.contact=latestSurvey.contact;
 
+  const workbook=state.workbookUnitData?.[key];
+  if(workbook){
+    base.ownerName=base.ownerName||latestSurvey?.ownerName||workbook.ownerName;
+    base.contact=base.contact||workbook.contact;
+    base.legacySchedule=workbook.legacySchedule||base.legacySchedule;
+    base.legacyRemark=workbook.legacyRemark||base.legacyRemark;
+    base.remarks=workbook.legacyRemark||"";
+  }
   const allUnitAppointments=state.appointments.filter(a=>a.unitKey===key);
   const latestIdentityAppt=latestById(allUnitAppointments.filter(a=>a.ownerName||a.contact));
   if(latestIdentityAppt){

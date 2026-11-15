@@ -9,8 +9,7 @@
   const dailyView=document.getElementById("dailyplanner");
   for(const element of [document.querySelector("#teams .simple-planner-hero"),document.getElementById("plannerDailyPanel"),document.querySelector("#teams .planner-bulk-export")])dailyView.appendChild(element);
   const title=document.getElementById("plannerDailyTitle");
-  const contractorZones={KSK:4,"ND Noor":5,IMS:4};
-  const contractorOrder=Object.keys(contractorZones);
+  const contractorOrder=["KSK","ND Noor","IMS","Other zones"];
   const sheetTitle="Unit Work – 10 sqmm Cable Upgrading";
   const teamLeads={
     KSK:["Manivel","Govindaraj"],
@@ -31,10 +30,9 @@
       +workInstructions.map(text=>'<li>'+esc(text)+'</li>').join("")+'</ul></footer>';
   }
 
-  function remarkField(a, showUnit=false){
+  function remarkField(a){
     const unit=esc(unitLabel(a));
-    return '<div class="daily-remark">'+(showUnit?'<span class="daily-remark-unit">'+unit+'</span>':'')
-      +'<textarea rows="1" data-daily-remark="'+esc(a.id)+'" aria-label="Remarks for '+unit+'" placeholder="Add remarks">'
+    return '<div class="daily-remark"><textarea rows="1" data-daily-remark="'+esc(a.id)+'" aria-label="Remarks for '+unit+'" placeholder="Add remarks">'
       +esc(a.remarks||"")+'</textarea></div>';
   }
   const dateInput=document.getElementById("teamDate"),zoneInput=document.getElementById("plannerViewZone");
@@ -48,7 +46,7 @@
       const key=a.date+"|"+a.unitKey,old=latest.get(key);
       if(!old||Number(a.id||0)>Number(old.id||0))latest.set(key,a);
     });
-    return [...latest.values()].map(a=>({...a,slot:plannerDisplaySlot(a.slot)}));
+    return [...latest.values()].map(a=>({...a,zone:Number(a.zone||zoneOfBlock(a.block)),slot:plannerDisplaySlot(a.slot)}));
   }
   const byUnit=(a,b)=>Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit);
   function dateCard(date){
@@ -58,45 +56,82 @@
     const part=type=>parts.find(p=>p.type===type)?.value||'';
     return '<div class="daily-date-card"><span class="daily-date-number">'+esc(part('day'))+'</span><span class="daily-date-month">'+esc(part('month').toUpperCase()+' '+part('year'))+'</span><span class="daily-date-weekday">'+esc(part('weekday').toUpperCase())+'</span></div>';
   }
-  function zoneTable(zone,date,appointments,contractor=""){
-    const single=contractor==="IMS"||contractor==="ND Noor";
-    const displayTeams=contractor==="KSK"?zone4KskDisplayTeams(appointments):null;
-    const teamOf=a=>displayTeams?.get(a.id)||a.team;
-    // The daily sheet is a record of booked appointments, not a template of free slots.
-    const slots=[...new Set(appointments.map(a=>a.slot).filter(Boolean))].sort((a,b)=>slotStartMinutes(a)-slotStartMinutes(b)||(slotEndMinutes(b)||0)-(slotEndMinutes(a)||0));
-    const matching=(team,slot)=>appointments.filter(a=>a.slot===slot&&(single||teamOf(a)===team)).sort(byUnit);
-    const units=(team,slot)=>matching(team,slot).map(a=>'<div class="daily-unit"><button type="button" class="daily-unit-open" data-daily-open="'+a.id+'" title="Open in Appointment Schedule">Blk '+esc(a.block)+' '+esc(a.unitDisplay||unitDisplay(a.floor,a.unit))+'</button>'+(contractor==="KSK"?'<button type="button" class="daily-team-move" data-daily-team="'+a.id+'" title="Move to '+(team==="Team 1"?"Team 2":"Team 1")+'">'+(team==="Team 1"?esc(team)+' →':'← '+esc(team))+'</button>':'')+'</div>').join("");
-    const remarks=(team,slot)=>{
-      const entries=matching(team,slot);
-      return entries.map(a=>remarkField(a,entries.length>1)).join("");
-    };
-    const unassigned=single?[]:appointments.filter(a=>!["Team 1","Team 2"].includes(teamOf(a)));
-    const heading='Zone '+zone+(contractor?' · '+contractor+(contractor==='IMS'?' · Blk 557–558':contractor==='KSK'?' · Blk 559–562':' · Blk 537–543'):'');
-    const teamHeader=number=>{
-      const lead=teamLeads[contractor]?.[number-1];
-      return 'Team '+number+(lead?' <span class="daily-team-lead">('+esc(lead)+')</span>':'');
-    };
-    const headers=['Date','Time',teamHeader(1),'Remarks'];
-    if(!single)headers.push('Time',teamHeader(2),'Remarks');
-    const teamCells=(team,slot)=>!matching(team,slot).length?'<td></td><td></td><td></td>':'<td class="daily-time">'+esc(slot)+'</td><td>'+units(team,slot)+'</td><td>'+remarks(team,slot)+'</td>';
-    return '<section class="daily-zone" data-daily-zone="'+zone+'" data-daily-contractor="'+esc(contractor)+'"><div class="daily-zone-head"><strong>'+heading+'</strong><span>'+appointments.length+' appointment'+(appointments.length===1?"":"s")+'</span></div><div class="daily-scroll"><img class="daily-zone-watermark" src="'+(contractor==='ND Noor'?closedDbWatermark:dailyWatermarks[single?'db':'meter'])+'" alt="" aria-hidden="true"><table class="daily-table'+(single?' single-team':'')+'"><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+slots.map((slot,i)=>'<tr>'+(i===0?'<td class="daily-date" rowspan="'+slots.length+'">'+dateCard(date)+'</td>':"")+(single?'<td class="daily-time">'+esc(slot)+'</td><td>'+units("Team 1",slot)+'</td><td>'+remarks("Team 1",slot)+'</td>':teamCells("Team 1",slot)+teamCells("Team 2",slot))+'</tr>').join("")+'</tbody></table></div>'+(unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned: </strong>'+unassigned.map(a=>remarkField(a,true)).join("")+'</div>':"")+'</section>';
+  function contractorFor(a){
+    if(a.zone===4)return [557,558].includes(Number(a.block))?"IMS":"KSK";
+    if(a.zone===5)return "ND Noor";
+    return [2,6].includes(a.zone)?"KSK":"Other zones";
   }
-  function render(){
-    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all",appointments=currentEntries(date,zone);
-    title.textContent=plannerDateLabel(date)+" · "+(zone==="all"?"All Zones":"Zone "+zone);
-    const zones=zone==="all"?[...new Set(appointments.map(a=>Number(a.zone||zoneOfBlock(a.block))))].sort((a,b)=>a-b):[Number(zone)];
-    const groups=zones.flatMap(z=>{
-      const entries=appointments.filter(a=>Number(a.zone||zoneOfBlock(a.block))===z);
-      if(!entries.length)return [];
-      if(z!==4)return [{zone:z,entries,contractor:z===5?"ND Noor":""}];
-      const ims=entries.filter(a=>[557,558].includes(Number(a.block)));
-      const ksk=entries.filter(a=>[559,560,561,562].includes(Number(a.block)));
-      return [{zone:z,entries:ksk,contractor:"KSK"},{zone:z,entries:ims,contractor:"IMS"}]
-        .filter(group=>group.entries.length);
+
+  function appointmentGroups(date,zone){
+    const groups=new Map(contractorOrder.map(name=>[name,[]]));
+    for(const appointment of currentEntries(date,zone)){
+      groups.get(contractorFor(appointment)).push(appointment);
+    }
+    return groups;
+  }
+
+  function zoneLabel(appointments){
+    const zones=[...new Set(appointments.map(a=>a.zone).filter(Boolean))].sort((a,b)=>a-b);
+    return zones.length===1?"Zone "+zones[0]:zones.length?"Zones "+zones.join(", "):"";
+  }
+
+  function scheduleTable(contractor,date,appointments,print=false){
+    const single=contractor==="IMS"||contractor==="ND Noor";
+    const teams=single?["Team 1"]:["Team 1","Team 2"];
+    const appointmentTime=a=>a.slot||"Time not set";
+    const ordered=appointments.slice().sort((a,b)=>
+      slotStartMinutes(a.slot)-slotStartMinutes(b.slot)
+      ||(slotEndMinutes(a.slot)||0)-(slotEndMinutes(b.slot)||0)
+      ||byUnit(a,b)
+    );
+    const assigned=teams.map(team=>ordered.filter(a=>single||a.team===team));
+    const unassigned=single?[]:ordered.filter(a=>!teams.includes(a.team));
+    const unitCell=(a,team)=>{
+      if(print)return '<strong>'+esc(unitLabel(a))+'</strong>';
+      const unit='<button type="button" class="daily-unit-open" data-daily-open="'+esc(a.id)+'" title="Open in Appointment Schedule">'+esc(unitLabel(a))+'</button>';
+      const otherTeam=team==="Team 1"?"Team 2":"Team 1";
+      const move=contractor==="KSK"&&team?'<button type="button" class="daily-team-move" data-daily-team="'+esc(a.id)+'" title="Move to '+otherTeam+'">'+(team==="Team 1"?"Team 1 →":"← Team 2")+'</button>':"";
+      return '<div class="daily-unit">'+unit+move+'</div>';
+    };
+    const appointmentCells=(a,team)=>{
+      if(!a)return print?'<td></td><td></td>':'<td></td><td></td><td></td>';
+      return '<td class="daily-time">'+esc(appointmentTime(a))+'</td><td>'+unitCell(a,team)+'</td>'
+        +(print?"":'<td>'+remarkField(a)+'</td>');
+    };
+    const headers=['Date'];
+    teams.forEach((team,i)=>{
+      const lead=teamLeads[contractor]?.[i];
+      headers.push("Time",team+(lead?' <span class="daily-team-lead">('+esc(lead)+')</span>':""));
+      if(!print)headers.push("Remarks");
     });
-    const ordered=contractorOrder.flatMap(name=>groups.filter(group=>group.contractor===name))
-      .concat(groups.filter(group=>!group.contractor));
-    const tables=ordered.map(({zone,entries,contractor})=>zoneTable(zone,date,entries,contractor)).join("");
+    const starts=[...new Set(ordered.map(a=>slotStartMinutes(a.slot)))];
+    const rows=starts.flatMap(start=>{
+      const atStart=assigned.map(entries=>entries.filter(a=>slotStartMinutes(a.slot)===start));
+      return Array.from({length:Math.max(...atStart.map(entries=>entries.length))},(_,i)=>
+        atStart.map((entries,j)=>appointmentCells(entries[i],teams[j])).join(""));
+    });
+    const dateRows=rows.map((cells,i)=>'<tr>'+(i===0?'<td class="daily-date" rowspan="'+rows.length+'">'+dateCard(date)+'</td>':"")+cells+'</tr>').join("");
+    const head='<div class="daily-zone-head"><strong>'+esc(contractor)+'</strong><span>'+appointments.length
+      +' appointment'+(appointments.length===1?"":"s")+'</span></div>';
+    const watermark=print?"":'<img class="daily-zone-watermark" src="'
+      +(contractor==="ND Noor"?closedDbWatermark:dailyWatermarks[single?"db":"meter"])+'" alt="" aria-hidden="true">';
+    const table=rows.length?'<table class="daily-table'+(single?' single-team':'')+'"><thead><tr>'
+      +headers.map(label=>'<th>'+label+'</th>').join("")+'</tr></thead><tbody>'+dateRows+'</tbody></table>':"";
+    const pending=unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned</strong>'
+      +(rows.length?"":' · '+esc(plannerDateLabel(date)))
+      +'<ul>'+unassigned.map(a=>'<li>'+esc(appointmentTime(a))+' · '+unitCell(a)
+        +(print?"":remarkField(a))+'</li>').join("")+'</ul></div>':"";
+    return '<section class="daily-zone" data-daily-contractor="'+esc(contractor)+'">'
+      +head+'<div class="daily-scroll">'+watermark+table+'</div>'+pending+'</section>';
+  }
+
+  function render(){
+    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all";
+    const groups=appointmentGroups(date,zone);
+    const zones=zoneLabel([...groups.values()].flat());
+    title.textContent=plannerDateLabel(date)+(zones?" · "+zones:"");
+    const tables=[...groups].filter(([,rows])=>rows.length)
+      .map(([name,rows])=>scheduleTable(name,date,rows)).join("");
     grid.innerHTML=tables
       ?tables+workRemarks()
       :'<p class="daily-empty">No appointments for this date. Enter bookings in Appointment Schedule.</p>';
@@ -121,22 +156,12 @@
   grid.addEventListener("click",event=>{
     const move=event.target.closest("[data-daily-team]");
     if(move){
-      const id=Number(move.dataset.dailyTeam),a=state.appointments.find(x=>Number(x.id)===id);
-      if(!a||![559,560,561,562].includes(Number(a.block))||!liveScheduleRecord(a))return;
-      const entries=currentEntries(a.date,"4").filter(x=>[559,560,561,562].includes(Number(x.block)));
-      const displayTeams=zone4KskDisplayTeams(entries),currentTeam=displayTeams.get(a.id);
-      if(currentTeam!=="Team 1"&&currentTeam!=="Team 2")return;
-      // Freeze this day's existing visible layout before moving the selected row.
-      // Otherwise legacy overlap balancing can also move its neighbouring booking.
-      const currentTeamsById=new Map(entries.map(entry=>[Number(entry.id),displayTeams.get(entry.id)]));
-      state.appointments.forEach(record=>{
-        const displayedTeam=currentTeamsById.get(Number(record.id));
-        if(displayedTeam==="Team 1"||displayedTeam==="Team 2"){
-          record.team=displayedTeam;
-          record.teamManual=true;
-        }
-      });
-      a.team=currentTeam==="Team 1"?"Team 2":"Team 1";
+      const a=state.appointments.find(record=>String(record.id)===move.dataset.dailyTeam);
+      if(!a||!liveScheduleRecord(a)||!["Team 1","Team 2"].includes(a.team))return;
+      const zone=Number(a.zone||zoneOfBlock(a.block));
+      if(contractorFor({...a,zone})!=="KSK")return;
+      a.team=a.team==="Team 1"?"Team 2":"Team 1";
+      a.teamManual=true;
       save("KSK appointment moved to "+a.team);
       return
     }
@@ -156,8 +181,6 @@
     .print-page:last-child{break-after:auto}
     .print-content{position:absolute;inset:var(--sheet-inset) var(--sheet-inset) auto;display:flex;flex-direction:column;transform-origin:top left}
     .print-content>*{flex:none}
-    .print-page:not(.print-contractor) .print-content{min-height:calc(100% - 2 * var(--sheet-inset))}
-    .print-page:not(.print-contractor) .daily-work-remarks{margin-top:auto}
     .print-heading{display:flex;align-items:center;justify-content:space-between;gap:12mm;margin:0 0 4mm;padding:1.5mm 0 3mm;border-bottom:1px solid #667583}
     .print-heading h1{font-size:19pt;line-height:1.15;margin:0}
     .print-heading p{font-size:10pt;font-weight:bold;text-align:right;margin:0}
@@ -171,10 +194,9 @@
     th,td{border:1px solid #667583;text-align:left;overflow-wrap:anywhere}
     th{background:#e4ebf1;font-size:10pt;padding:1.3mm 2.4mm}
     th:nth-child(1){width:12%}
-    th:nth-child(2),th:nth-child(5){width:11%}
-    th:nth-child(3),th:nth-child(6){width:17%;background:var(--tint)}
-    .single-team th:nth-child(2){width:14%}
-    .single-team th:nth-child(3){width:29%}
+    th:nth-child(2),th:nth-child(4){width:17%}
+    th:nth-child(3),th:nth-child(5){background:var(--tint)}
+    .single-team th:nth-child(2){width:21%}
     .daily-team-lead{font-size:9pt;white-space:nowrap}
     td{padding:1.25mm 2.4mm;vertical-align:middle;background:#fff}
     td.daily-time{background:#eef2f6;white-space:nowrap;font-weight:bold}
@@ -182,16 +204,9 @@
     .daily-date-card{display:grid;gap:1mm;font-weight:bold}
     .daily-date-number{font-size:13pt;line-height:1}
     .daily-date-month,.daily-date-weekday{font-size:8pt;line-height:1.1}
-    .daily-unit{font-weight:bold}
-    .daily-unit+.daily-unit,.daily-remark+.daily-remark{margin-top:1mm}
-    .daily-remark{white-space:pre-wrap}
-    .daily-remark-unit{display:block;font-weight:bold;font-size:8pt}
     .daily-unassigned,.daily-empty{padding:2mm;border:1px solid #ccd8e2;background:#f7fafc}
+    .daily-unassigned ul{margin:1mm 0;padding-left:5mm}
     .print-contractor td{padding-block:3mm}
-    .daily-work-remarks{min-width:0;padding:2.5mm 3mm;border:1px solid #667583;background:#f2f7fc;overflow-wrap:anywhere}
-    .daily-work-remarks h3{font-size:10pt;margin:0 0 1mm}
-    .daily-work-remarks ul{columns:2;column-gap:9mm;padding-left:4mm;margin:0}
-    .daily-work-remarks li{break-inside:avoid;margin:0 0 .65mm}
     @media print{
       .print-page{--sheet-inset:10mm;width:296mm;height:209mm;margin:0 auto}
     }
@@ -200,14 +215,6 @@
       .print-page{--sheet-inset:5mm;background:#fff;margin:0 auto 12px;box-shadow:0 2px 12px #1b354529;zoom:var(--preview-zoom,1)}
     }
   `;
-
-  function printSections(){
-    const clone=grid.cloneNode(true);
-    clone.querySelectorAll(".daily-zone-watermark,[data-daily-team]").forEach(element=>element.remove());
-    clone.querySelectorAll(".daily-unit-open").forEach(button=>button.replaceWith(button.textContent));
-    clone.querySelectorAll("[data-daily-remark]").forEach(field=>field.replaceWith(field.value.trim()));
-    return [...clone.querySelectorAll(".daily-zone")];
-  }
 
   function fitPrintPages(){
     frame.contentDocument.querySelectorAll(".print-page").forEach(page=>{
@@ -235,24 +242,17 @@
   });
 
   document.getElementById("plannerPrintDayBtn").addEventListener("click",()=>{
-    const zone=zoneInput.value||"all";
+    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all";
     const pick=document.getElementById("plannerPrintScope").value;
-    const sections=printSections();
-    const forContractor=name=>sections.filter(section=>(section.dataset.dailyContractor||"Other zones")===name);
-    const selections=pick==="contractors"?[...contractorOrder,"Other zones"].map(forContractor).filter(group=>group.length)
-      :[pick==="all"?sections:forContractor(pick)];
-    if(!selections.length)selections.push([]);
-    const pages=selections.map(group=>{
-      const zones=[...new Set(group.map(section=>Number(section.dataset.dailyZone)))].sort((a,b)=>a-b);
-      const contractorZone=contractorZones[pick];
-      if(!zones.length&&contractorZone)zones.push(contractorZone);
-      const zoneLabel=zones.length===1?"Zone "+zones[0]:zones.length?"Zones "+zones.join(", "):"";
-      const scope=pick==="all"?(zone==="all"?"All Zones":"Zone "+zone):zoneLabel;
-      const content=group.map(section=>section.outerHTML).join("")
-        ||'<p class="daily-empty">No appointments for this selection on this date.</p>';
+    const groups=appointmentGroups(date,zone);
+    const selected=[...groups].filter(([name,rows])=>rows.length&&(pick==="all"||pick==="contractors"||pick===name));
+    const pages=(pick==="contractors"&&selected.length?selected.map(group=>[group]):[selected]).map(group=>{
+      const scope=zoneLabel(group.flatMap(([,rows])=>rows));
+      const content=group.map(([name,rows])=>scheduleTable(name,date,rows,true)).join("")
+        ||'<p class="daily-empty">No appointments for '+esc(plannerDateLabel(date))+' in this selection.</p>';
       return '<main class="print-page'+(pick!=="all"?' print-contractor':'')+'"><div class="print-content">'
         +'<header class="print-heading"><h1>'+sheetTitle+'</h1>'
-        +(scope?'<p>'+esc(scope)+'</p>':"")+'</header>'+content+workRemarks()+'</div></main>';
+        +(scope?'<p>'+esc(scope)+'</p>':"")+'</header>'+content+'</div></main>';
     }).join("");
     printButton.disabled=true;
     preview.showModal();
