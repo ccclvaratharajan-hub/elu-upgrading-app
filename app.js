@@ -3684,6 +3684,47 @@ document.getElementById('photoBlockCycleBtn').addEventListener('click',()=>{
 document.getElementById("photoBlockReportZone").addEventListener("change",syncPhotoBlockReportBlocks);
 ["photoBlockReportBlock","photoBlockReportFrom","photoBlockReportTo"].forEach(id=>document.getElementById(id).addEventListener("change",()=>renderBlockPhotoSummary().catch(console.error)));
 
+// Restore recovered Word-report images without overwriting any existing photo or status records.
+// Expected ZIP paths: Zone_4/Block_557/2026-10-21/Unit_05-205/Photo_01.jpg
+async function recoverArchivedBlockPhotos(){
+  const input=document.getElementById("recoverPhotosZipInput"),button=document.getElementById("recoverPhotosZipBtn"),status=document.getElementById("recoverPhotosZipStatus");
+  const file=input?.files?.[0];
+  if(!file){toast("Choose the recovered photos ZIP first");return}
+  if(typeof JSZip!=="function"){toast("ZIP library unavailable");return}
+  if(!confirm("Have you downloaded a Full Backup of the current ELU data and photos? This will ADD recovered photos without replacing existing records."))return;
+  button.disabled=true;let inserted=0,skipped=0,invalid=0;
+  try{
+    status.textContent="Reading recovered photos ZIP…";
+    const zip=await JSZip.loadAsync(file);
+    const entries=Object.values(zip.files).filter(f=>!f.dir&&/\.(jpg|jpeg|png)$/i.test(f.name));
+    if(!entries.length)throw Error("ZIP contains no photos");
+    const existing=await photoDbAll("photos"),ids=new Set(existing.map(p=>String(p.id)));
+    const orderByGroup=new Map();
+    for(const p of existing){const k=`${p.date}|${p.unitKey}`;orderByGroup.set(k,Math.max(orderByGroup.get(k)||0,Number(p.order)||0))}
+    for(const entry of entries){
+      const m=/^Zone_(\d+)\/Block_(\d+)\/(\d{4}-\d{2}-\d{2})\/Unit_(\d+)-(\d+)\/Photo_(\d+)\.(jpe?g|png)$/i.exec(entry.name);
+      if(!m){invalid++;continue}
+      const [,z,b,date,f,u,n]=m,zone=Number(z),block=Number(b),floor=Number(f),unit=Number(u);
+      if(!(ZONE_BLOCKS[zone]||[]).includes(block)||!floor||!unit){invalid++;continue}
+      const id=`recovered-word:${entry.name.toLowerCase()}`;
+      if(ids.has(id)){skipped++;continue}
+      const key=unitKey(block,floor,unit),group=`${date}|${key}`,order=(orderByGroup.get(group)||0)+1;
+      const bytes=await entry.async("uint8array"),type=/\.png$/i.test(entry.name)?"image/png":"image/jpeg";
+      const blob=new Blob([bytes],{type});
+      await photoDbPut("photos",{id,cycleId:cycleForDate(date).id,date,zone,block,unitKey:key,unitDisplay:unitDisplay(floor,unit),
+        team:"",slot:"",order,name:entry.name.split("/").pop(),blob,importedAt:new Date().toISOString(),recoveredFrom:"Word report archive"});
+      orderByGroup.set(group,order);ids.add(id);inserted++;
+      if(inserted%25===0)status.textContent=`Restored ${inserted} / ${entries.length} photos…`;
+    }
+    status.textContent=`Restored ${inserted} photo(s); skipped ${skipped} previously restored, ${invalid} unmatched. Existing photos retained.`;
+    await renderBlockPhotoSummary();
+    if(typeof renderPhotoCenter==="function")await renderPhotoCenter();
+    toast(`Recovered ${inserted} photo(s) into Block-wise report`);
+  }catch(error){console.error("Archive photo recovery",error);status.textContent=`Restore interrupted after ${inserted} photo(s): ${error.message}. Reselect ZIP to resume safely.`;toast("Photo recovery interrupted — existing records unchanged")}
+  finally{button.disabled=false}
+}
+document.getElementById("recoverPhotosZipBtn").addEventListener("click",recoverArchivedBlockPhotos);
+
 async function photoAutoCleanup(){
   try{
     const today=isoTodaySG(),meta=await photoDbAll("meta"),eligible=meta.filter(m=>m.key?.startsWith("export:")&&m.cleanup&&today>=m.cleanup);

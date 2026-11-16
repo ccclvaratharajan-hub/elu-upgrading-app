@@ -3814,3 +3814,9 @@ body.theme-night #plannerDailyPanel .daily-table .daily-date{background:#fff04d;
 #plannerPreviewTitle{margin:0 auto 0 0;font-size:16px}
 #plannerPrintPreview button:disabled{opacity:.5;cursor:wait}
 #plannerPrintFrame{display:block;width:100%;flex:1;min-height:0;border:0;border-top:1px solid #b9cad8}
+
+/* KSK daily sheet: uncluttered blank area for uneven team schedules. */
+#plannerDailyPanel .daily-table td.daily-team-finished,
+body.theme-night #plannerDailyPanel .daily-table td.daily-team-finished{
+  background:#f8fafc;vertical-align:middle;
+}

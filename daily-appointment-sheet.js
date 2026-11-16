@@ -100,22 +100,29 @@
       return '<div class="daily-unit">'+unit+controls+'</div>';
     };
     const appointmentCells=(a,team)=>{
-      if(!a)return print?'<td></td><td></td>':'<td></td><td></td><td></td>';
+      if(!a)return '<td></td><td></td><td></td>';
       return '<td class="daily-time">'+esc(appointmentTime(a))+'</td><td>'+unitCell(a,team)+'</td>'
-        +(print?"":'<td>'+remarkField(a)+'</td>');
+        +(print?'<td class="daily-print-remark">'+esc(a.remarks||'')+'</td>':'<td>'+remarkField(a)+'</td>');
     };
     const headers=['Date'];
     teams.forEach((team,i)=>{
       const lead=teamLeads[contractor]?.[i];
       headers.push("Time",team+(lead?' <span class="daily-team-lead">('+esc(lead)+')</span>':""));
-      if(!print)headers.push("Remarks");
+      headers.push("Remarks");
     });
-    const starts=[...new Set(ordered.map(a=>slotStartMinutes(a.slot)))];
-    const rows=starts.flatMap(start=>{
-      const atStart=assigned.map(entries=>entries.filter(a=>slotStartMinutes(a.slot)===start));
-      return Array.from({length:Math.max(...atStart.map(entries=>entries.length))},(_,i)=>
-        atStart.map((entries,j)=>appointmentCells(entries[i],teams[j])).join(""));
-    });
+    // Pair each team's independently sorted schedule by position, not by matching
+    // start times.  This keeps appointment details compact when teams have unequal
+    // numbers of bookings or different slot lengths.
+    const rowCount=Math.max(0,...assigned.map(entries=>entries.length));
+    const rows=Array.from({length:rowCount},(_,i)=>
+      assigned.map((entries,j)=>{
+        if(i<entries.length)return appointmentCells(entries[i],teams[j]);
+        // A single merged cell replaces trailing empty Time / Unit / Remarks boxes.
+        // Only emit it once; its rowspan covers every remaining row; more appointments can appear later.
+        if(i===entries.length)return '<td class="daily-team-finished" colspan="'+3
+          +'" rowspan="'+(rowCount-i)+'"></td>';
+        return '';
+      }).join(''));
     const dateRows=rows.map((cells,i)=>'<tr>'+(i===0?'<td class="daily-date" rowspan="'+rows.length+'">'+dateCard(date)+'</td>':"")+cells+'</tr>').join("");
     const head='<div class="daily-zone-head"><strong>'+esc(contractor)+'</strong><span>'+appointments.length
       +' appointment'+(appointments.length===1?"":"s")+'</span></div>';
@@ -126,7 +133,7 @@
     const pending=unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned</strong>'
       +(rows.length?"":' · '+esc(plannerDateLabel(date)))
       +'<ul>'+unassigned.map(a=>'<li>'+esc(appointmentTime(a))+' · '+unitCell(a)
-        +(print?"":remarkField(a))+'</li>').join("")+'</ul></div>':"";
+        +(print?(a.remarks?' · '+esc(a.remarks):''):remarkField(a))+'</li>').join("")+'</ul></div>':"";
     return '<section class="daily-zone" data-daily-contractor="'+esc(contractor)+'">'
       +head+'<div class="daily-scroll">'+watermark+table+'</div>'+pending+'</section>';
   }
@@ -208,12 +215,26 @@
     td{padding:1.25mm 2.4mm;vertical-align:middle;background:#fff}
     td.daily-time{background:#eef2f6;white-space:nowrap;font-weight:bold}
     td.daily-date{background:#fff04d;text-align:center}
+    td.daily-team-finished{background:#f8fafc}
     .daily-date-card{display:grid;gap:1mm;font-weight:bold}
     .daily-date-number{font-size:13pt;line-height:1}
     .daily-date-month,.daily-date-weekday{font-size:8pt;line-height:1.1}
     .daily-unassigned,.daily-empty{padding:2mm;border:1px solid #ccd8e2;background:#f7fafc}
     .daily-unassigned ul{margin:1mm 0;padding-left:5mm}
-    .print-contractor td{padding-block:3mm}
+    .daily-table th:nth-child(1){width:9%}
+    .daily-table th:nth-child(2),.daily-table th:nth-child(5){width:12%}
+    .daily-table th:nth-child(3),.daily-table th:nth-child(6){width:19%}
+    .daily-table th:nth-child(4),.daily-table th:nth-child(7){width:14%}
+    .daily-table.single-team th:nth-child(1){width:13%}
+    .daily-table.single-team th:nth-child(2){width:19%}
+    .daily-table.single-team th:nth-child(3){width:34%}
+    .daily-table.single-team th:nth-child(4){width:34%}
+    .daily-print-remark{white-space:pre-wrap;overflow-wrap:anywhere;font-size:9pt}
+    .daily-work-remarks{margin-top:3mm;padding:2.5mm 3mm;border:1px solid #8b9ca9;background:#fff;break-inside:avoid}
+    .daily-work-remarks h3{font-size:11pt;margin:0 0 1.5mm}
+    .daily-work-remarks ul{margin:0;padding-left:6mm;font-size:9pt;line-height:1.3}
+    .daily-work-remarks li{margin-bottom:.5mm}
+    .print-contractor td{padding-block:2mm}
     @media print{
       .print-page{--sheet-inset:10mm;width:296mm;height:209mm;margin:0 auto}
     }
@@ -259,7 +280,7 @@
         ||'<p class="daily-empty">No appointments for '+esc(plannerDateLabel(date))+' in this selection.</p>';
       return '<main class="print-page'+(pick!=="all"?' print-contractor':'')+'"><div class="print-content">'
         +'<header class="print-heading"><h1>'+sheetTitle+'</h1>'
-        +(scope?'<p>'+esc(scope)+'</p>':"")+'</header>'+content+'</div></main>';
+        +(scope?'<p>'+esc(scope)+'</p>':"")+'</header>'+content+workRemarks()+'</div></main>';
     }).join("");
     printButton.disabled=true;
     preview.showModal();

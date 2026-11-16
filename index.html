@@ -782,6 +782,12 @@
               <button class="primary-btn" id="photoAllBlocksZipBtn" type="button">All blocks · separate Word ZIP</button>
             </div>
           </div>
+          <div class="photo-retention-note" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <strong>Recover archived photos:</strong>
+            <input id="recoverPhotosZipInput" type="file" accept=".zip,application/zip" aria-label="Select recovered block/date/unit photos ZIP">
+            <button class="ghost-btn" id="recoverPhotosZipBtn" type="button">Restore Photos (keep existing)</button>
+            <span id="recoverPhotosZipStatus" role="status">Choose ELU_Recovered_Photos_Block_Date_Unit.zip. Make a Full Backup first.</span>
+          </div>
           <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
           <div id="photoBlockSummary" class="photo-monthly-summary"></div>
           <div id="photoBlockBreakdown" class="photo-block-breakdown"></div>
