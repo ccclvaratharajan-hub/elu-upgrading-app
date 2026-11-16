@@ -482,7 +482,9 @@ function getUnit(key){return state.units[key]}
 function unitsArray(){return Object.values(state.units)}
 function getBlockUnits(block){return unitsArray().filter(u=>u.block===Number(block)).sort((a,b)=>b.floor-a.floor||a.unit-b.unit)}
 function appointmentHasEnded(a){
-  if(a?.requiresExplicitCompletion)return false;
+  // Confirmed imported bookings follow the same SG slot-end rule as manual bookings.
+  // Legacy requiresExplicitCompletion must not keep elapsed appointments pink forever.
+  // Manual unit status overrides are still respected by currentUnitAppointmentState.
   if(!a?.date||!a?.slot)return false;
   const now=sgClock();if(a.date<now.date)return true;if(a.date>now.date)return false;
   const end=SLOT_END_MINUTES[a.slot]??slotEndMinutes(a.slot);return end==null?false:now.minutes>=Number(end);
