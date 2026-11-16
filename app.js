@@ -574,7 +574,12 @@ function currentUnitAppointmentState(key){
   if(seedStatus==="A")return {appointment:null,status:"A",workStatus:"Completed",active:false,completed:true};
 
   const identityAppt=latestById(state.appointments.filter(x=>x.unitKey===key&&(String(x.ownerName||"").trim()||String(x.contact||"").trim())));
+  // A saved Survey Register visit is an acknowledged/pending unit even when
+  // the owner/contact fields are blank. Preserve manual status overrides and
+  // confirmed/completed appointment precedence above this fallback.
+  const hasSurveyVisit=state.surveys.some(s=>s.unitKey===key);
   const hasResidentResponse=Boolean(
+    hasSurveyVisit||
     String(identityAppt?.ownerName||"").trim()||
     String(identityAppt?.contact||"").trim()||
     String(u?.ownerName||"").trim()||
