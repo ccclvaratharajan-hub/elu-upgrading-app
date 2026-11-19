@@ -3505,8 +3505,31 @@ document.getElementById("photoDailyBoard").addEventListener("drop",async e=>{
   await renderPhotoCenter();toast("Photo print order saved")
 });
 
+async function photoWithDimensions(photo){
+  const valid=(width,height)=>Number.isFinite(Number(width))&&Number(width)>0&&Number.isFinite(Number(height))&&Number(height)>0;
+  if(valid(photo.width,photo.height))return photo;
+  if(!photo.blob)throw new Error("Photo file is missing: "+(photo.name||photo.id));
+  if(typeof createImageBitmap==="function"){
+    try{
+      const image=await createImageBitmap(photo.blob);
+      const width=image.width,height=image.height;
+      image.close();
+      if(valid(width,height))return {...photo,width,height};
+    }catch{}
+  }
+  const url=URL.createObjectURL(photo.blob);
+  try{
+    const image=new Image();
+    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error("Cannot read photo: "+(photo.name||photo.id)));image.src=url});
+    if(!valid(image.naturalWidth,image.naturalHeight))throw new Error("Invalid photo dimensions");
+    return {...photo,width:image.naturalWidth,height:image.naturalHeight};
+  }finally{URL.revokeObjectURL(url)}
+}
 function photoFitEmu(p,maxW,maxH){
-  const ratio=p.width/p.height;let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio}return {cx:Math.round(w*914400),cy:Math.round(h*914400)}
+  const width=Number(p.width),height=Number(p.height);
+  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)throw new Error("Photo dimensions are missing");
+  const ratio=width/height;let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio}
+  return {cx:Math.max(1,Math.round(w*914400)),cy:Math.max(1,Math.round(h*914400))}
 }
 function photoEscXml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;")}
 function photoRun(text,bold=false,size=16){return `<w:r><w:rPr>${bold?"<w:b/>":""}<w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:t xml:space="preserve">${photoEscXml(text)}</w:t></w:r>`}
@@ -3573,8 +3596,8 @@ async function buildBlockPhotoDocx(groups,block,from,to){
     const rows=groups.slice(p,p+6),refs=[];
     for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){
       const ph=photoReportCells(rows[i].photos)[j];if(!ph){refs[i][j]=null;continue}
-      const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});
-      refs[i][j]={photo:ph,rId,docId:docId++}
+      const rId=`rId${rn++}`,n=media.length+1,extension=ph.blob.type==="image/png"?"png":"jpg";rels.push({rId,target:`media/image${n}.${extension}`});media.push({target:`media/image${n}.${extension}`,blob:ph.blob});
+      refs[i][j]={photo:await photoWithDimensions(ph),rId,docId:docId++}
     }}
     pages.push(photoP(`ELECTRICAL LOAD UPGRADING WORKS (ELU) AT ${block} PASIR RIS STREET 51 · ${safeDate(from)} TO ${safeDate(to)}`,true,18)+photoPageTable(rows,refs));
     if(p+6<groups.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
@@ -3582,7 +3605,7 @@ async function buildBlockPhotoDocx(groups,block,from,to){
   const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
   const dr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.map(r=>`<Relationship Id="${r.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join("")}</Relationships>`;
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="16"/></w:rPr></w:style></w:styles>`;
-  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
   const rr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
   zip.file("[Content_Types].xml",types);zip.folder("_rels").file(".rels",rr);zip.folder("word").file("document.xml",doc);zip.folder("word").file("styles.xml",styles);zip.folder("word").folder("_rels").file("document.xml.rels",dr);
   for(const m of media)zip.folder("word").file(m.target,await m.blob.arrayBuffer());
@@ -3643,14 +3666,14 @@ async function generateMonthlyPhotoWord(){
   const zip=new JSZip(),rels=[],media=[];let rn=2,docId=1;const pages=[];
   for(const block of ZONE_BLOCKS[zone]||[]){const blockRows=groups.filter(g=>g.block===block);
   for(let p=0;p<blockRows.length;p+=6){const rows=blockRows.slice(p,p+6),refs=[];
-    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){const ph=photoReportCells(rows[i].photos)[j];if(!ph){refs[i][j]=null;continue}const rId=`rId${rn++}`,n=media.length+1;rels.push({rId,target:`media/image${n}.jpg`});media.push({target:`media/image${n}.jpg`,blob:ph.blob});refs[i][j]={photo:ph,rId,docId:docId++}}}
+    for(let i=0;i<rows.length;i++){refs[i]=[];for(let j=0;j<3;j++){const ph=photoReportCells(rows[i].photos)[j];if(!ph){refs[i][j]=null;continue}const rId=`rId${rn++}`,n=media.length+1,extension=ph.blob.type==="image/png"?"png":"jpg";rels.push({rId,target:`media/image${n}.${extension}`});media.push({target:`media/image${n}.${extension}`,blob:ph.blob});refs[i][j]={photo:await photoWithDimensions(ph),rId,docId:docId++}}}
     if(pages.length)pages.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
     pages.push(photoP(`ELECTRICAL LOAD UPGRADING WORKS (ELU) · ZONE ${zone} · BLOCK ${block}`,true,18)+photoP(`${safeDate(cycle.start)} TO ${safeDate(cycle.end)}`,false,14)+photoPageTable(rows,refs))
   }}
   const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages.join("")}<w:sectPr><w:pgSz w:w="11907" w:h="16839"/><w:pgMar w:top="255" w:right="238" w:bottom="255" w:left="238"/></w:sectPr></w:body></w:document>`;
   const dr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.map(r=>`<Relationship Id="${r.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join("")}</Relationships>`;
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="16"/></w:rPr></w:style></w:styles>`;
-  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
   const rr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
   zip.file("[Content_Types].xml",types);zip.folder("_rels").file(".rels",rr);zip.folder("word").file("document.xml",doc);zip.folder("word").file("styles.xml",styles);zip.folder("word").folder("_rels").file("document.xml.rels",dr);
   for(const m of media)zip.folder("word").file(m.target,await m.blob.arrayBuffer());
