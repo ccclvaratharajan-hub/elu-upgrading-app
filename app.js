@@ -3374,6 +3374,7 @@ async function compressPhotoBlob(bytes,name){
 async function importPhotoZip(){
   const file=document.getElementById("photoZipInput").files[0];if(!file){toast("Choose a photo ZIP");return}
   if(typeof JSZip==="undefined"){toast("Photo ZIP library not loaded");return}
+  if(window.importArchivedReportPhotos&&await window.importArchivedReportPhotos(file,true))return;
   const zone=Number(document.getElementById("photoZone").value),selectedDate=document.getElementById("photoDate").value||isoTodaySG();
   const parsed=parsePhotoZipName(file.name),date=parsed.date||selectedDate;
   if(date!==selectedDate&&!confirm(`ZIP filename date looks like ${safeDate(date)}, but selected date is ${safeDate(selectedDate)}. Use ZIP date?`))return;

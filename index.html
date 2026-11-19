@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#123f78">
   <link rel="manifest" href="manifest.webmanifest?v=8.44.56">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
-  <title>ELU Upgrading — Command Centre · V197</title>
+  <title>ELU Upgrading — Command Centre · V198</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css?v=8.44.192">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.155">
@@ -784,9 +784,9 @@
           </div>
           <div class="photo-retention-note" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <strong>Recover archived photos:</strong>
-            <input id="recoverPhotosZipInput" type="file" accept=".zip,application/zip" aria-label="Select recovered block/date/unit photos ZIP">
-            <button class="ghost-btn" id="recoverPhotosZipBtn" type="button">Restore Photos (keep existing)</button>
-            <span id="recoverPhotosZipStatus" role="status">Choose ELU_Recovered_Photos_Block_Date_Unit.zip. Make a Full Backup first.</span>
+            <input id="recoverPhotosZipInput" type="file" accept=".zip,.docx" aria-label="Select Word photo report or recovered photos ZIP">
+            <button class="ghost-btn" id="recoverPhotosZipBtn" type="button">Import report photos</button>
+            <span id="recoverPhotosZipStatus" role="status" aria-live="polite">Choose report.zip, a Word photo report, or the recovered photos ZIP.</span>
           </div>
           <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
           <div id="photoBlockSummary" class="photo-monthly-summary"></div>
@@ -1015,7 +1015,8 @@
   <script src="jszip.min.js"></script>
   <script src="pdf-lib.min.js"></script>
   <script src="pptxgen.min.js"></script>
-  <script src="app.js?v=8.44.196"></script>
+  <script src="app.js?v=8.44.198"></script>
+  <script src="photo-report-import.js?v=198"></script>
   <script src="desktop-nav.js?v=8.44.168"></script>
   <script src="nr-evidence.js?v=8.44.143"></script>
   <script src="riser-progress.js?v=8.44.143"></script>
