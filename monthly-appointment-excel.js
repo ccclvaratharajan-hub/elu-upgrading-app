@@ -42,7 +42,7 @@
           const group=matching(team,slot).sort((a,b)=>Number(a.block)-Number(b.block)||Number(b.floor)-Number(a.floor)||Number(a.unit)-Number(b.unit));
           cells.push(cell("ABCDEFG"[offset]+n,covered(team,slot)||selectedDate&&!group.length?"":slot,3));
           cells.push(cell("ABCDEFG"[offset+1]+n,group.map(unit).join("\n"),3));
-          cells.push(cell("ABCDEFG"[offset+2]+n,group.map(a=>String(a.remarks||"").trim()).filter(Boolean).join("\n"),3));
+          cells.push(cell("ABCDEFG"[offset+2]+n,group.map(a=>plannerRemarkText(a)).filter(Boolean).join("\n"),3));
         }
         rows.push('<row r="'+n+'" ht="29" customHeight="1">'+cells.join("")+"</row>");n++;
       }
@@ -53,7 +53,7 @@
   function unassignedSheet(data){
     const rows=['<row r="1">'+["Date","Zone","Time","Block","Unit","Remarks"].map((v,i)=>cell("ABCDEF"[i]+"1",v,1)).join("")+"</row>"];
     data.sort((a,b)=>a.date.localeCompare(b.date)||slotStartMinutes(a.slot)-slotStartMinutes(b.slot)).forEach((a,i)=>{
-      const n=i+2,values=[a.date,"Zone "+(a.zone||zoneOfBlock(a.block)),a.slot||"","Blk "+a.block,a.unitDisplay||unitDisplay(a.floor,a.unit),a.remarks||""];
+      const n=i+2,values=[a.date,"Zone "+(a.zone||zoneOfBlock(a.block)),a.slot||"","Blk "+a.block,a.unitDisplay||unitDisplay(a.floor,a.unit),plannerRemarkText(a)];
       rows.push('<row r="'+n+'">'+values.map((v,j)=>cell("ABCDEF"[j]+n,v,3)).join("")+"</row>");
     });
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"/></sheetViews><cols>'+[16,13,18,15,18,45].map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join("")+'</cols><sheetData>'+rows.join("")+"</sheetData></worksheet>";

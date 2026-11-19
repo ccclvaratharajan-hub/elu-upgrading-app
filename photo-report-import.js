@@ -143,7 +143,7 @@
   async function applyReportView(view) {
     document.getElementById("photoZone").value = String(view.zone);
     document.getElementById("photoBlockReportZone").value = String(view.zone);
-    document.getElementById("photoDate").value = view.date;
+    document.getElementById("photoDate").value = isoTodaySG();
     for (const id of ["photoReportFrom", "photoBlockReportFrom"]) document.getElementById(id).value = view.from;
     for (const id of ["photoReportTo", "photoBlockReportTo"]) document.getElementById(id).value = view.to;
     syncPhotoBlockReportBlocks();
@@ -242,7 +242,6 @@
     photoDbAll("meta").then(async records => {
       const last = records.find(record => record.key === "archive-photo-import-result");
       if (!last?.view || !validDate(last.view.from) || !validDate(last.view.to)) return;
-      await applyReportView(last.view);
       setStatus("Last import · " + last.photos + " report photos · " + last.from + " to " + last.to);
     }).catch(console.error);
   };

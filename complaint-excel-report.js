@@ -34,7 +34,7 @@
       const action=events.map((e,i)=>`${enDate(e.date)}${e.time?' '+e.time:''}: ${e.action||''}${e.attendedBy?' ('+e.attendedBy+')':''}${i===events.length-1&&e.outcome==='Closed'?' — CLOSED':''}`).join('\n');
       const address=`Blk ${c.block} ${c.unitDisplay||unitDisplay(c.floor,c.unit)}`;
       const ref=tcCaseId(c),description=ref&&!String(c.complaint||'').includes(ref)?`${ref} · ${c.complaint||''}`:c.complaint||'';
-      return [index+1,'TC',enDate(c.date),c.ownerName||u?.ownerName||'',address,c.contact||u?.contact||'',description,action,'','',''];
+      return [index+1,'TC',enDate(c.date),c.ownerName||u?.ownerName||'',address,contactText(c.contact||u?.contact||''),description,action,'','',''];
     });
   }
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="${ns}">

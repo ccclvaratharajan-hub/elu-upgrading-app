@@ -26,23 +26,22 @@
   const unitLabel=a=>"Blk "+a.block+" "+(a.unitDisplay||unitDisplay(a.floor,a.unit));
 
   function workRemarks(){
-    return '<footer class="daily-work-remarks"><h3>Remarks</h3><ul>'
-      +workInstructions.map(text=>'<li>'+esc(text)+'</li>').join("")+'</ul></footer>';
+    const column=items=>'<ul>'+items.map(text=>'<li>'+esc(text)+'</li>').join("")+'</ul>';
+    return '<footer class="daily-work-remarks"><h3>Remarks</h3><div class="daily-notes-columns">'
+      +column(workInstructions.slice(0,3))+column(workInstructions.slice(3))+'</div></footer>';
   }
 
   function remarkField(a){
     const unit=esc(unitLabel(a));
     return '<div class="daily-remark"><textarea rows="1" data-daily-remark="'+esc(a.id)+'" aria-label="Remarks for '+unit+'" placeholder="Add remarks">'
-      +esc(a.remarks||"")+'</textarea></div>';
+      +esc(plannerRemarkText(a))+'</textarea></div>';
   }
-  const dateInput=document.getElementById("teamDate"),zoneInput=document.getElementById("plannerViewZone");
+  const dateInput=document.getElementById("teamDate");
 
-  function currentEntries(date,zone){
+  function currentEntries(date){
     const latest=new Map();
     state.appointments.forEach(a=>{
       if(a.date!==date||!liveScheduleRecord(a))return;
-      const z=Number(a.zone||zoneOfBlock(a.block));
-      if(zone!=="all"&&z!==Number(zone))return;
       const key=a.date+"|"+a.unitKey,old=latest.get(key);
       if(!old||Number(a.id||0)>Number(old.id||0))latest.set(key,a);
     });
@@ -58,13 +57,13 @@
   }
   function contractorFor(a){
     if(a.zone===4)return [557,558].includes(Number(a.block))?"IMS":"KSK";
-    if(a.zone===5)return "ND Noor";
-    return [2,6].includes(a.zone)?"KSK":"Other zones";
+    if([3,5].includes(a.zone))return "ND Noor";
+    return [1,2,6].includes(a.zone)?"KSK":"Other zones";
   }
 
-  function appointmentGroups(date,zone){
+  function appointmentGroups(date){
     const groups=new Map(contractorOrder.map(name=>[name,[]]));
-    for(const appointment of currentEntries(date,zone)){
+    for(const appointment of currentEntries(date)){
       groups.get(contractorFor(appointment)).push(appointment);
     }
     return groups;
@@ -102,7 +101,7 @@
     const appointmentCells=(a,team)=>{
       if(!a)return '<td></td><td></td><td></td>';
       return '<td class="daily-time">'+esc(appointmentTime(a))+'</td><td>'+unitCell(a,team)+'</td>'
-        +(print?'<td class="daily-print-remark">'+esc(a.remarks||'')+'</td>':'<td>'+remarkField(a)+'</td>');
+        +(print?'<td class="daily-print-remark">'+esc(plannerRemarkText(a))+'</td>':'<td>'+remarkField(a)+'</td>');
     };
     const headers=['Date'];
     teams.forEach((team,i)=>{
@@ -133,14 +132,16 @@
     const pending=unassigned.length?'<div class="daily-unassigned"><strong>Team not assigned</strong>'
       +(rows.length?"":' · '+esc(plannerDateLabel(date)))
       +'<ul>'+unassigned.map(a=>'<li>'+esc(appointmentTime(a))+' · '+unitCell(a)
-        +(print?(a.remarks?' · '+esc(a.remarks):''):remarkField(a))+'</li>').join("")+'</ul></div>':"";
-    return '<section class="daily-zone" data-daily-contractor="'+esc(contractor)+'">'
+        +(print?(plannerRemarkText(a)?' · '+esc(plannerRemarkText(a)):''):remarkField(a))+'</li>').join("")+'</ul></div>':"";
+    const scope=zoneLabel(appointments);
+    return (scope?'<p class="daily-zone-scope">'+esc(scope)+'</p>':"")
+      +'<section class="daily-zone" data-daily-contractor="'+esc(contractor)+'">'
       +head+'<div class="daily-scroll">'+watermark+table+'</div>'+pending+'</section>';
   }
 
   function render(){
-    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all";
-    const groups=appointmentGroups(date,zone);
+    const date=dateInput.value||isoTodaySG();
+    const groups=appointmentGroups(date);
     const zones=zoneLabel([...groups.values()].flat());
     title.textContent=plannerDateLabel(date)+(zones?" · "+zones:"");
     const tables=[...groups].filter(([,rows])=>rows.length)
@@ -155,7 +156,8 @@
     if(!field)return;
     const appointment=state.appointments.find(a=>String(a.id)===field.dataset.dailyRemark);
     const remarks=field.value.trim();
-    if(!appointment||!liveScheduleRecord(appointment)||remarks===(appointment.remarks||""))return;
+    if(!appointment||!liveScheduleRecord(appointment)||remarks===plannerRemarkText(appointment))return;
+    appointment.manualPlannerRemarks=true;
     appointment.remarks=remarks;
     appointment.userRemarks=true;
     rebuildUnitMaster(appointment.unitKey);
@@ -212,6 +214,7 @@
     th:nth-child(3),th:nth-child(5){background:var(--tint)}
     .single-team th:nth-child(2){width:21%}
     .daily-team-lead{font-size:9pt;white-space:nowrap}
+    .daily-zone-scope{font-size:9pt;font-weight:bold;margin:0 0 1mm;color:#101820}
     td{padding:1.25mm 2.4mm;vertical-align:middle;background:#fff}
     td.daily-time{background:#eef2f6;white-space:nowrap;font-weight:bold}
     td.daily-date{background:#fff04d;text-align:center}
@@ -232,7 +235,8 @@
     .daily-print-remark{white-space:pre-wrap;overflow-wrap:anywhere;font-size:9pt}
     .daily-work-remarks{margin-top:3mm;padding:2.5mm 3mm;border:1px solid #8b9ca9;background:#fff;break-inside:avoid}
     .daily-work-remarks h3{font-size:11pt;margin:0 0 1.5mm}
-    .daily-work-remarks ul{margin:0;padding-left:6mm;font-size:9pt;line-height:1.3}
+    .daily-work-remarks .daily-notes-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8mm;align-items:start}
+    .daily-work-remarks ul{display:block;min-width:0;margin:0;padding-left:5mm;font-size:9pt;line-height:1.3}
     .daily-work-remarks li{margin-bottom:.5mm}
     .print-contractor td{padding-block:2mm}
     @media print{
@@ -270,9 +274,9 @@
   });
 
   document.getElementById("plannerPrintDayBtn").addEventListener("click",()=>{
-    const date=dateInput.value||isoTodaySG(),zone=zoneInput.value||"all";
+    const date=dateInput.value||isoTodaySG();
     const pick=document.getElementById("plannerPrintScope").value;
-    const groups=appointmentGroups(date,zone);
+    const groups=appointmentGroups(date);
     const selected=[...groups].filter(([name,rows])=>rows.length&&(pick==="all"||pick==="contractors"||pick===name));
     const pages=(pick==="contractors"&&selected.length?selected.map(group=>[group]):[selected]).map(group=>{
       const scope=zoneLabel(group.flatMap(([,rows])=>rows));

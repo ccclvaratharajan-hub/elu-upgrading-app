@@ -11,14 +11,14 @@ const ZONE1_REQUESTED_CORRECTIONS={
 const ZONE1_OPT_IN_REASON="Zone 1 requested Opt-In correction (status only)";
 const SLOTS=["9am–11am","11am–1pm","2pm–4pm","4pm–6pm"];
 const SLOT_END_MINUTES={"9am–11am":660,"11am–1pm":780,"2pm–4pm":960,"4pm–6pm":1080};
-const fmtDate=new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"short",year:"numeric"});
+const fmtDate=new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",day:"2-digit",month:"short",year:"numeric"});
 
 function isoTodaySG(){
   const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
   const o=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${o.year}-${o.month}-${o.day}`;
 }
 function dashboardScheduleDate(){
-  const clock=sgClock();return clock.minutes>=18*60?addDaysISO(clock.date,1):clock.date
+  return isoTodaySG()
 }
 function sgClock(){
   const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
@@ -158,6 +158,14 @@ function seedAppointments(){
 }
 function unitKey(block,floor,unit){return `${block}-${floor}-${unit}`}
 function unitDisplay(floor,unit){return `#${String(floor).padStart(2,"0")}-${unit}`}
+function contactText(value){
+  return String(value??"").replace(/\b(\d+)(?:\.(\d+))?[eE]([+-]?\d+)\b/g,(original,whole,fraction="",exponent)=>{
+    const point=whole.length+Number(exponent),digits=whole+fraction;
+    if(point<1||point>20||point<digits.length&&/[1-9]/.test(digits.slice(point)))return original;
+    const expanded=point>=digits.length?digits.padEnd(point,"0"):digits.slice(0,point);
+    return expanded.replace(/^0+(?=\d)/,"");
+  });
+}
 function esc(v=""){return String(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s]))}
 function safeDate(v){if(!v)return "";const d=new Date(v+"T00:00:00");return Number.isNaN(d.getTime())?v:fmtDate.format(d)}
 function shortBoardDate(v){if(!v)return "";const d=new Date(v+"T00:00:00");return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-SG",{day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
@@ -254,8 +262,10 @@ function mergeSavedIntoFresh(saved){
         contact:clean.contact||seed.contact||"",
         remarks:(clean.userRemarks||isUserAppointment(clean))?(clean.remarks||""):"",
         userRemarks:Boolean(clean.userRemarks||isUserAppointment(clean)),
+        manualPlannerRemarks:Boolean(clean.manualPlannerRemarks),
         source:isUserAppointment(clean)?clean.source:seed.source,
         team:clean.team||seed.team||"",
+        teamManual:Boolean(clean.teamManual||seed.teamManual),
         scheduleState:explicitScheduleOverride
           ? clean.scheduleState
           : isUserAppointment(clean)
@@ -698,6 +708,7 @@ function rebuildUnitMaster(key){
     base.team="";
   }
 
+  base.contact=contactText(base.contact);
   state.units[key]=base;
 }
 function rebuildAllMasters(){Object.keys(state.units).forEach(rebuildUnitMaster)}
@@ -731,7 +742,6 @@ completioncertificate:["Completion Certificate","Completion Certificate for Modi
 singleline:["Unit Single Line Diagram","Block-wise diagrams with and without sub-main upgrading."],
 sitefiles:["Site Report Files","Download the Block Chart, Response Details and NR Tracking Excel reports by zone."]
 }[view]}
-let photoEntryOpened=false;
 function setView(view){
   // The masters and tables are already refreshed at startup and on saves.
   // Page navigation must not recalculate every unit again.
@@ -746,7 +756,7 @@ function setView(view){
   }
   if(view==="singleline")window.renderSingleLineDiagram?.();
   if(view==="forme"||view==="completioncertificate")window.renderInspectionCertificate?.(view);
-  if(view==="dailyplanner"&&!document.getElementById("teamDate").value){document.getElementById("teamDate").value=dashboardScheduleDate();plannerDisplayMode="day"}
+  if(view==="dailyplanner"&&!document.getElementById("teamDate").value){document.getElementById("teamDate").value=isoTodaySG();plannerDisplayMode="day"}
   if(view==="schedulemaster")document.getElementById("masterDate").value=today;
   if(view==="dashboard")renderDashboard();
   else if(view==="blockboard")renderBlockBoard();
@@ -765,14 +775,11 @@ function setView(view){
   else if(view==="teams"||view==="dailyplanner")renderPlanner();
   else if(view==="schedulemaster")renderMasterSchedule();
   else if(view==="photos"){
-    if(!photoEntryOpened){
-      const date=document.getElementById("photoDate").value||today;
-      const currentZone=Number(document.getElementById("photoZone").value||1);
-      if(currentZone===1){
-        const first=state.appointments.find(a=>a.date===date&&!isInactiveSchedule(a)&&preferredMasterAppointment(a.unitKey)===a);
-        if(first)document.getElementById("photoZone").value=String(first.zone||zoneOfBlock(first.block));
-      }
-      photoEntryOpened=true;
+    document.getElementById("photoDate").value=today;
+    const currentZone=Number(document.getElementById("photoZone").value||1);
+    const bookings=state.appointments.filter(a=>a.date===today&&liveScheduleRecord(a));
+    if(bookings.length&&!bookings.some(a=>Number(a.zone||zoneOfBlock(a.block))===currentZone)){
+      document.getElementById("photoZone").value=String(bookings[0].zone||zoneOfBlock(bookings[0].block));
     }
     syncPhotoTargetUnits().catch(console.error)
   }
@@ -2035,7 +2042,13 @@ function plannerDateLabel(date){const d=new Date(date+"T00:00:00+08:00");return 
 function plannerDateShort(date){const d=new Date(date+"T00:00:00+08:00");return new Intl.DateTimeFormat("en-SG",{timeZone:"Asia/Singapore",weekday:"short",day:"2-digit",month:"2-digit",year:"2-digit"}).format(d)}
 function appointmentForPlanner(a){const u=getUnit(a.unitKey);return {...a,ownerName:u?.ownerName||a.ownerName||"",contact:u?.contact||a.contact||""}}
 function plannerEntries(date,team,slot){return state.appointments.filter(a=>!isInactiveSchedule(a)&&a.date===date&&a.team===team&&a.slot===slot).map(appointmentForPlanner)}
-function plannerRemarks(entries){return entries.map(a=>a.remarks||"").filter(Boolean).join(" · ")||"—"}
+function plannerRemarkText(appointment){
+  if(appointment.manualPlannerRemarks)return String(appointment.remarks||"");
+  if(appointment.source==="PR3 Workbook Import"&&!appointment.userRemarks)return "";
+  const value=String(appointment.remarks||"").trim();
+  return /^(Appointment Confirmed|Rewiring Completed|Pending|Pending Confirmation|No Response|Opt-In|Opt-Out)$/i.test(value)?"":value;
+}
+function plannerRemarks(entries){return entries.map(plannerRemarkText).filter(Boolean).join(" · ")||"—"}
 function plannerTeamCell(entries,team,slot,zone){if(!entries.length)return `<div class="planner-empty-cell">—</div><button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`;return entries.map(a=>`<div class="planner-team-entry"><div><strong>${esc(a.unitDisplay)}</strong><small>Blk ${a.block}</small></div><div class="planner-entry-actions"><button class="planner-mini-action" data-planner-edit="${a.id}">Edit</button><button class="planner-mini-action cancel" data-planner-cancel="${a.id}">Cancel</button></div></div>`).join("")+`<button class="planner-add-cell" data-planner-prefill="${esc(team)}|${esc(slot)}|${zone}">+ Add</button>`}
 let plannerDisplayMode="day";
 function renderPlanner(){
@@ -2216,7 +2229,7 @@ document.getElementById("plannerViewBlock").addEventListener("change",renderPlan
 document.getElementById("teamDate").addEventListener("change",()=>{plannerDisplayMode="day";renderPlanner()});
 document.getElementById("plannerPrevDay").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),-1);renderPlanner()});
 document.getElementById("plannerNextDay").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(document.getElementById("teamDate").value||isoTodaySG(),1);renderPlanner()});
-document.getElementById("plannerToday").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()});
+document.getElementById("plannerToday").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
 document.getElementById("plannerTomorrow").addEventListener("click",()=>{plannerDisplayMode="day";document.getElementById("teamDate").value=addDaysISO(isoTodaySG(),1);renderPlanner()});
 document.getElementById("plannerNext7").addEventListener("click",()=>{plannerDisplayMode="week";document.getElementById("teamDate").value=isoTodaySG();renderPlanner()});
 document.getElementById("plannerTable").addEventListener("click",e=>{const b=e.target.closest("[data-planner-open]");if(b)return editAppointment(Number(b.dataset.plannerOpen))});
@@ -3789,7 +3802,7 @@ function startApp(){
   document.getElementById("surveyVisitDate").value=isoTodaySG();
   document.getElementById("surveyPrintDate").value=isoTodaySG();
   document.getElementById("complaintReportDate").value=isoTodaySG();
-  document.getElementById("teamDate").value=dashboardScheduleDate();
+  document.getElementById("teamDate").value=isoTodaySG();
   configureAppointmentYearInputs();
   initSelectors();
   initMasterSchedule();
@@ -3801,7 +3814,23 @@ function startApp(){
   renderAll();
   autoCompleteAppointments();
   // Keep stored photos available for block reports that span monthly cycles.
-  autoCompleteTimer=setInterval(()=>{autoCompleteAppointments(true);if(document.getElementById("dashboard").classList.contains("active")){renderTodayTeamBoard();renderDashboardToday()}if(document.getElementById("dailyplanner").classList.contains("active")&&plannerDisplayMode==="day"&&!document.getElementById("plannerEditId").value&&document.getElementById("teamDate").value===isoTodaySG()&&dashboardScheduleDate()!==isoTodaySG()){document.getElementById("teamDate").value=dashboardScheduleDate();renderPlanner()}},60000)
+  let calendarDate=isoTodaySG();
+  autoCompleteTimer=setInterval(()=>{
+    autoCompleteAppointments(true);
+    const today=isoTodaySG();
+    document.getElementById("todayChip").textContent=fmtDate.format(new Date());
+    if(today!==calendarDate){
+      if(document.getElementById("teamDate").value===calendarDate&&!document.getElementById("plannerEditId").value){
+        document.getElementById("teamDate").value=today;renderPlanner()
+      }
+      if(document.getElementById("photoDate").value===calendarDate){
+        document.getElementById("photoDate").value=today;
+        if(document.getElementById("photos").classList.contains("active"))setView("photos")
+      }
+      calendarDate=today
+    }
+    if(document.getElementById("dashboard").classList.contains("active")){renderTodayTeamBoard();renderDashboardToday()}
+  },60000)
 }
 let scenePeekTimer;
 const scenePeekBtn=document.getElementById("scenePeekBtn");

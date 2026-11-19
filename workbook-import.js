@@ -138,7 +138,7 @@
           const legacyRemark=clean(row.J);
           const status=key==="554-10-117"?"A":marks[mark];
           const {date,slot}=readAppointment(legacySchedule);
-          rows.set(key,{status,date,slot,ownerName:clean(row.H),contact:clean(row.G),legacySchedule,legacyRemark});
+          rows.set(key,{status,date,slot,ownerName:clean(row.H),contact:contactText(clean(row.G)),legacySchedule,legacyRemark});
         }
       }
     }

@@ -101,3 +101,10 @@
   #plannerDailyPanel .daily-date-label{margin-top:5px;padding-top:4px}
   #plannerDailyPanel .daily-zone[data-daily-contractor="ND Noor"] .daily-zone-watermark{width:32%;opacity:.22}
 }
+
+#plannerDailyPanel .daily-zone-scope{margin:8px 12px 4px;color:#092c48;font:700 12px/1.4 Arial,sans-serif;text-shadow:0 1px 0 #fff}
+
+/* Keep the shared instructions in the approved three-left, two-right layout. */
+#plannerDailyPanel .daily-work-remarks .daily-notes-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+#plannerDailyPanel .daily-work-remarks .daily-notes-columns>ul{display:block;min-width:0;margin:0;padding-left:18px;font:13px/1.45 Arial,sans-serif}
+#plannerDailyPanel .daily-work-remarks .daily-notes-columns>ul>li{margin:0 0 4px}
