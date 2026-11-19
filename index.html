@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#123f78">
   <link rel="manifest" href="manifest.webmanifest?v=8.44.56">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
-  <title>ELU Upgrading — Command Centre · V201</title>
+  <title>ELU Upgrading — Command Centre · V202</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css?v=8.44.192">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.201">
+  <link rel="stylesheet" href="nr-pending-report.css?v=202">
   <link rel="stylesheet" href="dashboard-focus-v84430.css?v=8.44.58" media="screen">
   <link rel="stylesheet" href="desktop-home-v177.css?v=177" media="screen">
   <style media="print">#appStartButton,#appStartMenu,#headerToolsMenu,#dashboardUserName,.dashboard-company-logo{display:none!important}</style>
@@ -815,7 +816,22 @@
           <button type="button" role="tab" class="active" data-report-view="chart" aria-selected="true">3D Block Chart</button>
           <button type="button" role="tab" data-report-view="sheet" aria-selected="false">Meeting Sheet</button>
           <button type="button" role="tab" data-report-view="response" aria-selected="false">Response Summary</button>
+          <button type="button" role="tab" data-report-view="nrpending" aria-selected="false">NR / Pending Units</button>
         </div>
+        <article class="panel" id="nrPendingPanel">
+          <h3>NR and Pending Units</h3>
+          <p class="nrp-note">NR = No Response. Pending = Pending Confirmation (P). Counts follow Project Progress; blocks not started are excluded.</p>
+          <div class="nrp-tools">
+            <label>Zone<select id="nrPendingZone"></select></label>
+            <label>Block<select id="nrPendingBlock"></select></label>
+            <button type="button" class="primary-btn" id="nrPendingExcel">Download Excel</button>
+            <button type="button" class="ghost-btn" id="nrPendingPrint">Print / PDF</button>
+          </div>
+          <strong class="nrp-count" id="nrPendingCount"></strong>
+          <h4>Zone Summary</h4><div class="nrp-summary" id="nrPendingSummary"></div>
+          <h4>Block Summary</h4><div class="nrp-scroll" id="nrPendingBlocks"></div>
+          <h4>Unit List</h4><div class="nrp-scroll" id="nrPendingUnits"></div>
+        </article>
         <article class="panel" id="weeklyReportPanel">
           <div class="panel-head register-head">
             <div><h3>Weekly Progress Summary</h3><p>Aligned to the Progress Summary structure from your source workbooks.</p></div>
@@ -1024,6 +1040,7 @@
   <script src="monthly-appointment-excel.js?v=8.44.200"></script>
   <script src="daily-appointment-sheet.js?v=8.44.201"></script>
   <script src="unit-register-export.js?v=8.44.200"></script>
+  <script src="nr-pending-report.js?v=202"></script>
   <script src="completion-plan.js?v=8.44.107"></script>
 <script src="exact-excel-reports.js?v=8.29"></script>
 <script src="workbook-import.js?v=200"></script>
