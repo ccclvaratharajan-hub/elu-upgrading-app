@@ -554,9 +554,27 @@ function preferredMasterAppointment(key){
   return [...arr].sort((a,b)=>b.date.localeCompare(a.date)||slotStartMinutes(b.slot)-slotStartMinutes(a.slot)||Number(b.id)-Number(a.id))[0]
 }
 
+function surveyRespondedAfterNR(key,decision){
+  if(normalizeStatus(decision?.status)!=="NR")return false;
+  const decisionAt=Date.parse(decision.updatedAt||"");
+  if(!Number.isFinite(decisionAt))return false;
+  return state.surveys.some(visit=>{
+    if(visit.unitKey!==key)return false;
+    const recordedAt=Date.parse(visit.updatedAt||visit.createdAt||"");
+    const idAt=Number(visit.id);
+    const visitAt=Number.isFinite(recordedAt)?recordedAt:(idAt>=946684800000?idAt:NaN);
+    return Number.isFinite(visitAt)&&visitAt>decisionAt;
+  });
+}
+
 function currentUnitAppointmentState(key){
   const manual=manualStatusOverride(key);
   if(manual){
+    // A later Survey Register response supersedes an older NR decision only.
+    // Keep the original decision/audit and every later NR, A, C, D or P edit.
+    if(surveyRespondedAfterNR(key,manual)){
+      return {appointment:null,status:"P",workStatus:"Pending",active:false,completed:false,manualOverride:manual,surveyResponse:true};
+    }
     // Green A counts as completed even when the work date is unknown.
     const completed=manual.status==="A";
     return {appointment:null,status:manual.status,workStatus:completed?"Completed":"Pending",active:false,completed,manualOverride:manual}
@@ -1435,13 +1453,17 @@ document.getElementById("surveyForm").addEventListener("submit",e=>{
   const visitTime=previous?.visitTime&&surveyVisitMinutes(previous.visitTime)===surveyVisitMinutes(selectedTime)?previous.visitTime:selectedTime;
   const entry={
     id,
-    createdAt:new Date().toISOString(),
+    createdAt:previous?.createdAt||new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
     unitKey:key,zone:u.zone,block:u.block,floor:u.floor,unit:u.unit,unitDisplay:unitDisplay(u.floor,u.unit),
     ownerName:document.getElementById("surveyOwner").value.trim(),
     contact:document.getElementById("surveyContact").value.trim(),
     visitDate,visitTime,
     remarks:document.getElementById("surveyRemarks").value.trim()
   };
+  if(normalizeStatus(state.statusOverrides?.[key]?.status)==="NR"){
+    setManualStatusDecision(key,"P","Later Survey Register save: resident response recorded; awaiting appointment confirmation");
+  }
   const idx=state.surveys.findIndex(s=>s.id===id);
   if(idx>=0)state.surveys[idx]=entry;else state.surveys.push(entry);
   resetSurveyForm();
