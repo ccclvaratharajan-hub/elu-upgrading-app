@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#123f78">
   <link rel="manifest" href="manifest.webmanifest?v=8.44.56">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/elu-192.png">
-  <title>ELU Upgrading — Command Centre · V205</title>
+  <title>ELU Upgrading — Command Centre · V206</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css?v=8.44.192">
   <link rel="stylesheet" href="planner-3d.css?v=8.44.201">
@@ -762,6 +762,7 @@
               <label class="mini-filter">To<input type="date" id="photoReportTo"></label>
               <button class="primary-btn" id="photoWordBtn" type="button">Generate Word</button>
               <button class="ghost-btn" id="photoPdfBtn" type="button">Print / PDF</button>
+              <button class="primary-btn" id="photoDownloadPdfBtn" type="button">Download PDF</button>
             </div>
           </div>
           <div class="photo-retention-note" id="photoRetentionNote"></div>
@@ -770,7 +771,7 @@
         <article class="panel photo-block-report-panel">
           <div class="panel-head register-head">
             <div><span class="section-label">BLOCK-WISE OUTPUT</span><h3>Block-wise Photo Report</h3>
-              <p>Select a zone, block and date range. Download one block, or collect every block as separate Word files in one ZIP. The 21st-to-22nd cycle is prefilled.</p>
+              <p>Select a zone, block and date range. Download Word or PDF for one block, or collect every block as separate reports in a ZIP. The 21st-to-22nd cycle is prefilled.</p>
             </div>
             <div class="register-tools block-photo-tools">
               <label class="mini-filter">Zone<select id="photoBlockReportZone"></select></label>
@@ -780,7 +781,9 @@
               <button class="ghost-btn" id="photoBlockCycleBtn" type="button">Set 21 → 22</button>
               <button class="primary-btn" id="photoBlockWordBtn" type="button">Download Word</button>
               <button class="ghost-btn" id="photoBlockPdfBtn" type="button">Print / PDF</button>
+              <button class="primary-btn" id="photoBlockDownloadPdfBtn" type="button">Download PDF</button>
               <button class="primary-btn" id="photoAllBlocksZipBtn" type="button">All blocks · separate Word ZIP</button>
+              <button class="primary-btn" id="photoAllBlocksPdfZipBtn" type="button">All blocks · separate PDF ZIP</button>
             </div>
           </div>
           <div class="photo-retention-note" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -790,6 +793,7 @@
             <span id="recoverPhotosZipStatus" role="status" aria-live="polite">Choose report.zip, a Word photo report, or the recovered photos ZIP.</span>
           </div>
           <div class="photo-retention-note">Report view only — stored photos are not moved, copied, deleted or changed.</div>
+          <p id="photoPdfDownloadStatus" role="status" aria-live="polite" style="font-size:14px;font-weight:600;overflow-wrap:anywhere"></p>
           <div id="photoBlockSummary" class="photo-monthly-summary"></div>
           <div id="photoBlockBreakdown" class="photo-block-breakdown"></div>
         </article>
@@ -1047,5 +1051,6 @@
 <script src="complaint-excel-report.js?v=8.44.200"></script>
 <script src="certificate-forms.js?v=8.44.143"></script>
 <script src="single-line-diagram.js?v=8.44.144"></script>
+  <script src="photo-report-pdf.js?v=206"></script>
 </body>
 </html>
