@@ -75,7 +75,7 @@
     const card=(p,g,role)=>{
       const url=p?URL.createObjectURL(p.blob):'';if(url)urls.push(url);
       const label=role==='overview'?'Meter box overview':role==='link'?'Link':`#${String(g.floor).padStart(2,'0')}-${role.slice(5)}`;
-      return `<div class="riser-slot"><strong>${esc(label)}</strong>${p?`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${esc(label)}"></a><small>${esc(p.name)}</small>`:'<div class="riser-empty">Photo not available</div>'}<label class="riser-slot-add">${p?'Replace photo':'Add photo'}<input type="file" accept="image/jpeg,image/png,image/webp" data-riser-slot="${g.key}" data-riser-slot-role="${role}" ${p?`data-riser-replace="${esc(p.id)}"`:''}></label>${p?`<button type="button" data-riser-delete="${esc(p.id)}">Delete</button>`:''}</div>`;
+      return `<div class="riser-slot"><strong>${esc(label)}</strong>${p?`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${esc(label)}" style="object-fit:${p.fit==='contain'?'contain':'cover'}"></a><small>${esc(p.name)}</small><label class="riser-fit-label">Photo fit<select data-riser-fit="${esc(p.id)}" aria-label="${esc(label)} photo fit"><option value="cover" ${p.fit!=='contain'?'selected':''}>Fill box (crop edges)</option><option value="contain" ${p.fit==='contain'?'selected':''}>Full photo</option></select></label>`:'<div class="riser-empty">Photo not available</div>'}<label class="riser-slot-add">${p?'Replace photo':'Add photo'}<input type="file" accept="image/jpeg,image/png,image/webp" data-riser-slot="${g.key}" data-riser-slot-role="${role}" ${p?`data-riser-replace="${esc(p.id)}"`:''}></label>${p?`<button type="button" data-riser-delete="${esc(p.id)}">Delete</button>`:''}</div>`;
     };
     groupsEl.innerHTML=groups.length?groups.map(g=>{
       const photos=saved.filter(p=>p.groupKey===g.key);
@@ -242,18 +242,52 @@
   groupsEl.addEventListener('change',async e=>{const key=e.target.dataset.riserAdd,files=[...(e.target.files||[])];if(!key||!files.length)return;const g=reference.find(g=>g.key===key);if(!g)return;try{for(const file of files){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024)throw new Error('Use JPEG, PNG or WebP photos under 12 MB.');const id=`riser-${await fingerprint(await file.arrayBuffer())}`;await photoDbPut('riserPhotos',{id,zone:g.zone,block:g.block,floor:g.floor,groupKey:g.key,role:roleHint(file.name,g),name:file.name,blob:file,savedAt:new Date().toISOString()})}await render()}catch(error){statusEl.textContent=error.message}});
   groupsEl.addEventListener('change',async e=>{const id=e.target.dataset.riserRole;if(!id)return;const p=(await photoDbAll('riserPhotos')).find(p=>p.id===id),g=reference.find(g=>g.key===p?.groupKey);if(!p||!g)return;p.role=requiredRoles(g).includes(e.target.value)?e.target.value:'';p.manual=true;await photoDbPut('riserPhotos',p);await render()});
   groupsEl.addEventListener('change',async e=>{const id=e.target.dataset.riserMove;if(!id)return;const p=(await photoDbAll('riserPhotos')).find(p=>p.id===id),g=reference.find(g=>g.key===e.target.value);if(!p||!g)return;p.groupKey=g.key;p.zone=g.zone;p.block=g.block;p.floor=g.floor;p.role=requiredRoles(g).includes(p.role)?p.role:'';await photoDbPut('riserPhotos',p);await render()});
+  groupsEl.addEventListener('change',async e=>{
+    const id=e.target.dataset.riserFit;if(!id)return;
+    const fit=e.target.value;if(!['cover','contain'].includes(fit))return;
+    try{
+      const p=(await photoDbAll('riserPhotos')).find(p=>p.id===id);if(!p)return;
+      await photoDbPut('riserPhotos',{...p,fit});
+      statusEl.textContent=fit==='contain'?'Full photo selected. The entire photo will be shown.':'Fill box selected. The photo edges may be cropped.';
+      await render();
+    }catch(error){statusEl.textContent='Photo fit could not be saved. Please try again.';await render().catch(console.error)}
+  });
   groupsEl.addEventListener('click',async e=>{const id=e.target.dataset.riserDelete;if(!id)return;if(!confirm('Delete this riser photo?'))return;await photoDbDelete('riserPhotos',id);await render()});
   // PDF output follows the A4 sample: block header, unit details, two AFTER columns.
   document.getElementById('riserPdf').addEventListener('click',async()=>{
     const button=document.getElementById('riserPdf');button.disabled=true;
     try{await downloadReport()}catch(error){console.error(error);statusEl.textContent=error.message||'PDF could not be prepared.'}finally{button.disabled=false}
   });
+  function exifOrientation(bytes){
+    if(bytes[0]!==255||bytes[1]!==216)return 1;
+    const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let pos=2;
+    try{while(pos+4<=bytes.length){if(bytes[pos]!==255)break;const marker=bytes[pos+1],size=view.getUint16(pos+2);if(marker===218||marker===217||size<2||pos+2+size>bytes.length)break;
+      if(marker===225&&size>=16&&view.getUint32(pos+4)===0x45786966&&view.getUint16(pos+8)===0){const tiff=pos+10,little=view.getUint16(tiff)===0x4949;if(view.getUint16(tiff+2,little)!==42)return 1;const ifd=tiff+view.getUint32(tiff+4,little),count=view.getUint16(ifd,little);for(let i=0;i<count;i++){const at=ifd+2+i*12;if(at+12>pos+2+size)break;if(view.getUint16(at,little)===274){const orientation=view.getUint16(at+8,little);return orientation>=1&&orientation<=8?orientation:1;}}return 1;}
+      pos+=size+2;
+    }}catch(_){}return 1;
+  }
+  async function canvasJpeg(blob){
+    let image,url,bitmap=false;
+    try{
+      if(typeof createImageBitmap==='function'){image=await createImageBitmap(blob,{imageOrientation:'from-image'});bitmap=true;}
+      else {url=URL.createObjectURL(blob);image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('Image could not be decoded'));image.src=url;});}
+      const width=image.width||image.naturalWidth,height=image.height||image.naturalHeight;
+      if(!width||!height)throw new Error('Image has no dimensions');
+      const scale=Math.min(1,2400/Math.max(width,height)),canvas=document.createElement('canvas');canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
+      const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Image conversion is unavailable');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
+      const converted=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Image conversion failed')),'image/jpeg',.94));return new Uint8Array(await converted.arrayBuffer());
+    }finally{if(bitmap)image?.close();if(url)URL.revokeObjectURL(url);}
+  }
   async function reportImage(pdf,p){
-    let bytes=await p.blob.arrayBuffer();
-    if(p.blob.type==='image/webp'){
-      const url=URL.createObjectURL(p.blob);try{const img=new Image();img.src=url;await img.decode();const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);const data=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!data)throw new Error('Could not convert a WebP photo.');bytes=await data.arrayBuffer()}finally{URL.revokeObjectURL(url)}
-    }
-    return p.blob.type==='image/jpeg'?pdf.embedJpg(bytes):pdf.embedPng(bytes)
+    const bytes=new Uint8Array(await p.blob.arrayBuffer());
+    if(bytes[0]===255&&bytes[1]===216)return pdf.embedJpg(exifOrientation(bytes)===1?bytes:await canvasJpeg(p.blob));
+    if(bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71)return pdf.embedPng(bytes);
+    return pdf.embedJpg(await canvasJpeg(p.blob));
+  }
+  function photoBoxPlacement(width,height,box,fit){
+    const scale=(fit==='contain'?Math.min:Math.max)(box.w/width,box.h/height);
+    const w=width*scale,h=height*scale;
+    return {x:box.x+(box.w-w)/2,y:box.y+(box.h-h)/2,width:w,height:h};
   }
   async function downloadReport(){
     if(!window.PDFLib)throw new Error('PDF library is unavailable. Reload the app.');
@@ -270,8 +304,10 @@
     function newPage(block){page=pdf.addPage([W,H]);rowCount=0;center(`ELECTRICAL LOAD UPGRADING WORKS (ELU) AT BLOCKS 531 - 569 ${zone===3?'PASIR RIS DRIVE 1':'PASIR RIS STREET 51'}`,bold,8,x,totalW,H-42);line(x,H-48,x+totalW,H-48);center(`BLOCK ${block}`,bold,9,x,totalW,H-61);line(x,H-66,x+totalW,H-66);line(x,H-82,x+totalW,H-82);line(x,H-82,x,H-66);line(x+unitW,H-82,x+unitW,H-66);line(x+unitW+photoW,H-82,x+unitW+photoW,H-66);line(x+totalW,H-82,x+totalW,H-66);center('Unit Details',bold,8,x,unitW,H-78);center('AFTER',bold,8,x+unitW,photoW,H-78);center('AFTER',bold,8,x+unitW+photoW,photoW,H-78);y=H-82;previousBlock=block}
     async function fit(p,box){
       if(!p){center('Photo not available',font,7,box.x,box.w,box.y+box.h/2);return}
-      const img=await reportImage(pdf,p),scale=Math.min(box.w/img.width,box.h/img.height);const w=img.width*scale,h=img.height*scale;
-      page.drawImage(img,{x:box.x+(box.w-w)/2,y:box.y+(box.h-h)/2,width:w,height:h})
+      const img=await reportImage(pdf,p);
+      page.pushOperators(PDFLib.pushGraphicsState(),PDFLib.rectangle(box.x,box.y,box.w,box.h),PDFLib.clip(),PDFLib.endPath());
+      page.drawImage(img,photoBoxPlacement(img.width,img.height,box,p.fit));
+      page.pushOperators(PDFLib.popGraphicsState());
     }
     for(const g of records){
       const photos=requiredRoles(g).map(role=>byKey.get(g.key).filter(p=>p.role===role).sort((a,b)=>(b.manual?1:0)-(a.manual?1:0)||(b.quality||0)-(a.quality||0)||String(b.savedAt).localeCompare(String(a.savedAt)))[0]);

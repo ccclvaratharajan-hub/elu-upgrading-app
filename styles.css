@@ -3820,3 +3820,6 @@ body.theme-night #plannerDailyPanel .daily-table .daily-date{background:#fff04d;
 body.theme-night #plannerDailyPanel .daily-table td.daily-team-finished{
   background:#f8fafc;vertical-align:middle;
 }
+
+/* V208: use the same fit choice in Riser Progress and the PDF. */
+.riser-slot>a{display:block;overflow:hidden;background:#eef6fa}.riser-slot img{display:block;object-fit:cover;object-position:center}.riser-fit-label{display:grid;gap:3px;font-size:10px;color:#47657a}.riser-fit-label select{width:100%;min-width:0;border:1px solid #9bbdd0;border-radius:5px;padding:5px;background:#fff;color:#174667;font-size:11px}
