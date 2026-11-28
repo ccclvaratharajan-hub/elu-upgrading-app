@@ -567,12 +567,24 @@ function surveyRespondedAfterNR(key,decision){
   });
 }
 
+function unitHasResidentIdentity(key){
+  const unit=state.units[key];
+  const layout=unit&&(PROJECT_LAYOUT[String(unit.block)]||PROJECT_LAYOUT[unit.block]);
+  const seed=unit?(layout?.seed||{})[`${unit.floor}-${unit.unit}`]:null;
+  const rows=[unit,seed,state.workbookUnitData?.[key],...[state.surveys,state.appointments,state.complaints].flatMap(records=>(records||[]).filter(row=>row.unitKey===key))].filter(Boolean);
+  const named=value=>{const text=String(value||"").trim();return Boolean(text&&!/^(?:[-–—.]+|n\/?a|nil|none|unknown|nr|no response|not available)$/i.test(text))};
+  const phone=value=>String(value||"").replace(/\D/g,"").length>=8;
+  return rows.some(row=>named(row.ownerName))||rows.some(row=>phone(row.contact))
+}
+
+
 function currentUnitAppointmentState(key){
   const manual=manualStatusOverride(key);
   if(manual){
     // A later Survey Register response supersedes an older NR decision only.
-    // Keep the original decision/audit and every later NR, A, C, D or P edit.
-    if(surveyRespondedAfterNR(key,manual)){
+    // NR with either a saved resident name or phone is Pending.
+    // Retain original decisions/audit; A, C, D and P remain authoritative.
+    if(surveyRespondedAfterNR(key,manual)||(manual.status==="NR"&&unitHasResidentIdentity(key))){
       return {appointment:null,status:"P",workStatus:"Pending",active:false,completed:false,manualOverride:manual,surveyResponse:true};
     }
     // Green A counts as completed even when the work date is unknown.
